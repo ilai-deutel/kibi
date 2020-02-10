@@ -1,0 +1,16 @@
+[package]
+name = "kibi"
+version = "0.1.0"
+authors = ["Ilaï Deutel"]
+license = "MIT OR Apache-2.0"
+edition = "2018"
+description = "A text editor in less than 1024 lines of code with syntax higlighting, search and more."
+repository = "https://github.com/ilai-deutel/kibi"
+readme = "README.md"
+keywords = ["editor", "terminal", "text-editor"]
+categories = ["algorithms", "no-std"]
+
+[dependencies]
+libc = "0.2"
+nix = "0.16"
+signal-hook = "0.1"
