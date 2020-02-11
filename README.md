@@ -4,6 +4,8 @@
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-lightgray.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/crates/l/kibi)](#license)
 
+[![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
+
 A configurable text editor with incremental search, syntax highlighting, line numbers and more, written in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C, and [this tutorial](https://viewsourcecode.org/snaptoken/kilo/) (also in C).
