@@ -1,5 +1,6 @@
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
+[![Build Status](https://travis-ci.com/ilai-deutel/kibi.svg?branch=master)](https://travis-ci.com/ilai-deutel/kibi)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-lightgray.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/crates/l/kibi)](#license)

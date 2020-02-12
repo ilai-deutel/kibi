@@ -12,6 +12,13 @@ categories = ["text-editors", "development-tools"]
 exclude = [".gitignore", "rustfmt.toml", "syntax"]
 
 [dependencies]
-libc = "0.2"
-nix = "0.17"
-signal-hook = "0.1"
+libc = "0.2.66"
+nix = "0.17.0"
+signal-hook = "0.1.13"
+
+[dev-dependencies]
+tokei = "10.1.1"
+
+[badges]
+travis-ci = { repository = "ilai-deutel/kibi", branch = "master" }
+maintenance = { status = "actively-developed" }

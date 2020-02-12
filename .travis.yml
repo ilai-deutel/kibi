@@ -1,0 +1,41 @@
+dist: bionic
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+os:
+  - linux
+  - osx
+
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+  include:
+    - name: "LoC and style tests"
+      before_script: rustup component add rustfmt clippy
+      script:
+        - cargo test --test loc
+        - cargo fmt -- --check
+        - cargo clippy --all-targets -- -D warnings
+      rust: stable
+      os: linux
+    - name: "Dependency Audit"
+      install: cargo install cargo-audit
+      script: cargo audit
+      cache: cargo
+      rust: stable
+      os: linux
+
+before_install:
+  - set -e
+  - rustup self update
+
+cache: false
+
+install: cargo build --verbose
+
+script: skip
