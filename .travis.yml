@@ -1,41 +1,48 @@
-dist: bionic
 language: rust
+dist: bionic
 
-rust:
-  - stable
-  - beta
-  - nightly
-
-os:
-  - linux
-  - osx
+env:
+  global:
+    - HOST=x86_64-unknown-linux-gnu
 
 jobs:
-  allow_failures:
-    - rust: nightly
-  fast_finish: true
   include:
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-musl
+    - env: TARGET=i686-unknown-linux-gnu
+
+    # OSX
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+    # Testing other channels
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+
+    # Static checks
     - name: "LoC and style tests"
       before_script: rustup component add rustfmt clippy
       script:
         - cargo test --test loc
         - cargo fmt -- --check
         - cargo clippy --all-targets -- -D warnings
-      rust: stable
-      os: linux
     - name: "Dependency Audit"
       install: cargo install cargo-audit
       script: cargo audit
       cache: cargo
-      rust: stable
-      os: linux
 
-before_install:
-  - set -e
-  - rustup self update
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
+before_install: ci/before_install.sh
 
 cache: false
 
-install: cargo build --verbose
+install: cargo build --target "${TARGET:-$HOST}" --verbose
 
 script: skip
