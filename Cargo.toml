@@ -15,6 +15,7 @@ exclude = [".gitignore", "rustfmt.toml", "syntax"]
 libc = "0.2.66"
 nix = "0.17.0"
 signal-hook = "0.1.13"
+unicode-width = "0.1.7"
 
 [dev-dependencies]
 tokei = "10.1.1"

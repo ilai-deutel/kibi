@@ -5,6 +5,7 @@
 
 use crate::ansi_escape::*;
 use crate::syntax::{HighlightType, SyntaxConf};
+use unicode_width::UnicodeWidthChar;
 
 /// The "Highlight State" of the row
 #[derive(Clone, Copy, PartialEq)]
@@ -56,16 +57,18 @@ impl Row {
         self.rx2cx.clear();
         let (mut cx, mut rx) = (0, 0);
         for c in String::from_utf8_lossy(&self.chars).chars() {
+            // The number of bytes used to store the character
             let n_bytes = c.len_utf8();
-            let n_rendered_chars = if c == '\t' { tab - (rx % tab) } else { 1 };
+            // The number of rendered characters
+            let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
             if c == '\t' {
-                self.render.push_str(&" ".repeat(n_rendered_chars))
+                self.render.push_str(&" ".repeat(n_rend_chars))
             } else {
                 self.render.push(c)
             }
             self.cx2rx.extend(std::iter::repeat(rx).take(n_bytes));
-            self.rx2cx.extend(std::iter::repeat(cx).take(n_rendered_chars));
-            rx += n_rendered_chars;
+            self.rx2cx.extend(std::iter::repeat(cx).take(n_rend_chars));
+            rx += n_rend_chars;
             cx += n_bytes;
         }
         self.cx2rx.push(rx);
@@ -73,8 +76,12 @@ impl Row {
         self.update_syntax(syntax, hl_state)
     }
 
+    /// Obtain the character size, in bytes, given its position in `self.render`. This is done in
+    /// constant time by using the difference between `self.rx2cx[rx]` and the cx for the next
+    /// character.
     pub(crate) fn get_char_size(&self, rx: usize) -> usize {
-        (self.rx2cx[rx + 1] - self.rx2cx[rx]).max(1)
+        let cx0 = self.rx2cx[rx];
+        self.rx2cx.iter().skip(rx + 1).map(|cx| cx - cx0).find(|d| *d > 0).unwrap_or(1)
     }
 
     /// Update the syntax highlighting types of the row.

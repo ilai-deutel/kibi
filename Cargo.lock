@@ -433,6 +433,7 @@ dependencies = [
  "nix",
  "signal-hook",
  "tokei",
+ "unicode-width",
 ]
 
 [[package]]

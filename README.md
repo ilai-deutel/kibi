@@ -9,7 +9,7 @@
 
 A configurable text editor with incremental search, syntax highlighting, line numbers and more, written in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
-This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C, and [this tutorial](https://viewsourcecode.org/snaptoken/kilo/) (also in C).
+This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C. See [comparison](#comparison-with-kilo) below.
 
 Contributions are welcome! Be careful to stay below the 1024-line limit...
 
@@ -101,14 +101,29 @@ keywords_1=abstract, as, async, await, become, box, break, const, continue, crat
 keywords_2=i8, i16, i32, i64, i128, isize, u8, u16, u32, u36, u128, usize, f32, f64, bool, char, str
 ```
 
+## Comparison with `kilo`
+
+This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written by Salvatore Sanfilippo (antirez) in C, and [this tutorial](https://viewsourcecode.org/snaptoken/kilo/) (also in C).
+
+`kibi` provides additional features:
+- Support for UTF-8 characters
+- Command to jump to a given row/column
+- Handle window resize
+- Configurable using configuration files: global editor configuration, langage-specific syntax higlighting configuration
+- Display line numbers on the left of the screen, file size in the status bar
+- "Save as" prompt when no file name has been provided
+
 ## Dependencies
 
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses), [`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
-The only dependencies provide safe wrappers around `libc` calls, to avoid using `unsafe` code as much as possible:
+
+These dependencies provide safe wrappers around `libc` calls, to avoid using `unsafe` code as much as possible:
 
 * `libc`
 * `nix`
 * `signal-hook`
+
+In addition, `unicode-width` is used to determine the displayed width of Unicode characters. 
 
 ## Why Kibi?
 
