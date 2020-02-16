@@ -16,9 +16,11 @@ const REFRESH_SCREEN: u8 = ctrl_key(b'L');
 const SAVE: u8 = ctrl_key(b'S');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
+const DUPLICATE: u8 = ctrl_key(b'D');
 const BACKSPACE: u8 = 127;
 
-const HELP_MESSAGE: &str = "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to";
+const HELP_MESSAGE: &str =
+    "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate";
 
 /// set_status! sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
@@ -402,6 +404,19 @@ impl<'a> Editor<'a> {
         }
     }
 
+    fn duplicate_current_row(&mut self) {
+        if let Some(row) = self.current_row() {
+            let new_row = Row::new(row.chars.clone());
+            self.n_bytes += new_row.chars.len() as u64;
+            self.rows.insert(self.cursor.y + 1, new_row);
+            self.update_row(self.cursor.y + 1, false);
+            self.cursor.y += 1;
+            self.dirty = true;
+            // The line number has changed
+            self.update_screen_cols();
+        }
+    }
+
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
     /// If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
@@ -619,6 +634,7 @@ impl<'a> Editor<'a> {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
             }
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
+            Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;

@@ -52,6 +52,7 @@ $ kibi <file path>
 | Ctrl-S            | Save the buffer to the current file, or specify the file path |
 | Ctrl-G            | Go to `<line number>[:<column number>]` position              |
 | Ctrl-Q            | Quit                                                          |
+| Ctrl-D            | Duplicate the current row                                     |
 
 ### Configuration
 
@@ -109,9 +110,13 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 - Support for UTF-8 characters
 - Command to jump to a given row/column
 - Handle window resize
-- Configurable using configuration files: global editor configuration, langage-specific syntax higlighting configuration
-- Display line numbers on the left of the screen, file size in the status bar
+- Parsing configuration files: global editor configuration, language-specific syntax highlighting configuration
+- Display line numbers on the left of the screen; display file size in the status bar
+- Syntax highlighting: multi-line strings
 - "Save as" prompt when no file name has been provided
+- Command to duplicate the current row
+- Memory safety, thanks to Rust!
+- Many bug fixes
 
 ## Dependencies
 
