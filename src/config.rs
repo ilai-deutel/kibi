@@ -30,7 +30,7 @@ pub struct Config {
 impl Config {
     /// Load the configuration, potentially overridden using `config.ini` files that can be located
     /// in the following directories:
-    ///   - `/etc/kibi/config` (system-wide configuration).
+    ///   - `/etc/kibi` (system-wide configuration).
     ///   - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
     ///     `$HOME/.config/kibi` otherwise (user-level configuration).
     ///
@@ -43,7 +43,7 @@ impl Config {
             quit_times: 2,
             message_duration: Duration::from_secs(3),
             show_line_num: true,
-            conf_dirs: vec![PathBuf::from("/etc/kibi/config")],
+            conf_dirs: vec![PathBuf::from("/etc/kibi")],
         };
 
         if let Ok(xdg_config_home) = env::var("XDG_CONFIG_HOME") {
