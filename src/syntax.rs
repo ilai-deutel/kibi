@@ -73,7 +73,7 @@ impl SyntaxConf {
         config::process_ini_file(path, &mut |key, val| {
             match key {
                 "name" => sc.name = pv(val)?,
-                "extensions" => extensions.extend(val.split(',').map(String::from)),
+                "extensions" => extensions.extend(val.split(',').map(|u| String::from(u.trim()))),
                 "highlight_numbers" => sc.highlight_numbers = pv(val)?,
                 "highlight_strings" => sc.hightlight_sl_strings = pv(val)?,
                 "singleline_comment_start" => sc.sl_comment_start = pvs(val)?,
