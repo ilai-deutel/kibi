@@ -1,13 +1,13 @@
-use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Write};
-use std::iter::{repeat, successors};
+use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
+use std::iter::{self, repeat, successors};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::{cmp::Ordering, fmt::Display, fs::File, path::Path, time::Instant};
+use std::{fmt::Display, fs::File, path::Path, time::Instant};
 
 use nix::sys::termios::Termios;
 use signal_hook::{iterator::Signals, SIGWINCH};
 
 use crate::row::{HLState, Row};
-use crate::{ansi_escape::*, syntax::SyntaxConfig, terminal, Config, Error};
+use crate::{ansi_escape::*, syntax::SyntaxConf, terminal, Config, Error};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
@@ -72,10 +72,8 @@ pub struct Editor<'a> {
     prompt_mode: Option<PromptMode>,
     /// The current state of the cursor.
     cursor: CursorState,
-    /// The current column position
-    rx: usize,
     /// The padding size used on the left for line numbering.
-    ln_padding: usize,
+    ln_pad: usize,
     /// The width of the current window. Will be updated when the window is resized.
     window_width: usize,
     /// The number of rows that can be used for the editor, excluding the status bar and the message
@@ -99,7 +97,7 @@ pub struct Editor<'a> {
     /// The current status message being shown.
     status_msg: Option<StatusMessage>,
     /// The syntax configuration corresponding to the current file's extension.
-    syntax: SyntaxConfig,
+    syntax: SyntaxConf,
     /// The number of bytes contained in `rows`. This excludes new lines.
     n_bytes: u64,
     /// A channel receiver for the "window size changed" message. A message is received shortly
@@ -152,9 +150,8 @@ impl<'a> Editor<'a> {
         let mut editor = Self {
             prompt_mode: None,
             cursor: CursorState::default(),
-            rx: 0,
             // Will be updated with update_window_size() below
-            ln_padding: 0,
+            ln_pad: 0,
             window_width: 0,
             screen_rows: 0,
             screen_cols: 0,
@@ -164,7 +161,7 @@ impl<'a> Editor<'a> {
             config,
             file_name: None,
             status_msg: Some(StatusMessage::new(HELP_MESSAGE.to_string())),
-            syntax: SyntaxConfig::default(),
+            syntax: SyntaxConf::default(),
             n_bytes: 0,
             ws_changed_receiver: ws_changed_rx,
             orig_termios,
@@ -177,35 +174,35 @@ impl<'a> Editor<'a> {
     /// Return the current row if the cursor points to an existing row, `None` otherwise.
     fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
 
+    /// Return the position of the cursor, in terms of rendered characters (as opposed to
+    /// `self.cursor.x`, which is the position of the cursor in terms of bytes.
+    fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
+
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
-        match key {
-            AKey::Left => {
-                if self.cursor.x > 0 {
-                    self.cursor.x -= 1;
-                } else if self.cursor.y > 0 {
-                    // ← at the beginning of the line: move to the end of the previous line. The x
-                    // position will be adjusted after this `match` to accommodate the current row
-                    // length, so we can just set here to the maximum possible value here.
-                    self.cursor.y -= 1;
-                    self.cursor.x = usize::max_value();
-                }
+        match (key, self.current_row()) {
+            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
+                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1)
             }
-            AKey::Right if self.cursor.y < self.rows.len() => {
-                match self.cursor.x.cmp(&self.rows[self.cursor.y].chars.len()) {
-                    Ordering::Less => self.cursor.x += 1,
-                    Ordering::Equal => {
-                        // Move to the next line
-                        self.cursor.y += 1;
-                        self.cursor.x = 0;
-                    }
-                    Ordering::Greater => (),
-                }
+            (AKey::Left, _) if self.cursor.y > 0 => {
+                // ← at the beginning of the line: move to the end of the previous line. The x
+                // position will be adjusted after this `match` to accommodate the current row
+                // length, so we can just set here to the maximum possible value here.
+                self.cursor.y -= 1;
+                self.cursor.x = usize::max_value();
             }
-            // TODO: For Up and Down, move self.cursor.x to be consistent with tabs, i.e. according
-            //  to rx
-            AKey::Up if self.cursor.y > 0 => self.cursor.y -= 1,
-            AKey::Down if self.cursor.y < self.rows.len() => self.cursor.y += 1,
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
+                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x])
+            }
+            (AKey::Right, Some(_)) => {
+                // Move to the next line
+                self.cursor.y += 1;
+                self.cursor.x = 0;
+            }
+            // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
+            //  characters, i.e. according to rx
+            (AKey::Up, _) if self.cursor.y > 0 => self.cursor.y -= 1,
+            (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
         }
         self.update_cursor_x_position()
@@ -301,8 +298,8 @@ impl<'a> Editor<'a> {
         let n_digits =
             successors(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
         let show_line_num = self.config.show_line_num && n_digits + 2 < self.window_width / 4;
-        self.ln_padding = if show_line_num { n_digits + 2 } else { 0 };
-        self.screen_cols = self.window_width.saturating_sub(self.ln_padding);
+        self.ln_pad = if show_line_num { n_digits + 2 } else { 0 };
+        self.screen_cols = self.window_width.saturating_sub(self.ln_pad);
     }
 
     /// Given a file path, try to find a syntax highlighting configuration that matches the path
@@ -311,7 +308,7 @@ impl<'a> Editor<'a> {
     fn select_syntax_highlight(&mut self, path: &Path) -> Result<(), Error> {
         let conf_dirs = &self.config.conf_dirs;
         let extension = path.extension().and_then(std::ffi::OsStr::to_str);
-        if let Some(s) = extension.and_then(|e| SyntaxConfig::get(e, conf_dirs).transpose()) {
+        if let Some(s) = extension.and_then(|e| SyntaxConf::get(e, conf_dirs).transpose()) {
             self.syntax = s?
         }
         Ok(())
@@ -341,9 +338,9 @@ impl<'a> Editor<'a> {
         }
     }
 
-    /// Insert a character at the current cursor position. If there is now row at the current cursor
-    /// position, add a new row and insert the character.
-    fn insert_char(&mut self, c: u8) {
+    /// Insert a byte at the current cursor position. If there is now row at the current cursor
+    /// position, add a new row and insert the byte.
+    fn insert_byte(&mut self, c: u8) {
         if let Some(row) = self.rows.get_mut(self.cursor.y) {
             row.chars.insert(self.cursor.x, c)
         } else {
@@ -380,13 +377,14 @@ impl<'a> Editor<'a> {
     /// the cursor is located after the last row, move up to the last character of the previous row.
     fn delete_char(&mut self) {
         if self.cursor.x > 0 {
-            if let Some(row) = self.rows.get_mut(self.cursor.y) {
-                row.chars.remove(self.cursor.x - 1);
-                self.update_row(self.cursor.y, false);
-                self.cursor.x -= 1;
-                self.dirty = if self.is_empty() { self.file_name.is_some() } else { true };
-                self.n_bytes -= 1;
-            }
+            let row = &mut self.rows[self.cursor.y];
+            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8 character size).
+            let n_bytes_to_remove = row.get_char_size(row.cx2rx[self.cursor.x] - 1);
+            row.chars.splice(self.cursor.x - n_bytes_to_remove..self.cursor.x, iter::empty());
+            self.update_row(self.cursor.y, false);
+            self.cursor.x -= n_bytes_to_remove;
+            self.dirty = if self.is_empty() { self.file_name.is_some() } else { true };
+            self.n_bytes -= n_bytes_to_remove as u64;
         } else if self.cursor.y < self.rows.len() && self.cursor.y > 0 {
             let row = self.rows.remove(self.cursor.y);
             let previous_row = &mut self.rows[self.cursor.y - 1];
@@ -408,28 +406,41 @@ impl<'a> Editor<'a> {
     /// If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
         match File::open(path) {
-            Ok(ref file) => {
+            Ok(file) => {
                 for line in BufReader::new(file).split(b'\n') {
                     self.rows.push(Row::new(line?));
+                }
+                // If the file ends with an empty line or is empty, we need to append an empty row
+                // to `self.rows`. Unfortunately, BufReader::split doesn't yield an empty Vec in
+                // this case, so we need to check the last byte directly.
+                let mut file = File::open(path)?;
+                file.seek(io::SeekFrom::End(0))?;
+                if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
+                    self.rows.push(Row::new(Vec::new()));
                 }
                 self.update_all_rows();
                 // The number of rows has changed. The left padding may need to be updated.
                 self.update_screen_cols();
                 self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
-                Ok(())
             }
-            Err(e) => (if e.kind() == NotFound { Ok(()) } else { Err(e.into()) }),
+            Err(e) if e.kind() == NotFound => self.rows.push(Row::new(Vec::new())),
+            Err(e) => return Err(e.into()),
         }
+        Ok(())
     }
 
     /// Save the text to a file, given its name.
     fn save(&self, file_name: &str) -> Result<usize, io::Error> {
         let mut file = File::create(file_name)?;
-        let written = self.rows.iter().try_fold(0, |written, row| -> Result<_, io::Error> {
+        let mut written = 0;
+        for (i, row) in self.rows.iter().enumerate() {
             file.write_all(&row.chars)?;
-            file.write_all(&[b'\n'])?;
-            Ok(written + row.chars.len() + 1)
-        })?;
+            written += row.chars.len();
+            if i != (self.rows.len() - 1) {
+                file.write_all(&[b'\n'])?;
+                written += 1
+            }
+        }
         file.sync_all()?;
         Ok(written)
     }
@@ -466,27 +477,25 @@ impl<'a> Editor<'a> {
     /// Scroll the terminal window vertically and horizontally (i.e. adjusting the row offset and
     /// the column offset) so that the cursor can be shown.
     fn scroll(&mut self) {
-        // TODO: Should we move this to somewhere else?
-        self.rx = self.current_row().map_or(0, |r| r.cx2rx(self.cursor.x, self.config.tab_stop));
-
+        let rx = self.rx();
         if self.cursor.y < self.cursor.roff {
             self.cursor.roff = self.cursor.y;
         } else if self.cursor.y >= self.cursor.roff + self.screen_rows {
             self.cursor.roff = self.cursor.y - self.screen_rows + 1;
         }
 
-        if self.rx < self.cursor.coff {
-            self.cursor.coff = self.rx;
-        } else if self.rx >= self.cursor.coff + self.screen_cols {
-            self.cursor.coff = self.rx - self.screen_cols + 1;
+        if rx < self.cursor.coff {
+            self.cursor.coff = rx;
+        } else if rx >= self.cursor.coff + self.screen_cols {
+            self.cursor.coff = rx - self.screen_cols + 1;
         }
     }
 
     /// Draw the left part of the screen: line numbers and vertical bar.
     fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) {
-        if self.ln_padding >= 2 {
+        if self.ln_pad >= 2 {
             // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
-            buffer.push_str(&format!("\x1b[38;5;240m{:>1$} \u{2502}", val, self.ln_padding - 2));
+            buffer.push_str(&format!("\x1b[38;5;240m{:>1$} \u{2502}", val, self.ln_pad - 2));
             buffer.push_str(RESET_FMT)
         }
     }
@@ -527,7 +536,7 @@ impl<'a> Editor<'a> {
         // Right part of the status bar
         let size = format_size(self.n_bytes + self.rows.len().saturating_sub(1) as u64);
         let right =
-            format!("{} | {} | {}:{}", self.syntax.name, size, self.cursor.y + 1, self.rx + 1);
+            format!("{} | {} | {}:{}", self.syntax.name, size, self.cursor.y + 1, self.rx() + 1);
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
@@ -553,7 +562,7 @@ impl<'a> Editor<'a> {
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
             // If not in prompt mode, position the cursor according to the `cursor` attributes.
-            (self.rx - self.cursor.coff + 1 + self.ln_padding, self.cursor.y - self.cursor.roff + 1)
+            (self.rx() - self.cursor.coff + 1 + self.ln_pad, self.cursor.y - self.cursor.roff + 1)
         } else {
             // If in prompt mode, position the cursor on the prompt line at the end of the line.
             (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
@@ -610,7 +619,7 @@ impl<'a> Editor<'a> {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
             }
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
-            Key::Char(c) => self.insert_char(*c),
+            Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;
         Ok((false, prompt_mode))
@@ -628,7 +637,7 @@ impl<'a> Editor<'a> {
             let row = &mut self.rows[current];
             if let Some(rx) = row.render.find(&query) {
                 self.cursor.y = current as usize;
-                self.cursor.x = row.rx2cx(rx, self.config.tab_stop);
+                self.cursor.x = row.rx2cx[rx];
                 // Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.scroll() so that the result is visible
                 self.cursor.coff = 0;
@@ -648,8 +657,7 @@ impl<'a> Editor<'a> {
         if let Some(path) = file_name.as_ref().map(Path::new) {
             self.select_syntax_highlight(path)?;
             self.load(path)?;
-        }
-        if self.rows.is_empty() {
+        } else {
             self.rows.push(Row::new(Vec::new()));
         }
         self.file_name = file_name;
@@ -744,8 +752,7 @@ impl PromptMode {
                         (Ok(Some(y)), Ok(x)) => {
                             ed.cursor.y = y.min(ed.rows.len());
                             if let Some(rx) = x {
-                                ed.cursor.x =
-                                    ed.current_row().map_or(0, |r| r.rx2cx(rx, ed.config.tab_stop));
+                                ed.cursor.x = ed.current_row().map_or(0, |r| r.rx2cx[rx]);
                             } else {
                                 ed.update_cursor_x_position();
                             }

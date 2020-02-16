@@ -5,14 +5,14 @@ use nix::{pty::Winsize, sys::termios};
 
 use crate::{ansi_escape::*, Error};
 
-pub(super) fn set_termios(term: &termios::Termios) -> Result<(), nix::Error> {
+pub(crate) fn set_termios(term: &termios::Termios) -> Result<(), nix::Error> {
     termios::tcsetattr(STDIN_FILENO, termios::SetArg::TCSAFLUSH, term)
 }
 
 /// Setup the termios to enable raw mode, and return the original termios.
 ///
 /// termios manual is available at: <http://man7.org/linux/man-pages/man3/termios.3.html>
-pub(super) fn enable_raw_mode() -> Result<termios::Termios, Error> {
+pub(crate) fn enable_raw_mode() -> Result<termios::Termios, Error> {
     let orig_termios = termios::tcgetattr(STDIN_FILENO)?;
     let mut term = orig_termios.clone();
     termios::cfmakeraw(&mut term);
@@ -31,7 +31,7 @@ pub(super) fn enable_raw_mode() -> Result<termios::Termios, Error> {
 ///    This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
 /// 2. If the first method fails, we reposition the cursor at the end of the terminal and get the
 ///    cursor position.
-pub(super) fn get_window_size() -> Result<(usize, usize), Error> {
+pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
     nix::ioctl_read_bad!(get_ws, TIOCGWINSZ, Winsize);
     let mut maybe_ws = std::mem::MaybeUninit::<Winsize>::uninit();
 

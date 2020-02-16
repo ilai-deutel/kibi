@@ -4,11 +4,11 @@
 //! highlighting information.
 
 use crate::ansi_escape::*;
-use crate::syntax::{HighlightType, SyntaxConfig};
+use crate::syntax::{HighlightType, SyntaxConf};
 
 /// The "Highlight State" of the row
 #[derive(Clone, Copy, PartialEq)]
-pub(super) enum HLState {
+pub(crate) enum HLState {
     /// Normal state.
     Normal,
     /// A multi-line comment has been open, but not yet closed.
@@ -25,56 +25,60 @@ impl Default for HLState {
 
 /// Represents a row of characters and how it is rendered.
 #[derive(Default)]
-pub(super) struct Row {
+pub(crate) struct Row {
     /// The characters of the row.
-    pub(super) chars: Vec<u8>,
-    /// How the characters are rendered. In particular, tabs are converted into several spaces.
-    pub(super) render: String,
+    pub(crate) chars: Vec<u8>,
+    /// How the characters are rendered. In particular, tabs are converted into several spaces, and
+    /// bytes may be combined into single UTF-8 characters.
+    pub(crate) render: String,
+    /// Mapping from indices in `self.chars` to the corresponding indices in `self.render`.
+    pub(crate) cx2rx: Vec<usize>,
+    /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
+    pub(crate) rx2cx: Vec<usize>,
     /// The vector of `HighlightType` for each rendered character.
-    pub(super) hl: Vec<HighlightType>,
+    pub(crate) hl: Vec<HighlightType>,
     /// The final state of the row.
-    pub(super) hl_state: HLState,
+    pub(crate) hl_state: HLState,
     /// If not `None`, the range that is currently matched during a FIND operation.
-    pub(super) match_segment: Option<std::ops::Range<usize>>,
+    pub(crate) match_segment: Option<std::ops::Range<usize>>,
 }
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub(super) fn new(chars: Vec<u8>) -> Self { Self { chars, ..Self::default() } }
+    pub(crate) fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
-    pub(super) fn update(
-        &mut self, syntax: &SyntaxConfig, previous_hl_state: HLState, tab: usize,
-    ) -> HLState {
+    /// The `hl_state` argument is the `HLState` for the previous row.
+    pub(crate) fn update(&mut self, syntax: &SyntaxConf, hl_state: HLState, tab: usize) -> HLState {
         self.render.clear();
-        for c in &self.chars {
-            if *c == b'\t' {
-                self.render.push_str(&" ".repeat(tab - (self.render.len() % tab)));
+        self.cx2rx.clear();
+        self.rx2cx.clear();
+        let (mut cx, mut rx) = (0, 0);
+        for c in String::from_utf8_lossy(&self.chars).chars() {
+            let n_bytes = c.len_utf8();
+            let n_rendered_chars = if c == '\t' { tab - (rx % tab) } else { 1 };
+            if c == '\t' {
+                self.render.push_str(&" ".repeat(n_rendered_chars))
             } else {
-                self.render.push(*c as char);
+                self.render.push(c)
             }
+            self.cx2rx.extend(std::iter::repeat(rx).take(n_bytes));
+            self.rx2cx.extend(std::iter::repeat(cx).take(n_rendered_chars));
+            rx += n_rendered_chars;
+            cx += n_bytes;
         }
-        self.update_syntax(syntax, previous_hl_state)
+        self.cx2rx.push(rx);
+        self.rx2cx.push(cx);
+        self.update_syntax(syntax, hl_state)
     }
-    /// Convert an index in `self.chars` to the corresponding index in `self.render`.
-    pub(super) fn cx2rx(&self, cx: usize, tab: usize) -> usize {
-        self.chars[..cx].iter().fold(0, |r, c| r + if *c == b'\t' { tab - (r % tab) } else { 1 })
+
+    pub(crate) fn get_char_size(&self, rx: usize) -> usize {
+        (self.rx2cx[rx + 1] - self.rx2cx[rx]).max(1)
     }
-    /// Convert an index in `self.render` to the corresponding index in `self.chars`.
-    /// If the index is too large, return the size of `self.chars`.
-    pub(super) fn rx2cx(&self, rx: usize, tab: usize) -> usize {
-        let mut current_rx = 0;
-        for (cx, c) in self.chars.iter().enumerate() {
-            current_rx += if *c == b'\t' { tab - (current_rx % tab) } else { 1 };
-            if current_rx > rx {
-                return cx;
-            }
-        }
-        self.chars.len()
-    }
+
     /// Update the syntax highlighting types of the row.
-    fn update_syntax(&mut self, syntax: &SyntaxConfig, mut hl_state: HLState) -> HLState {
+    fn update_syntax(&mut self, syntax: &SyntaxConf, mut hl_state: HLState) -> HLState {
         self.hl.clear();
         let line = self.render.as_bytes();
 
@@ -183,15 +187,16 @@ impl Row {
         };
         self.hl_state
     }
+
     /// Draw the row and write the result to a buffer. An `offset` can be given, as well as a limit
     /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
     /// line and move the cursor to the start of the next line.
-    pub(super) fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
+    pub(crate) fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
         let mut current_hl_type = HighlightType::Normal;
-        let bytes = self.render.bytes().skip(offset).take(max_len);
-        for (c, (i, mut hl_type)) in bytes.zip(self.hl.iter().enumerate().skip(offset)) {
+        let chars = self.render.chars().skip(offset).take(max_len);
+        for (c, (i, mut hl_type)) in chars.zip(self.hl.iter().enumerate().skip(offset)) {
             if c.is_ascii_control() {
-                let rendered_char = if c <= 26 { (b'@' + c) as char } else { '?' };
+                let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
                 buffer.push_str(&format!("{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT,));
                 // Restore previous color
                 if current_hl_type != HighlightType::Normal {

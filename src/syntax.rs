@@ -10,7 +10,7 @@ use crate::Error;
 /// to the discriminant, modulo 100. The colors are described here:
 /// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
 #[derive(PartialEq, Copy, Clone)]
-pub(super) enum HighlightType {
+pub(crate) enum HighlightType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
     Match = 46,      // Cyan
@@ -29,25 +29,25 @@ impl Display for HighlightType {
 
 /// Configuration for syntax highlighting.
 #[derive(Clone, Default)]
-pub(crate) struct SyntaxConfig {
+pub(crate) struct SyntaxConf {
     /// The name of the language, e.g. "Rust".
-    pub(super) name: String,
+    pub(crate) name: String,
     /// Whether to highlight numbers.
-    pub(super) highlight_numbers: bool,
+    pub(crate) highlight_numbers: bool,
     /// Whether to highlight single-line strings.
-    pub(super) hightlight_sl_strings: bool,
+    pub(crate) hightlight_sl_strings: bool,
     /// The token that starts a single-line comment, e.g. "//".
-    pub(super) sl_comment_start: Vec<String>,
+    pub(crate) sl_comment_start: Vec<String>,
     /// The tokens that start and end a multi-line comment, e.g. ("/*", "*/").
-    pub(super) ml_comment_delim: Option<(String, String)>,
+    pub(crate) ml_comment_delim: Option<(String, String)>,
     /// The tokens that start and end a multi-line strings, e.g. "\"\"\"" for Python..
-    pub(super) ml_string_delim: Option<String>,
+    pub(crate) ml_string_delim: Option<String>,
     /// Keywords to highlight and there corresponding HighlightType (typically
     /// HighlightType::Keyword1 or HighlightType::Keyword2)
-    pub(super) keywords: Vec<(HighlightType, Vec<String>)>,
+    pub(crate) keywords: Vec<(HighlightType, Vec<String>)>,
 }
 
-impl SyntaxConfig {
+impl SyntaxConf {
     /// Return the syntax configuration corresponding to the given file extension, if a matching
     /// INI file is found in a config directory.
     pub(crate) fn get(ext: &str, conf_dirs: &[PathBuf]) -> Result<Option<Self>, Error> {
@@ -67,7 +67,7 @@ impl SyntaxConfig {
         }
         Ok(None)
     }
-    /// Load a `SyntaxConfig` from file.
+    /// Load a `SyntaxConf` from file.
     fn from_file(path: &Path) -> Result<(Self, Vec<String>), Error> {
         let (mut sc, mut extensions) = (Self::default(), Vec::new());
         config::process_ini_file(path, &mut |key, val| {
