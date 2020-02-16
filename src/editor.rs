@@ -9,9 +9,7 @@ use signal_hook::{iterator::Signals, SIGWINCH};
 use crate::row::{HLState, Row};
 use crate::{ansi_escape::*, syntax::SyntaxConfig, terminal, Config, Error};
 
-const fn ctrl_key(key: u8) -> u8 {
-    key & 0x1f
-}
+const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
 const DELETE_BIS: u8 = ctrl_key(b'H');
 const REFRESH_SCREEN: u8 = ctrl_key(b'L');
@@ -121,9 +119,7 @@ struct StatusMessage {
 
 impl StatusMessage {
     /// Create a new status message and set time to the current date/time.
-    fn new(msg: String) -> Self {
-        Self { msg, time: Instant::now() }
-    }
+    fn new(msg: String) -> Self { Self { msg, time: Instant::now() } }
 }
 
 /// Pretty-format a size in bytes.
@@ -179,9 +175,7 @@ impl<'a> Editor<'a> {
     }
 
     /// Return the current row if the cursor points to an existing row, `None` otherwise.
-    fn current_row(&self) -> Option<&Row> {
-        self.rows.get(self.cursor.y)
-    }
+    fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
@@ -499,9 +493,7 @@ impl<'a> Editor<'a> {
 
     /// Return whether the file being edited is empty or not. If there is more than one row, even if
     /// all the rows are empty, `is_empty` returns `false`, since the text contains new lines.
-    fn is_empty(&self) -> bool {
-        self.rows.len() <= 1 && self.n_bytes == 0
-    }
+    fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
     fn draw_rows(&self, buffer: &mut String) {
@@ -704,7 +696,7 @@ impl PromptMode {
     fn status_msg(&self) -> String {
         match self {
             Self::Save(buffer) => format!("Save as: {}", buffer),
-            Self::Find(buffer, _, _) => format!("Search (Use ESC/Arrows/Enter): {}", buffer),
+            Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {}", buffer),
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {}", buffer),
         }
     }

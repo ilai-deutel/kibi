@@ -19,24 +19,28 @@ jobs:
     # Testing other channels
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: nightly
+      allow_failures: true
     - env: TARGET=x86_64-apple-darwin
       os: osx
       rust: nightly
+      allow_failures: true
 
     # Static checks
-    - name: LoC and style tests
-      before_script: rustup component add rustfmt clippy
+    - name: LoC and clippy
+      before_script: rustup component add clippy
+      install: skip
       script:
         - cargo test --test loc
-        - cargo fmt -- --check
         - cargo clippy --all-targets -- -D warnings
+    - name: Rustfmt
+      before_script: rustup component add rustfmt
+      script: cargo fmt -- --check
+      rust: nightly
     - name: Dependency Audit
       install: cargo install cargo-audit
       script: cargo audit
       cache: cargo
 
-  allow_failures:
-    - rust: nightly
   fast_finish: true
 
 before_install: ci/before_install.sh

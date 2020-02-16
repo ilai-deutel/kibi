@@ -82,9 +82,7 @@ impl Config {
 /// The `deser_fn` will be called for each key-value pair in the file. Typically, this function will
 /// update a configuration instance.
 pub(crate) fn process_ini_file<F>(path: &Path, deser_fn: &mut F) -> Result<(), Error>
-where
-    F: FnMut(&str, &str) -> Result<(), String>,
-{
+where F: FnMut(&str, &str) -> Result<(), String> {
     for line in BufReader::new(File::open(path)?).lines() {
         let line = line?;
         let mut parts = line.trim_start().splitn(2, '=');

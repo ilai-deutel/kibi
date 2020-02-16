@@ -1,4 +1,9 @@
+brace_style = "PreferSameLine"
+condense_wildcard_suffixes = true
+fn_args_layout = "Compressed"
+fn_single_line = true
+inline_attribute_width = 50
 use_field_init_shorthand = true
 use_small_heuristics = "Max"
 use_try_shorthand = true
-
+where_single_line = true

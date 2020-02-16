@@ -24,9 +24,7 @@ pub(super) enum HighlightType {
 
 impl Display for HighlightType {
     /// Write the ANSI color escape sequence for the `HighlightType` using the given formatter.
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "\x1b[{}m", (*self as u32) % 100)
-    }
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "\x1b[{}m", (*self as u32) % 100) }
 }
 
 /// Configuration for syntax highlighting.

@@ -20,9 +20,7 @@ pub(super) enum HLState {
 }
 
 impl Default for HLState {
-    fn default() -> Self {
-        Self::Normal
-    }
+    fn default() -> Self { Self::Normal }
 }
 
 /// Represents a row of characters and how it is rendered.
@@ -42,17 +40,12 @@ pub(super) struct Row {
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub(super) fn new(chars: Vec<u8>) -> Self {
-        Self { chars, ..Self::default() }
-    }
+    pub(super) fn new(chars: Vec<u8>) -> Self { Self { chars, ..Self::default() } }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
     pub(super) fn update(
-        &mut self,
-        syntax: &SyntaxConfig,
-        previous_hl_state: HLState,
-        tab: usize,
+        &mut self, syntax: &SyntaxConfig, previous_hl_state: HLState, tab: usize,
     ) -> HLState {
         self.render.clear();
         for c in &self.chars {

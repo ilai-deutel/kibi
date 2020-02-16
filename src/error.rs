@@ -28,13 +28,9 @@ impl Display for Error {
 
 impl From<std::io::Error> for Error {
     /// Convert an IO Error into a Kibi Error.
-    fn from(err: std::io::Error) -> Self {
-        Self::IO(err)
-    }
+    fn from(err: std::io::Error) -> Self { Self::IO(err) }
 }
 impl From<nix::Error> for Error {
     /// Convert a nix IO Error into a Kibi Error.
-    fn from(err: nix::Error) -> Self {
-        Self::Nix(err)
-    }
+    fn from(err: nix::Error) -> Self { Self::Nix(err) }
 }
