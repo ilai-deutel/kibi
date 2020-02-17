@@ -1,13 +1,14 @@
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
-[![Build Status](https://travis-ci.com/ilai-deutel/kibi.svg?branch=master)](https://travis-ci.com/ilai-deutel/kibi)
+[![Build Status](https://img.shields.io/travis/com/ilai-deutel/kibi/master?logo=travis)](https://travis-ci.com/ilai-deutel/kibi)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-lightgray.svg)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/crates/l/kibi)](#license)
+[![AUR](https://img.shields.io/aur/version/kibi.svg?logo=arch-linux)](https://aur.archlinux.org/packages/kibi/)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-blue.svg?logo=rust)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 
 [![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
-A configurable text editor with incremental search, syntax highlighting, line numbers and more, written in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
+A configurable text editor with UTF-8 support, incremental search, syntax highlighting, line numbers and more, written in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C. See [comparison](#comparison-with-kilo) below.
 
@@ -16,6 +17,8 @@ Contributions are welcome! Be careful to stay below the 1024-line limit...
 <sub><a name="counted-with">1.</a>: Counted with [`tokei`](https://github.com/XAMPPRocky/tokei)</sub>
 
 ## Installation
+
+### With `cargo`
 
 You can install Kibi with [`cargo`](https://github.com/rust-lang/cargo/):
 
@@ -33,6 +36,26 @@ $ cd ~/repos
 $ git clone https://github.com/ilai-deutel/kibi.git
 $ mkdir -p ~/.config/kibi
 $ ln -sr ./kibi/syntax ~/.config/kibi/syntax.d
+```
+
+### Arch User Repository (Arch Linux)
+
+[`kibi`](https://aur.archlinux.org/packages/kibi/) is available on the AUR.
+
+#### Installation with an AUR helper
+
+For instance, using `yay`: 
+
+```bash
+yay -Syu kibi
+```
+
+#### Manual installation with `makepkg`
+
+```bash
+git clone https://aur.archlinux.org/kibi.git
+cd kibi
+makepkg -si
 ```
 
 ## Usage
