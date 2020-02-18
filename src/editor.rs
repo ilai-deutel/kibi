@@ -123,7 +123,7 @@ impl StatusMessage {
 }
 
 /// Pretty-format a size in bytes.
-pub fn format_size(n: u64) -> String {
+fn format_size(n: u64) -> String {
     let quo_rem = successors(Some((n, 0)), |(q, _)| Some((q / 1024, q % 1024)).filter(|u| u.0 > 0));
     // unwrap(): quo_rem is never empty (since `successors` has an initial value), so _.last()
     // cannot be None

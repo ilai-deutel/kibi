@@ -15,16 +15,16 @@ use crate::Error;
 /// The global Kibi configuration.
 pub struct Config {
     /// The size of a tab. Must be > 0.
-    pub tab_stop: usize,
+    pub(crate) tab_stop: usize,
     /// The number of confirmations needed before quitting, when changes have been made since the
     /// file was last changed.
-    pub quit_times: usize,
+    pub(crate) quit_times: usize,
     /// The duration for which messages are shown in the status bar.
-    pub message_duration: Duration,
+    pub(crate) message_duration: Duration,
     /// Whether to display line numbers.
-    pub show_line_num: bool,
+    pub(crate) show_line_num: bool,
     /// The paths to directories that may be used to store Kibi configuration files.
-    pub conf_dirs: Vec<PathBuf>,
+    pub(crate) conf_dirs: Vec<PathBuf>,
 }
 
 impl Config {
