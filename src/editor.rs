@@ -359,15 +359,16 @@ impl<'a> Editor<'a> {
     /// Insert a new line at the current cursor position and move the cursor to the start of the new
     /// line. If the cursor is in the middle of a row, split off that row.
     fn insert_new_line(&mut self) {
-        if self.cursor.x == 0 {
-            self.rows.insert(self.cursor.y, Row::new(Vec::new()));
+        let (position, new_row_chars) = if self.cursor.x == 0 {
+            (self.cursor.y, Vec::new())
         } else {
             // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any cursor.y ≥ row.len()
             let new_chars = self.rows[self.cursor.y].chars.split_off(self.cursor.x);
             self.update_row(self.cursor.y, true);
-            self.rows.insert(self.cursor.y + 1, Row::new(new_chars));
-            self.update_row(self.cursor.y + 1, false);
-        }
+            (self.cursor.y + 1, new_chars)
+        };
+        self.rows.insert(position, Row::new(new_row_chars));
+        self.update_row(self.cursor.y, false);
         self.update_screen_cols();
         self.cursor.y += 1;
         self.cursor.x = 0;

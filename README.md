@@ -8,9 +8,11 @@
 
 [![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
-A configurable text editor with UTF-8 support, incremental search, syntax highlighting, line numbers and more, written in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
+A configurable text editor with UTF-8 support, incremental search, syntax highlighting, line numbers and more, written
+in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
-This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C. See [comparison](#comparison-with-kilo) below.
+This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C.
+See [comparison](#comparison-with-kilo) below for a list of additional features.
 
 Contributions are welcome! Be careful to stay below the 1024-line limit...
 
@@ -26,8 +28,9 @@ You can install Kibi with [`cargo`](https://github.com/rust-lang/cargo/):
 $ cargo install kibi
 ```
 
-Syntax highlighting configuration files are available in the [`syntax`](syntax) directory of this repository.
-They need to be placed in one of the configuration directories mentioned in the [Configuration/Syntax Highlighting](#syntax-higlighting) section.
+Syntax highlighting configuration files are available in the [`config_example/syntax.d`](config_example/syntax.d)
+directory of this repository. They need to be placed in one of the configuration directories mentioned in the
+[Configuration/Syntax Highlighting](#syntax-highlighting) section.
 
 For instance:
 
@@ -100,7 +103,7 @@ message_duration=3
 show_line_numbers=true
 ```
 
-#### Syntax Higlighting
+#### Syntax Highlighting
 
 Syntax highlighting can be configured using INI files located at:
 * `/etc/kibi/syntax.d/<file_name>.ini` for system-wide availability
@@ -120,14 +123,17 @@ highlight_numbers=true
 highlight_strings=true
 singleline_comment_start=//
 multiline_comment_delim=/*, */
-; The keyword list is taken from here: https://doc.rust-lang.org/book/appendix-01-keywords.html
+; In Rust, the multi-line string delimiter is the same as the single-ine string delimiter
+multiline_string_delim="
+; https://doc.rust-lang.org/book/appendix-01-keywords.html
 keywords_1=abstract, as, async, await, become, box, break, const, continue, crate, do, dyn, else, enum, extern, false, final, fn, for, if, impl, in, let, loop, macro, match, mod, move, mut, override, priv, pub, ref, return, self, Self, static, struct, super, trait, true, try, type, typeof, unsafe, unsized, use, virtual, where, while, yield
 keywords_2=i8, i16, i32, i64, i128, isize, u8, u16, u32, u36, u128, usize, f32, f64, bool, char, str
 ```
 
 ## Comparison with `kilo`
 
-This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written by Salvatore Sanfilippo (antirez) in C, and [this tutorial](https://viewsourcecode.org/snaptoken/kilo/) (also in C).
+This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written by Salvatore Sanfilippo
+(antirez) in C, and [this tutorial](https://viewsourcecode.org/snaptoken/kilo/) (also in C).
 
 `kibi` provides additional features:
 - Support for UTF-8 characters
@@ -143,7 +149,8 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 
 ## Dependencies
 
-This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses), [`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
+This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
+[`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
 
 These dependencies provide safe wrappers around `libc` calls, to avoid using `unsafe` code as much as possible:
 
@@ -151,14 +158,15 @@ These dependencies provide safe wrappers around `libc` calls, to avoid using `un
 * `nix`
 * `signal-hook`
 
-In addition, `unicode-width` is used to determine the displayed width of Unicode characters. 
+In addition, `unicode-width` is used to determine the displayed width of Unicode characters. Unfortunately, there is no
+way around it: the [unicode character width table](https://github.com/unicode-rs/unicode-width/blob/3033826f8bf05e82724140a981d5941e48fce393/src/tables.rs#L52)
+is 230 lines long.
 
 ## Why Kibi?
 
 1. Porting the `kilo` source code from C to Rust and trying to make it idiomatic was interesting
 2. Implementing new features while under the 1024-line constraint is a good challenge
 3. Most importantly, I wanted to learn Rust and this was a great project to start (thanks Reddit for the idea)
-
 
 ## License
 
