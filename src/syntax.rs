@@ -36,11 +36,11 @@ pub(crate) struct SyntaxConf {
     pub(crate) highlight_numbers: bool,
     /// Whether to highlight single-line strings.
     pub(crate) hightlight_sl_strings: bool,
-    /// The token that starts a single-line comment, e.g. "//".
+    /// The tokens that starts a single-line comment, e.g. "//".
     pub(crate) sl_comment_start: Vec<String>,
     /// The tokens that start and end a multi-line comment, e.g. ("/*", "*/").
-    pub(crate) ml_comment_delim: Option<(String, String)>,
-    /// The tokens that start and end a multi-line strings, e.g. "\"\"\"" for Python..
+    pub(crate) ml_comment_delims: Option<(String, String)>,
+    /// The token that start and end a multi-line strings, e.g. "\"\"\"" for Python.
     pub(crate) ml_string_delim: Option<String>,
     /// Keywords to highlight and there corresponding HighlightType (typically
     /// HighlightType::Keyword1 or HighlightType::Keyword2)
@@ -77,9 +77,9 @@ impl SyntaxConf {
                 "highlight_numbers" => sc.highlight_numbers = pv(val)?,
                 "highlight_strings" => sc.hightlight_sl_strings = pv(val)?,
                 "singleline_comment_start" => sc.sl_comment_start = pvs(val)?,
-                "multiline_comment_delim" => {
+                "multiline_comment_delims" => {
                     let mut split = val.split(',');
-                    sc.ml_comment_delim = match (split.next(), split.next(), split.next()) {
+                    sc.ml_comment_delims = match (split.next(), split.next(), split.next()) {
                         (Some(v1), Some(v2), None) => Some((pv(v1)?, pv(v2)?)),
                         _ => return Err(String::from("Expected 2 delimiters")),
                     }
