@@ -3,8 +3,10 @@
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered string and the syntax
 //! highlighting information.
 
+use std::iter::repeat;
+
 use crate::ansi_escape::*;
-use crate::syntax::{HighlightType, SyntaxConf};
+use crate::syntax::{HLType, SyntaxConf};
 use unicode_width::UnicodeWidthChar;
 
 /// The "Highlight State" of the row
@@ -36,8 +38,8 @@ pub(crate) struct Row {
     pub(crate) cx2rx: Vec<usize>,
     /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
     pub(crate) rx2cx: Vec<usize>,
-    /// The vector of `HighlightType` for each rendered character.
-    pub(crate) hl: Vec<HighlightType>,
+    /// The vector of `HLType` for each rendered character.
+    pub(crate) hl: Vec<HLType>,
     /// The final state of the row.
     pub(crate) hl_state: HLState,
     /// If not `None`, the range that is currently matched during a FIND operation.
@@ -89,54 +91,42 @@ impl Row {
         self.hl.clear();
         let line = self.render.as_bytes();
 
-        let find_substring =
-            |i: usize, s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
+        // Delimiters for multi-line comments and multi-line strings, as Option<&String, &String>
+        let ml_comment_delims = syntax.ml_comment_delims.as_ref().map(|(start, end)| (start, end));
+        let ml_string_delims = syntax.ml_string_delim.as_ref().map(|x| (x, x));
 
-        let push_repeat =
-            |hl_vec: &mut Vec<HighlightType>, hl_type, n| (0..n).for_each(|_| hl_vec.push(hl_type));
-
-        while self.hl.len() < line.len() {
+        'syntax_loop: while self.hl.len() < line.len() {
             let i = self.hl.len();
+            let find_str =
+                |s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
 
-            for comment_start in &syntax.sl_comment_start {
-                if hl_state == HLState::Normal && find_substring(i, comment_start) {
-                    push_repeat(&mut self.hl, HighlightType::Comment, line.len() - i);
-                    continue;
-                }
-            }
-            if let Some((mc_start, mc_end)) = &syntax.ml_comment_delim {
-                if hl_state == HLState::MultiLineComment {
-                    if find_substring(i, mc_end) {
-                        // Highlight the remaining symbols of the multi line comment end
-                        push_repeat(&mut self.hl, HighlightType::MLComment, mc_end.len());
-                        hl_state = HLState::Normal;
-                    } else {
-                        self.hl.push(HighlightType::MLComment);
-                    }
-                    continue;
-                } else if hl_state == HLState::Normal && find_substring(i, mc_start) {
-                    // Highlight the remaining symbols of the multi line comment start
-                    push_repeat(&mut self.hl, HighlightType::MLComment, mc_start.len());
-                    hl_state = HLState::MultiLineComment;
-                    continue;
-                }
+            if hl_state == HLState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
+                self.hl.extend(repeat(HLType::Comment).take(line.len() - i));
+                continue;
             }
 
-            // TODO: Reuse some code from the multiline comment part above?
-            if let Some(ml_string_delim) = &syntax.ml_string_delim {
-                if hl_state == HLState::MultiLineString {
-                    if find_substring(i, ml_string_delim) {
-                        // Highlight the remaining symbol of the delimiter
-                        push_repeat(&mut self.hl, HighlightType::MLString, ml_string_delim.len());
-                        hl_state = HLState::Normal;
-                    } else {
-                        self.hl.push(HighlightType::MLString);
+            // Multi-line strings and multi-line comments have the same behavior; the only
+            // differences are: the start/end delimiters, the `HLState`, the `HLType`.
+            for (delims, mstate, mtype) in &[
+                (ml_comment_delims, HLState::MultiLineComment, HLType::MLComment),
+                (ml_string_delims, HLState::MultiLineString, HLType::MLString),
+            ] {
+                if let Some((start, end)) = delims {
+                    if hl_state == *mstate {
+                        if find_str(end) {
+                            // Highlight the remaining symbols of the multi line comment end
+                            self.hl.extend(repeat(mtype).take(end.len()));
+                            hl_state = HLState::Normal;
+                        } else {
+                            self.hl.push(*mtype);
+                        }
+                        continue 'syntax_loop;
+                    } else if hl_state == HLState::Normal && find_str(start) {
+                        // Highlight the remaining symbols of the multi line comment start
+                        self.hl.extend(repeat(mtype).take(start.len()));
+                        hl_state = *mstate;
+                        continue 'syntax_loop;
                     }
-                    continue;
-                } else if find_substring(i, ml_string_delim) {
-                    push_repeat(&mut self.hl, HighlightType::MLString, ml_string_delim.len());
-                    hl_state = HLState::MultiLineString;
-                    continue;
                 }
             }
 
@@ -146,46 +136,43 @@ impl Row {
 
             if syntax.hightlight_sl_strings {
                 if let HLState::String(quote) = hl_state {
-                    self.hl.push(HighlightType::String);
+                    self.hl.push(HLType::String);
                     if c == quote {
                         hl_state = HLState::Normal;
                     } else if c == b'\\' && i != line.len() - 1 {
-                        self.hl.push(HighlightType::String);
+                        self.hl.push(HLType::String);
                     }
                     continue;
                 } else if c == b'"' || c == b'\'' {
                     hl_state = HLState::String(c);
-                    self.hl.push(HighlightType::String);
+                    self.hl.push(HLType::String);
                     continue;
                 }
             }
 
-            let prev_sep = (i == 0) || is_separator(line[i - 1]);
-            let prev_hl_type = if i == 0 { HighlightType::Normal } else { self.hl[i - 1] };
+            let prev_sep = (i == 0) || is_sep(line[i - 1]);
 
             if syntax.highlight_numbers
                 && ((c.is_ascii_digit() && prev_sep)
-                    || (prev_hl_type == HighlightType::Number && !prev_sep && !is_separator(c)))
+                    || (i != 0 && self.hl[i - 1] == HLType::Number && !prev_sep && !is_sep(c)))
             {
-                self.hl.push(HighlightType::Number);
+                self.hl.push(HLType::Number);
                 continue;
             }
 
             if prev_sep {
-                for (keyword_highlight_type, keyword_list) in &syntax.keywords {
-                    for keyword in keyword_list.iter() {
-                        if find_substring(i, keyword)
-                            // Make sure that names such as in_comment are not partially 
-                            // highlighted (even though "in" is a keyword in rust)
-                            && line.get(i + keyword.len()).map_or(true, |c| is_separator(*c))
-                        {
-                            push_repeat(&mut self.hl, *keyword_highlight_type, keyword.len())
-                        }
+                // This filters makes sure that names such as "in_comment" are not partially
+                // highlighted (even though "in" is a keyword in rust)
+                // The argument is the keyword that is matched at `i`.
+                let s_filter = |kw: &str| line.get(i + kw.len()).map_or(true, |c| is_sep(*c));
+                for (keyword_highlight_type, kws) in &syntax.keywords {
+                    for keyword in kws.iter().filter(|kw| find_str(kw) && s_filter(kw)) {
+                        self.hl.extend(repeat(*keyword_highlight_type).take(keyword.len()));
                     }
                 }
             }
 
-            self.hl.push(HighlightType::Normal);
+            self.hl.push(HLType::Normal);
         }
         self.hl_state = match hl_state {
             // String state doesn't propagate to the next row
@@ -199,21 +186,21 @@ impl Row {
     /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
     /// line and move the cursor to the start of the next line.
     pub(crate) fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
-        let mut current_hl_type = HighlightType::Normal;
+        let mut current_hl_type = HLType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         for (c, (i, mut hl_type)) in chars.zip(self.hl.iter().enumerate().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
                 buffer.push_str(&format!("{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT,));
                 // Restore previous color
-                if current_hl_type != HighlightType::Normal {
+                if current_hl_type != HLType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
                 }
             } else {
                 if let Some(match_segment) = &self.match_segment {
                     if match_segment.contains(&i) {
                         // Set the highlight type to Match, i.e. set the background to cyan
-                        hl_type = &HighlightType::Match
+                        hl_type = &HLType::Match
                     } else if i == match_segment.end {
                         // Reset the formatting, in particular the background
                         buffer.push_str(RESET_FMT)
@@ -231,6 +218,6 @@ impl Row {
 }
 
 /// Return whether `c` is an ASCII separator.
-fn is_separator(c: u8) -> bool {
+fn is_sep(c: u8) -> bool {
     c.is_ascii_whitespace() || c == b'\0' || (c.is_ascii_punctuation() && c != b'_')
 }

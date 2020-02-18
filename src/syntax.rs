@@ -6,11 +6,11 @@ use crate::Error;
 
 /// Type of syntax highlighting for a single rendered character.
 ///
-/// Each `HighlightType` is associated with a color, via its discriminant. The ANSI color is equal
+/// Each `HLType` is associated with a color, via its discriminant. The ANSI color is equal
 /// to the discriminant, modulo 100. The colors are described here:
 /// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
 #[derive(PartialEq, Copy, Clone)]
-pub(crate) enum HighlightType {
+pub(crate) enum HLType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
     Match = 46,      // Cyan
@@ -22,8 +22,8 @@ pub(crate) enum HighlightType {
     Keyword2 = 35,   // Magenta
 }
 
-impl Display for HighlightType {
-    /// Write the ANSI color escape sequence for the `HighlightType` using the given formatter.
+impl Display for HLType {
+    /// Write the ANSI color escape sequence for the `HLType` using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "\x1b[{}m", (*self as u32) % 100) }
 }
 
@@ -42,9 +42,9 @@ pub(crate) struct SyntaxConf {
     pub(crate) ml_comment_delims: Option<(String, String)>,
     /// The token that start and end a multi-line strings, e.g. "\"\"\"" for Python.
     pub(crate) ml_string_delim: Option<String>,
-    /// Keywords to highlight and there corresponding HighlightType (typically
-    /// HighlightType::Keyword1 or HighlightType::Keyword2)
-    pub(crate) keywords: Vec<(HighlightType, Vec<String>)>,
+    /// Keywords to highlight and there corresponding HLType (typically
+    /// HLType::Keyword1 or HLType::Keyword2)
+    pub(crate) keywords: Vec<(HLType, Vec<String>)>,
 }
 
 impl SyntaxConf {
@@ -85,8 +85,8 @@ impl SyntaxConf {
                     }
                 }
                 "multiline_string_delim" => sc.ml_string_delim = Some(pv(val)?),
-                "keywords_1" => sc.keywords.push((HighlightType::Keyword1, pvs(val)?)),
-                "keywords_2" => sc.keywords.push((HighlightType::Keyword2, pvs(val)?)),
+                "keywords_1" => sc.keywords.push((HLType::Keyword1, pvs(val)?)),
+                "keywords_2" => sc.keywords.push((HLType::Keyword2, pvs(val)?)),
                 _ => return Err(format!("Invalid key: {}", key)),
             };
             Ok(())
