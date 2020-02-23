@@ -368,7 +368,7 @@ impl<'a> Editor<'a> {
             (self.cursor.y + 1, new_chars)
         };
         self.rows.insert(position, Row::new(new_row_chars));
-        self.update_row(self.cursor.y, false);
+        self.update_row(position, false);
         self.update_screen_cols();
         self.cursor.y += 1;
         self.cursor.x = 0;
