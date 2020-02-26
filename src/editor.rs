@@ -364,7 +364,7 @@ impl<'a> Editor<'a> {
         } else {
             // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any cursor.y ≥ row.len()
             let new_chars = self.rows[self.cursor.y].chars.split_off(self.cursor.x);
-            self.update_row(self.cursor.y, true);
+            self.update_row(self.cursor.y, false);
             (self.cursor.y + 1, new_chars)
         };
         self.rows.insert(position, Row::new(new_row_chars));
@@ -394,6 +394,7 @@ impl<'a> Editor<'a> {
             self.cursor.x = previous_row.chars.len();
             previous_row.chars.extend(&row.chars);
             self.update_row(self.cursor.y - 1, true);
+            self.update_row(self.cursor.y, false);
             // The number of rows has changed. The left padding may need to be updated.
             self.update_screen_cols();
             self.dirty = true;
