@@ -81,7 +81,7 @@ pub struct Editor<'a> {
     /// The number of rows that can be used for the editor, excluding the status bar and the message
     /// bar
     screen_rows: usize,
-    /// The number of rows that can be used for the editor, excluding the part used for line numbers
+    /// The number of columns that can be used for the editor, excluding the part used for line numbers
     screen_cols: usize,
     /// The collection of rows, including the content and the syntax highlighting information.
     rows: Vec<Row>,
@@ -136,7 +136,7 @@ impl<'a> Editor<'a> {
     ///
     /// # Errors
     ///
-    /// Will return `Err` if an error occur when enabling termios raw mode, creating the signal hook
+    /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
     /// or when obtaining the terminal window size.
     pub fn new(config: &'a Config) -> Result<Self, Error> {
         // Enable termios raw mode and store the original (non-raw) termios.
@@ -340,7 +340,7 @@ impl<'a> Editor<'a> {
         }
     }
 
-    /// Insert a byte at the current cursor position. If there is now row at the current cursor
+    /// Insert a byte at the current cursor position. If there is no row at the current cursor
     /// position, add a new row and insert the byte.
     fn insert_byte(&mut self, c: u8) {
         if let Some(row) = self.rows.get_mut(self.cursor.y) {
