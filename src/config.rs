@@ -30,21 +30,18 @@ pub struct Config {
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        let mut conf = Self {
+        let conf_dirs = vec![
+            Ok(String::from("/etc/kibi")),
+            env::var("XDG_CONFIG_HOME").map(|d| d + "/kibi"),
+            env::var("HOME").map(|d| d + "/.config/kibi"),
+        ];
+        Self {
             tab_stop: 4,
             quit_times: 2,
             message_duration: Duration::from_secs(3),
             show_line_num: true,
-            conf_dirs: vec![PathBuf::from("/etc/kibi")],
-        };
-
-        if let Ok(xdg_config_home) = env::var("XDG_CONFIG_HOME") {
-            conf.conf_dirs.push(Path::new(&xdg_config_home).join("kibi"));
-        } else if let Ok(home) = env::var("HOME") {
-            conf.conf_dirs.push(Path::new(&home).join(".config/kibi"));
+            conf_dirs: conf_dirs.into_iter().filter_map(Result::ok).map(PathBuf::from).collect(),
         }
-
-        conf
     }
 }
 
