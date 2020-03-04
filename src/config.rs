@@ -27,6 +27,24 @@ pub struct Config {
     pub(crate) conf_dirs: Vec<PathBuf>,
 }
 
+impl Default for Config {
+    /// Default configuration.
+    fn default() -> Self {
+        let conf_dirs = vec![
+            Ok(String::from("/etc/kibi")),
+            env::var("XDG_CONFIG_HOME").map(|d| d + "/kibi"),
+            env::var("HOME").map(|d| d + "/.config/kibi"),
+        ];
+        Self {
+            tab_stop: 4,
+            quit_times: 2,
+            message_duration: Duration::from_secs(3),
+            show_line_num: true,
+            conf_dirs: conf_dirs.into_iter().filter_map(Result::ok).map(PathBuf::from).collect(),
+        }
+    }
+}
+
 impl Config {
     /// Load the configuration, potentially overridden using `config.ini` files that can be located
     /// in the following directories:
@@ -38,19 +56,7 @@ impl Config {
     ///
     /// Will return `Err` if one of the configuration file cannot be parsed properly.
     pub fn load() -> Result<Self, Error> {
-        let mut conf = Self {
-            tab_stop: 4,
-            quit_times: 2,
-            message_duration: Duration::from_secs(3),
-            show_line_num: true,
-            conf_dirs: vec![PathBuf::from("/etc/kibi")],
-        };
-
-        if let Ok(xdg_config_home) = env::var("XDG_CONFIG_HOME") {
-            conf.conf_dirs.push(Path::new(&xdg_config_home).join("kibi"));
-        } else if let Ok(home) = env::var("HOME") {
-            conf.conf_dirs.push(Path::new(&home).join(".config/kibi"));
-        }
+        let mut conf: Config = Default::default();
 
         let conf_paths: Vec<PathBuf> =
             conf.conf_dirs.iter().map(|p| p.join("config.ini")).filter(|p| p.exists()).collect();
