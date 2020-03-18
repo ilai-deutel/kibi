@@ -1,6 +1,6 @@
 //! # Kibi
 
-use kibi::{ansi_escape::*, Config, Editor, Error};
+use kibi::{ansi_escape::CLEAR_SCREEN, ansi_escape::MOVE_CURSOR_TO_START, Config, Editor, Error};
 
 /// Load the configuration, initialize the editor and run the program, optionally opening a file if
 /// an argument is given.

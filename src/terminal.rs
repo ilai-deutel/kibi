@@ -3,7 +3,7 @@ use std::io::{self, BufRead, Read, Write};
 use libc::{STDIN_FILENO, STDOUT_FILENO, TIOCGWINSZ, VMIN, VTIME};
 use nix::{pty::Winsize, sys::termios};
 
-use crate::{ansi_escape::*, Error};
+use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, Error};
 
 pub(crate) fn set_termios(term: &termios::Termios) -> Result<(), nix::Error> {
     termios::tcsetattr(STDIN_FILENO, termios::SetArg::TCSAFLUSH, term)

@@ -5,7 +5,7 @@
 
 use std::iter::repeat;
 
-use crate::ansi_escape::*;
+use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
 use crate::syntax::{HLType, SyntaxConf};
 use unicode_width::UnicodeWidthChar;
 
