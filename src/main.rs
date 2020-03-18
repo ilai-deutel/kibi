@@ -12,7 +12,7 @@ fn run(mut args: std::env::Args) -> Result<(), Error> {
     if args.len() > 2 {
         return Err(Error::TooManyArguments(args.len() - 1));
     }
-    Editor::new(&Config::load()?)?.run(args.nth(1))
+    Editor::new(Config::load()?)?.run(args.nth(1))
 }
 
 fn main() {

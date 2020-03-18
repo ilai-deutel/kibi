@@ -68,7 +68,8 @@ struct CursorState {
 }
 
 /// The `Editor` struct, contains the state and configuration of the text editor.
-pub struct Editor<'a> {
+#[derive(Default)]
+pub struct Editor {
     /// If not `None`, the current prompt mode (Save, Find, GoTo). If `None`, we are in regular
     /// edition mode.
     prompt_mode: Option<PromptMode>,
@@ -88,7 +89,7 @@ pub struct Editor<'a> {
     /// Whether the document has been modified since it was open.
     dirty: bool,
     /// The configuration for the editor.
-    config: &'a Config,
+    config: Config,
     /// The number of warnings remaining before we can quit without saving. Defaults to
     /// `config.quit_times`, then decreases to 0.
     quit_times: usize,
@@ -104,9 +105,9 @@ pub struct Editor<'a> {
     n_bytes: u64,
     /// A channel receiver for the "window size changed" message. A message is received shortly
     /// after a SIGWINCH signal is received.
-    ws_changed_receiver: Receiver<()>,
+    ws_changed_receiver: Option<Receiver<()>>,
     /// The original termios configuration. It will be restored when the `Editor` is dropped.
-    orig_termios: Termios,
+    orig_termios: Option<Termios>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -131,17 +132,14 @@ fn format_size(n: u64) -> String {
     format!("{:.2$}{}B", q as f32 + r as f32 / 1024., prefix, p = if *prefix == "" { 0 } else { 2 })
 }
 
-impl<'a> Editor<'a> {
+impl Editor {
     /// Initialize the text editor.
     ///
     /// # Errors
     ///
     /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
     /// or when obtaining the terminal window size.
-    pub fn new(config: &'a Config) -> Result<Self, Error> {
-        // Enable termios raw mode and store the original (non-raw) termios.
-        let orig_termios = terminal::enable_raw_mode()?;
-
+    pub fn new(config: Config) -> Result<Self, Error> {
         // Create a channel for receiving window size update requests
         let (ws_changed_tx, ws_changed_rx) = mpsc::sync_channel(1);
         // Spawn a new thread that will push to the aforementioned channel every time the SIGWINCH
@@ -149,26 +147,17 @@ impl<'a> Editor<'a> {
         let signals = Signals::new(&[SIGWINCH])?;
         std::thread::spawn(move || signals.forever().for_each(|_| ws_changed_tx.send(()).unwrap()));
 
-        let mut editor = Self {
-            prompt_mode: None,
-            cursor: CursorState::default(),
-            // Will be updated with update_window_size() below
-            ln_pad: 0,
-            window_width: 0,
-            screen_rows: 0,
-            screen_cols: 0,
-            rows: Vec::new(),
-            dirty: false,
-            quit_times: config.quit_times,
-            config,
-            file_name: None,
-            status_msg: Some(StatusMessage::new(HELP_MESSAGE.to_string())),
-            syntax: SyntaxConf::default(),
-            n_bytes: 0,
-            ws_changed_receiver: ws_changed_rx,
-            orig_termios,
-        };
+        let mut editor = Self::default();
+        editor.quit_times = config.quit_times;
+        editor.config = config;
+        editor.ws_changed_receiver = Some(ws_changed_rx);
+
+        // Enable termios raw mode and store the original (non-raw) termios.
+        editor.orig_termios = Some(terminal::enable_raw_mode()?);
+
         editor.update_window_size()?;
+
+        set_status!(editor, "{}", HELP_MESSAGE);
 
         Ok(editor)
     }
@@ -224,14 +213,16 @@ impl<'a> Editor<'a> {
     fn loop_until_keypress(&mut self) -> Result<Key, Error> {
         loop {
             // Handle window size if a signal has be received
-            match self.ws_changed_receiver.try_recv() {
-                Ok(()) => {
+            match self.ws_changed_receiver.as_ref().map(Receiver::try_recv) {
+                // If there is no receiver or no "window size updated" signal has been received, do
+                // nothing.
+                None | Some(Err(TryRecvError::Empty)) => (),
+                // A "window size updated" signal has been received
+                Some(Ok(())) => {
                     self.update_window_size()?;
                     self.refresh_screen()?;
                 }
-                // No signal has been received, that's ok.
-                Err(TryRecvError::Empty) => (),
-                Err(err) => return Err(Error::MPSCTryRecv(err)),
+                Some(Err(err)) => return Err(Error::MPSCTryRecv(err)),
             }
             let mut bytes = io::stdin().bytes();
             // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on the next
@@ -698,10 +689,12 @@ impl<'a> Editor<'a> {
     }
 }
 
-impl<'a> Drop for Editor<'a> {
-    /// When the editor is droped, restore the original termios.
+impl Drop for Editor {
+    /// When the editor is dropped, restore the original termios.
     fn drop(&mut self) {
-        terminal::set_termios(&self.orig_termios).expect("Could not restore original termios.");
+        if let Some(orig_termios) = &self.orig_termios {
+            terminal::set_termios(orig_termios).expect("Could not restore original termios.")
+        }
     }
 }
 
