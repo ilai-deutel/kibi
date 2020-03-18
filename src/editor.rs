@@ -177,7 +177,7 @@ impl<'a> Editor<'a> {
     fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
 
     /// Return the position of the cursor, in terms of rendered characters (as opposed to
-    /// `self.cursor.x`, which is the position of the cursor in terms of bytes.
+    /// `self.cursor.x`, which is the position of the cursor in terms of bytes).
     fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
