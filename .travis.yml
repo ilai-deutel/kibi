@@ -34,7 +34,13 @@ jobs:
         - cargo test --test loc
         - cargo clippy --all-targets -- -D warnings
     - name: Rustfmt
-      before_script: rustup component add rustfmt
+      # Install the rustfmt component for the nightly channel
+      # Sometimes, not all components are available in any given nightly, which causes errors such as
+      # https://github.com/ilai-deutel/kibi/issues/24. Therefore, we use the `--allow-downgrade` flag to downgrade
+      # the version if rustfmt is not available for this or any newer nightly.
+      # In the future, `rustup component add` will have a `--allow-downgrade` flag
+      # (see https://github.com/rust-lang/rustup/issues/2146), but in the meantime we use this work-around:
+      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt
       script: cargo fmt -- --check
       rust: nightly
     - name: Dependency Audit
