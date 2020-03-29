@@ -69,9 +69,8 @@ impl Config {
                         tab_stop => conf.tab_stop = tab_stop,
                     },
                     "quit_times" => conf.quit_times = parse_value(value)?,
-                    "message_duration" => {
-                        conf.message_duration = Duration::from_secs_f32(parse_value(value)?)
-                    }
+                    "message_duration" =>
+                        conf.message_duration = Duration::from_secs_f32(parse_value(value)?),
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {}", key)),
                 };

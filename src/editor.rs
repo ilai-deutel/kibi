@@ -172,9 +172,8 @@ impl Editor {
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
         match (key, self.current_row()) {
-            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
-                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1)
-            }
+            (AKey::Left, Some(row)) if self.cursor.x > 0 =>
+                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1),
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
@@ -182,9 +181,8 @@ impl Editor {
                 self.cursor.y -= 1;
                 self.cursor.x = usize::max_value();
             }
-            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
-                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x])
-            }
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
+                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
             (AKey::Right, Some(_)) => {
                 // Move to the next line
                 self.cursor.y += 1;
@@ -623,9 +621,8 @@ impl Editor {
                 }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
-            Key::Char(FIND) => {
-                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
-            }
+            Key::Char(FIND) =>
+                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(c) => self.insert_byte(*c),
@@ -736,9 +733,8 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right) | Key::Arrow(AKey::Down) | Key::Char(FIND) => {
-                                (last_match, true)
-                            }
+                            Key::Arrow(AKey::Right) | Key::Arrow(AKey::Down) | Key::Char(FIND) =>
+                                (last_match, true),
                             Key::Arrow(AKey::Left) | Key::Arrow(AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
