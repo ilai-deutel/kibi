@@ -132,6 +132,12 @@ fn format_size(n: u64) -> String {
     format!("{:.2$}{}B", q as f32 + r as f32 / 1024., prefix, p = if *prefix == "" { 0 } else { 2 })
 }
 
+/// `slice_find` returns the index of `needle` in slice `s` if `needle` is a subslice of `s`,
+/// otherwise returns `None`.
+fn slice_find<T: PartialEq>(s: &[T], needle: &[T]) -> Option<usize> {
+    (0..(s.len() + 1).saturating_sub(needle.len())).find(|&i| s[i..].starts_with(needle))
+}
+
 impl Editor {
     /// Initialize the text editor.
     ///
@@ -644,12 +650,13 @@ impl Editor {
         for _ in 0..num_rows {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
-            if let Some(rx) = row.render.find(&query) {
+            if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
                 self.cursor.y = current as usize;
-                self.cursor.x = row.rx2cx[rx];
+                self.cursor.x = cx;
                 // Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.scroll() so that the result is visible
                 self.cursor.coff = 0;
+                let rx = row.cx2rx[cx];
                 row.match_segment = Some(rx..rx + query.len());
                 return Some(current);
             }
