@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
 use std::sync::mpsc::{Receiver, TryRecvError};
-use std::{fmt::Display, fs::File, path::Path, time::Instant};
+use std::{fmt::Display, fs::File, path::Path, thread, time::Instant};
 
 use crate::row::{HLState, Row};
 use crate::{ansi_escape::*, syntax::SyntaxConf, sys, Config, Error};
@@ -687,6 +687,10 @@ impl Drop for Editor {
     fn drop(&mut self) {
         if let Some(orig_term_mode) = self.orig_term_mode.take() {
             sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.")
+        }
+        if !thread::panicking() {
+            print!("{}{}", CLEAR_SCREEN, MOVE_CURSOR_TO_START);
+            io::stdout().flush().expect("Could not flush stdout")
         }
     }
 }

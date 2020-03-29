@@ -1,6 +1,6 @@
 //! # Errors
 
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Debug, Formatter};
 
 /// These errors can used in the program.
 pub enum Error {
@@ -13,7 +13,7 @@ pub enum Error {
     TooManyArguments(usize),
 }
 
-impl Display for Error {
+impl Debug for Error {
     /// Format the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {

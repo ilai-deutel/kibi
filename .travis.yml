@@ -48,7 +48,7 @@ jobs:
       install: skip
       script:
         - cargo test --test loc
-        - cargo clippy --all-targets -- -D warnings -W pedantic
+        - cargo clippy --all-targets -- -D warnings
     - name: Rustfmt
       # Install the rustfmt component for the nightly channel
       # Sometimes, not all components are available in any given nightly, which causes errors such as
@@ -56,6 +56,7 @@ jobs:
       # the version if rustfmt is not available for this or any newer nightly.
       # In the future, `rustup component add` will have a `--allow-downgrade` flag
       # (see https://github.com/rust-lang/rustup/issues/2146), but in the meantime we use this work-around:
+      install: skip
       before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt
       script: cargo fmt -- --check
       rust: nightly
