@@ -17,12 +17,28 @@ jobs:
     - env: TARGET=x86_64-apple-darwin
       os: osx
 
-    # Testing other channels
+    # Windows
+    - env: TARGET=x86_64-pc-windows-gnu
+      os: windows
+      before_install: ci/before_install.bat
+    - env: TARGET=x86_64-pc-windows-msvc
+      os: windows
+      before_install: ci/before_install.bat
+    - env: TARGET=i686-pc-windows-msvc
+      os: windows
+      before_install: ci/before_install.bat
+
+    # Testing on the nightly channel
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: nightly
       allow_failures: true
     - env: TARGET=x86_64-apple-darwin
       os: osx
+      rust: nightly
+      allow_failures: true
+    - env: TARGET=x86_64-pc-windows-gnu
+      os: windows
+      before_install: ci/before_install.bat
       rust: nightly
       allow_failures: true
 
