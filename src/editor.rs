@@ -1,13 +1,10 @@
 use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::sync::mpsc::{Receiver, TryRecvError};
 use std::{fmt::Display, fs::File, path::Path, time::Instant};
 
-use nix::sys::termios::Termios;
-use signal_hook::{iterator::Signals, SIGWINCH};
-
 use crate::row::{HLState, Row};
-use crate::{ansi_escape::*, syntax::SyntaxConf, terminal, Config, Error};
+use crate::{ansi_escape::*, syntax::SyntaxConf, sys, Config, Error};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
@@ -106,8 +103,8 @@ pub struct Editor {
     /// A channel receiver for the "window size changed" message. A message is received shortly
     /// after a SIGWINCH signal is received.
     ws_changed_receiver: Option<Receiver<()>>,
-    /// The original termios configuration. It will be restored when the `Editor` is dropped.
-    orig_termios: Option<Termios>,
+    /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
+    orig_term_mode: Option<sys::TermMode>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -140,21 +137,13 @@ impl Editor {
     /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
     /// or when obtaining the terminal window size.
     pub fn new(config: Config) -> Result<Self, Error> {
-        // Create a channel for receiving window size update requests
-        let (ws_changed_tx, ws_changed_rx) = mpsc::sync_channel(1);
-        // Spawn a new thread that will push to the aforementioned channel every time the SIGWINCH
-        // signal is received
-        let signals = Signals::new(&[SIGWINCH])?;
-        std::thread::spawn(move || signals.forever().for_each(|_| ws_changed_tx.send(()).unwrap()));
-
         let mut editor = Self::default();
         editor.quit_times = config.quit_times;
         editor.config = config;
-        editor.ws_changed_receiver = Some(ws_changed_rx);
+        editor.ws_changed_receiver = sys::get_window_size_update_receiver()?;
 
-        // Enable termios raw mode and store the original (non-raw) termios.
-        editor.orig_termios = Some(terminal::enable_raw_mode()?);
-
+        // Enable raw mode and store the original (non-raw) terminal mode.
+        editor.orig_term_mode = Some(sys::enable_raw_mode()?);
         editor.update_window_size()?;
 
         set_status!(editor, "{}", HELP_MESSAGE);
@@ -273,7 +262,7 @@ impl Editor {
 
     /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding` attributes.
     fn update_window_size(&mut self) -> Result<(), Error> {
-        let (window_height, window_width) = terminal::get_window_size()?;
+        let (window_height, window_width) = sys::get_window_size()?;
         self.screen_rows = window_height.saturating_sub(2); // Make room for the status bar and status message
         self.window_width = window_width;
         self.update_screen_cols();
@@ -573,9 +562,9 @@ impl Editor {
             // If in prompt mode, position the cursor on the prompt line at the end of the line.
             (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
         };
-        // Move the cursor
-        buffer.push_str(&format!("\x1b[{};{}H{}", cursor_y, cursor_x, SHOW_CURSOR));
-        terminal::print_and_flush(&buffer)
+        // Finally, print `buffer` and move the cursor
+        print!("{}\x1b[{};{}H{}", buffer, cursor_y, cursor_x, SHOW_CURSOR);
+        io::stdout().flush().map_err(Error::from)
     }
 
     /// Process a key that has been pressed, when not in prompt mode. Returns whether the program
@@ -687,10 +676,10 @@ impl Editor {
 }
 
 impl Drop for Editor {
-    /// When the editor is dropped, restore the original termios.
+    /// When the editor is dropped, restore the original terminal mode.
     fn drop(&mut self) {
-        if let Some(orig_termios) = &self.orig_termios {
-            terminal::set_termios(orig_termios).expect("Could not restore original termios.")
+        if let Some(orig_term_mode) = self.orig_term_mode.take() {
+            sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.")
         }
     }
 }

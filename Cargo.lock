@@ -434,6 +434,8 @@ dependencies = [
  "signal-hook",
  "tokei",
  "unicode-width",
+ "winapi 0.3.8",
+ "winapi-util",
 ]
 
 [[package]]

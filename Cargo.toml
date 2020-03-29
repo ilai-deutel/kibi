@@ -9,13 +9,19 @@ repository = "https://github.com/ilai-deutel/kibi"
 readme = "README.md"
 keywords = ["editor", "terminal", "text-editor"]
 categories = ["text-editors", "development-tools"]
-exclude = [".gitignore", "rustfmt.toml", "syntax"]
+include = ["src/**/*", "Cargo.toml"]
 
 [dependencies]
+unicode-width = "0.1.7"
+
+[target.'cfg(unix)'.dependencies]
 libc = "0.2.66"
 nix = "0.17.0"
 signal-hook = "0.1.13"
-unicode-width = "0.1.7"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.8", default-features = false, features = ["wincon"] }
+winapi-util = "0.1.3"
 
 [dev-dependencies]
 tokei = "10.1.1"

@@ -4,12 +4,15 @@
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
 [![AUR](https://img.shields.io/aur/version/kibi.svg?logo=arch-linux)](https://aur.archlinux.org/packages/kibi/)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-blue.svg?logo=rust)](https://www.rust-lang.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 
 [![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
 A configurable text editor with UTF-8 support, incremental search, syntax highlighting, line numbers and more, written
 in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
+
+Kibi is compatible with Linux, macOS, and Windows 10 (beta).
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C.
 See [comparison](#comparison-with-kilo) below for a list of additional features.
@@ -84,11 +87,15 @@ $ kibi <file path>
 
 #### Global configuration
 
-Kibi can be configured using:
-* A system-wide configuration file, located at `/etc/kibi/config.ini`
-* A user-level configuration file, located at:
-  * `$XDG_CONFIG_HOME/kibi/config.ini` if environment variable `$XDG_CONFIG_HOME` is defined
-  * `~/.config/kibi/config.ini` otherwise
+Kibi can be configured using configuration files. The location of these files is described below.
+
+* Linux / macOS:
+    * `/etc/kibi/config.ini` (system-wide configuration file)
+    * A user-level configuration file can be located located at:
+      * `$XDG_CONFIG_HOME/kibi/config.ini` if environment variable `$XDG_CONFIG_HOME` is defined
+      * `~/.config/kibi/config.ini` otherwise
+* Windows:
+    * `%APPDATA%\kibi\config.ini`
 
 Example configuration file:
 ```ini
@@ -106,10 +113,14 @@ show_line_numbers=true
 #### Syntax Highlighting
 
 Syntax highlighting can be configured using INI files located at:
-* `/etc/kibi/syntax.d/<file_name>.ini` for system-wide availability
-* For user-level configuration files:
-  * `$XDG_CONFIG_HOME/kibi/syntax.d/<file_name>.ini` if environment variable `$XDG_CONFIG_HOME` is defined
-  * `~/.config/kibi/syntax.d/<file_name>.ini` otherwise
+
+* Linux / macOS:
+    * `/etc/kibi/syntax.d/<file_name>.ini` for system-wide availability
+    * For user-level configuration files:
+      * `$XDG_CONFIG_HOME/kibi/syntax.d/<file_name>.ini` if environment variable `$XDG_CONFIG_HOME` is defined
+      * `~/.config/kibi/syntax.d/<file_name>.ini` otherwise
+* Windows:
+    * `%APPDATA%\kibi\syntax.d\<file_name>.ini`
 
 Syntax highlighting configuration follows this format:
 
@@ -137,12 +148,13 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 
 `kibi` provides additional features:
 - Support for UTF-8 characters
+- Compatible with Windows
 - Command to jump to a given row/column
-- Handle window resize
+- Handle window resize (UNIX only)
 - Parsing configuration files: global editor configuration, language-specific syntax highlighting configuration
 - Display line numbers on the left of the screen; display file size in the status bar
 - Syntax highlighting: multi-line strings
-- "Save as" prompt when no file name has been provided
+- *Save as* prompt when no file name has been provided
 - Command to duplicate the current row
 - Memory safety, thanks to Rust!
 - Many bug fixes
@@ -152,11 +164,15 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
 [`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
 
-These dependencies provide safe wrappers around `libc` calls, to avoid using `unsafe` code as much as possible:
+The following dependencies provide wrappers around system calls. Safe wrappers are preferred to avoid using `unsafe` code as much as possible:
 
-* `libc`
-* `nix`
-* `signal-hook`
+* On UNIX systems (Linux, macOS):
+    * `libc`
+    * `nix`
+    * `signal-hook`
+* On Windows:
+    * `winapi`
+    * `winapi-util`
 
 In addition, `unicode-width` is used to determine the displayed width of Unicode characters. Unfortunately, there is no
 way around it: the [unicode character width table](https://github.com/unicode-rs/unicode-width/blob/3033826f8bf05e82724140a981d5941e48fce393/src/tables.rs#L52)

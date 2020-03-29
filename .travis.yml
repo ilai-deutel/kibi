@@ -32,7 +32,7 @@ jobs:
       install: skip
       script:
         - cargo test --test loc
-        - cargo clippy --all-targets -- -D warnings
+        - cargo clippy --all-targets -- -D warnings -W pedantic
     - name: Rustfmt
       # Install the rustfmt component for the nightly channel
       # Sometimes, not all components are available in any given nightly, which causes errors such as

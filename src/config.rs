@@ -2,7 +2,6 @@
 //!
 //! Utilities to configure the text editor.
 
-use std::env;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -10,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::Error;
+use crate::{sys::conf_dirs, Error};
 
 /// The global Kibi configuration.
 pub struct Config {
@@ -27,20 +26,20 @@ pub struct Config {
     pub(crate) conf_dirs: Vec<PathBuf>,
 }
 
+/// Return directories that may contain configuration files for Kibi
+fn kibi_conf_dirs() -> Vec<PathBuf> {
+    conf_dirs().iter().filter_map(Option::as_ref).map(|p| PathBuf::from(p).join("kibi")).collect()
+}
+
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        let conf_dirs = [
-            Some(String::from("/etc/kibi")),
-            env::var("XDG_CONFIG_HOME").map(|d| d + "/kibi").ok(),
-            env::var("HOME").map(|d| d + "/.config/kibi").ok(),
-        ];
         Self {
             tab_stop: 4,
             quit_times: 2,
             message_duration: Duration::from_secs(3),
             show_line_num: true,
-            conf_dirs: conf_dirs.iter().filter_map(|d| d.as_ref().map(PathBuf::from)).collect(),
+            conf_dirs: kibi_conf_dirs(),
         }
     }
 }
@@ -48,9 +47,12 @@ impl Default for Config {
 impl Config {
     /// Load the configuration, potentially overridden using `config.ini` files that can be located
     /// in the following directories:
-    ///   - `/etc/kibi` (system-wide configuration).
-    ///   - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
-    ///     `$HOME/.config/kibi` otherwise (user-level configuration).
+    ///   - On Linux, macOS, and other *nix systems:
+    ///     - `/etc/kibi` (system-wide configuration).
+    ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
+    ///       `$HOME/.config/kibi` otherwise (user-level configuration).
+    ///   - On Windows:
+    ///     - `%APPDATA%/kibi`
     ///
     /// # Errors
     ///
@@ -58,10 +60,9 @@ impl Config {
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
-        let conf_paths: Vec<PathBuf> =
-            conf.conf_dirs.iter().map(|p| p.join("config.ini")).filter(|p| p.exists()).collect();
+        let conf_paths: Vec<_> = conf.conf_dirs.iter().map(|p| p.join("config.ini")).collect();
 
-        for path in conf_paths {
+        for path in conf_paths.into_iter().filter(|p| p.exists()) {
             process_ini_file(&path, &mut |key, value| {
                 match key {
                     "tab_stop" => match parse_value(value)? {
