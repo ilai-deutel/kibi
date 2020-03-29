@@ -67,10 +67,9 @@ makepkg -si
 ## Usage
 
 ```bash
-# Start an new text buffer
-$ kibi
-# Open a file
-$ kibi <file path>
+kibi              # Start an new text buffer
+kibi <file path>  # Open a file
+kibi --version    # Print version information and exit
 ```
 
 ### Keyboard shortcuts

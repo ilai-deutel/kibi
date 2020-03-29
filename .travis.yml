@@ -71,7 +71,9 @@ before_install: ci/before_install.sh
 
 cache: false
 
-install: cargo build --target "${TARGET:-$HOST}" --verbose
+install: |
+  cargo build --target "${TARGET:-$HOST}" --verbose
+  cargo run -- --version
 
 script: skip
 
