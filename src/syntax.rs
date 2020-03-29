@@ -53,14 +53,13 @@ impl SyntaxConf {
     pub(crate) fn get(ext: &str, conf_dirs: &[PathBuf]) -> Result<Option<Self>, Error> {
         for conf_dir in conf_dirs.iter().rev() {
             match conf_dir.join("syntax.d").read_dir() {
-                Ok(dir_entries) => {
+                Ok(dir_entries) =>
                     for dir_entry in dir_entries {
                         let (sc, extensions) = Self::from_file(&dir_entry?.path())?;
                         if extensions.into_iter().any(|e| e == ext) {
                             return Ok(Some(sc));
                         };
-                    }
-                }
+                    },
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
                 Err(e) => return Err(e.into()),
             }

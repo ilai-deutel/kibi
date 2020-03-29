@@ -7,3 +7,4 @@ use_field_init_shorthand = true
 use_small_heuristics = "Max"
 use_try_shorthand = true
 where_single_line = true
+match_arm_blocks = false
