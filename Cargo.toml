@@ -9,7 +9,7 @@ repository = "https://github.com/ilai-deutel/kibi"
 readme = "README.md"
 keywords = ["editor", "terminal", "text-editor"]
 categories = ["text-editors", "development-tools"]
-include = ["src/**/*", "Cargo.toml"]
+include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
 
 [dependencies]
 unicode-width = "0.1.7"

@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-if [ "$TRAVIS_OS_NAME" == linux ] && [ "$HOST" != "${TARGET:-$HOST}"  ]; then
+if [ "$HOST" != "${TARGET:-$HOST}"  ]; then
   case "$TARGET" in
   'i686-unknown-linux-gnu')
     sudo apt-get update
