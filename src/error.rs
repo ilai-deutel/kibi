@@ -7,6 +7,7 @@ pub enum Error {
     IO(std::io::Error),
     #[cfg(unix)]
     Nix(nix::Error),
+    InvalidWindowSize,
     MPSCTryRecv(std::sync::mpsc::TryRecvError),
     CursorPosition,
     Config(String, String),
@@ -20,6 +21,7 @@ impl Debug for Error {
             Self::IO(err) => write!(f, "IO error: {}", err),
             #[cfg(unix)]
             Self::Nix(err) => write!(f, "System call error: {}", err),
+            Self::InvalidWindowSize => write!(f, "Invalid window size"),
             Self::MPSCTryRecv(err) => write!(f, "MSPC try_recv error: {}", err),
             Self::CursorPosition => write!(f, "Could not obtain cursor position"),
             Self::Config(line, reason) => write!(f, "Could not parse config {}: {}", line, reason),

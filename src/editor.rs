@@ -4,7 +4,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::{fmt::Display, fs::File, path::Path, thread, time::Instant};
 
 use crate::row::{HLState, Row};
-use crate::{ansi_escape::*, syntax::SyntaxConf, sys, Config, Error};
+use crate::{ansi_escape::*, syntax::SyntaxConf, sys, terminal, Config, Error};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
@@ -268,9 +268,9 @@ impl Editor {
 
     /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding` attributes.
     fn update_window_size(&mut self) -> Result<(), Error> {
-        let (window_height, window_width) = sys::get_window_size()?;
-        self.screen_rows = window_height.saturating_sub(2); // Make room for the status bar and status message
-        self.window_width = window_width;
+        let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
+        self.screen_rows = wsize.0.saturating_sub(2); // Make room for the status bar and status message
+        self.window_width = wsize.1;
         self.update_screen_cols();
         Ok(())
     }

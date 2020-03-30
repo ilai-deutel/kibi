@@ -7,6 +7,8 @@ use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_EN
 /// This function moves the cursor to the bottom-right using ANSI escape sequence
 /// `\x1b[999C\x1b[999B`, then requests the cursor position using ANSI escape sequence `\x1b[6n`.
 /// After this sequence is sent, the next characters on stdin should be `\x1b[{row};{column}R`.
+///
+/// It is used as an alternative method if `sys::get_window_size()` returns an error.
 pub(crate) fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     print!("{}{}", REPOSITION_CURSOR_END, DEVICE_STATUS_REPORT);
     io::stdout().flush()?;

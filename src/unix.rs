@@ -12,7 +12,7 @@ use signal_hook::{iterator::Signals, SIGWINCH};
 // On UNIX systems, Termios represents the terminal mode.
 pub(crate) use nix::sys::termios::Termios as TermMode;
 
-use crate::{terminal::get_window_size_using_cursor, Error};
+use crate::Error;
 
 /// Return configuration directories for UNIX systems
 pub(crate) fn conf_dirs() -> [Option<String>; 3] {
@@ -21,11 +21,9 @@ pub(crate) fn conf_dirs() -> [Option<String>; 3] {
 
 /// Return the current window size as (rows, columns).
 ///
-/// Two methods are used to get the window size:
-/// 1. Use the TIOCGWINSZ to get window size. If it succeeds, a Winsize struct will be populated
-///    This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
-/// 2. If the first method fails, we reposition the cursor at the end of the terminal and get the
-///    cursor position.
+/// We use the TIOCGWINSZ ioctl to get window size. If it succeeds, a `Winsize` struct will be
+/// populated.
+/// This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
 pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
     nix::ioctl_read_bad!(get_ws, TIOCGWINSZ, Winsize);
 
@@ -33,8 +31,7 @@ pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
 
     unsafe { get_ws(STDOUT_FILENO, maybe_ws.as_mut_ptr()).ok().map(|_| maybe_ws.assume_init()) }
         .filter(|ws| ws.ws_col != 0 && ws.ws_row != 0)
-        // If the IOCTL method fails, use the alternate method
-        .map_or_else(get_window_size_using_cursor, |ws| Ok((ws.ws_row as usize, ws.ws_col as usize)))
+        .map_or(Err(Error::InvalidWindowSize), |ws| Ok((ws.ws_row as usize, ws.ws_col as usize)))
 }
 
 /// Return a MPSC receiver that receives a message whenever the window size is updated.
