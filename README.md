@@ -46,7 +46,7 @@ $ ln -sr ./kibi/syntax ~/.config/kibi/syntax.d
 
 ### Arch User Repository (Arch Linux)
 
-[`kibi`](https://aur.archlinux.org/packages/kibi/) is available on the AUR.
+2 packages are available on the AUR: [`kibi`](https://aur.archlinux.org/packages/kibi/) and [`kibi-git`](https://aur.archlinux.org/packages/kibi-git/).
 
 #### Installation with an AUR helper
 
