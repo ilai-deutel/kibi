@@ -21,7 +21,7 @@ pub(crate) fn conf_dirs() -> [Option<String>; 3] {
 
 /// Return the current window size as (rows, columns).
 ///
-/// We use the TIOCGWINSZ ioctl to get window size. If it succeeds, a `Winsize` struct will be
+/// We use the `TIOCGWINSZ` ioctl to get window size. If it succeeds, a `Winsize` struct will be
 /// populated.
 /// This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
 pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
