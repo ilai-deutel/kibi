@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::{sys::conf_dirs, Error};
+use crate::{sys::conf_dirs, Error, Error::Config as ConfErr};
 
 /// The global Kibi configuration.
 pub struct Config {
@@ -85,18 +85,18 @@ impl Config {
 
 /// Process an INI file.
 ///
-/// The `deser_fn` will be called for each key-value pair in the file. Typically, this function will
-/// update a configuration instance.
-pub(crate) fn process_ini_file<F>(path: &Path, deser_fn: &mut F) -> Result<(), Error>
+/// The `kv_fn` function will be called for each key-value pair in the file. Typically, this
+/// function will update a configuration instance.
+pub(crate) fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
-    for line in BufReader::new(File::open(path)?).lines() {
+    for (i, line) in BufReader::new(File::open(path)?).lines().enumerate() {
         let line = line?;
         let mut parts = line.trim_start().splitn(2, '=');
         match (parts.next(), parts.next()) {
             (Some(comment_line), _) if comment_line.starts_with(&['#', ';'][..]) => (),
-            (Some(k), Some(v)) => deser_fn(k.trim_end(), v).map_err(|r| Error::Config(line, r))?,
+            (Some(k), Some(v)) => kv_fn(k.trim_end(), v).map_err(|r| ConfErr(path.into(), i, r))?,
             (Some(""), None) | (None, _) => (), // Empty line
-            (Some(_), None) => return Err(Error::Config(line, String::from("No '='"))),
+            (Some(_), None) => return Err(ConfErr(path.into(), i, String::from("No '='"))),
         }
     }
     Ok(())

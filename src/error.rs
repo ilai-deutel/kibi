@@ -1,33 +1,25 @@
 //! # Errors
 
-use std::fmt::{self, Debug, Formatter};
-
-/// These errors can used in the program.
+/// Kibi error type.
+#[derive(Debug)]
 pub enum Error {
+    /// Wrapper around `std::io::Error`
     IO(std::io::Error),
+    /// Wrapper around `nix::Error`
     #[cfg(unix)]
     Nix(nix::Error),
-    InvalidWindowSize,
+    /// Wrapper around `std::sync::mpsc::TryRecvError`
     MPSCTryRecv(std::sync::mpsc::TryRecvError),
+    /// Error returned when the window size obtained through a system call is invalid.
+    InvalidWindowSize,
+    /// Error setting or retrieving the cursor position.
     CursorPosition,
-    Config(String, String),
+    /// Configuration error. The three attributes correspond the file path, the line number and the
+    /// error message.
+    Config(std::path::PathBuf, usize, String),
+    /// Too many arguments given to kibi. The attribute corresponds to the total number of command
+    /// line armuments.
     TooManyArguments(usize),
-}
-
-impl Debug for Error {
-    /// Format the value using the given formatter.
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Self::IO(err) => write!(f, "IO error: {}", err),
-            #[cfg(unix)]
-            Self::Nix(err) => write!(f, "System call error: {}", err),
-            Self::InvalidWindowSize => write!(f, "Invalid window size"),
-            Self::MPSCTryRecv(err) => write!(f, "MSPC try_recv error: {}", err),
-            Self::CursorPosition => write!(f, "Could not obtain cursor position"),
-            Self::Config(line, reason) => write!(f, "Could not parse config {}: {}", line, reason),
-            Self::TooManyArguments(n) => write!(f, "Expected 0 or 1 argument, got {}", n),
-        }
-    }
 }
 
 impl From<std::io::Error> for Error {
@@ -37,6 +29,6 @@ impl From<std::io::Error> for Error {
 
 #[cfg(unix)]
 impl From<nix::Error> for Error {
-    /// Convert a nix IO Error into a Kibi Error.
+    /// Convert a nix Error into a Kibi Error.
     fn from(err: nix::Error) -> Self { Self::Nix(err) }
 }
