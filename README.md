@@ -12,14 +12,17 @@
 A configurable text editor with UTF-8 support, incremental search, syntax highlighting, line numbers and more, written
 in less than 1024 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
-Kibi is compatible with Linux, macOS, and Windows 10 (beta).
+Kibi is compatible with Linux, macOS, and Windows 10<sup>[2](#windows-version)</sup> (beta).
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text editor written in C.
 See [comparison](#comparison-with-kilo) below for a list of additional features.
 
 Contributions are welcome! Be careful to stay below the 1024-line limit...
 
-<sub><a name="counted-with">1.</a>: Counted with [`tokei`](https://github.com/XAMPPRocky/tokei)</sub>
+<sub><a name="counted-with">1.</a>: Counted with [`tokei`](https://github.com/XAMPPRocky/tokei)</sub> \
+<sub><a name="windows-version">2.</a>: Kibi requires the terminal to support ANSI escape sequences. Windows 10 version
+1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
+April 2017) and above are supported.</sub>
 
 ## Installation
 
