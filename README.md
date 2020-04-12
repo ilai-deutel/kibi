@@ -67,6 +67,15 @@ cd kibi
 makepkg -si
 ```
 
+### Fedora/CentOS
+
+Available in [COPR](https://copr.fedorainfracloud.org/coprs/atim/kibi/).
+
+```bash
+sudo dnf copr enable atim/kibi -y
+sudo dnf install kibi
+```
+
 ## Usage
 
 ```bash
