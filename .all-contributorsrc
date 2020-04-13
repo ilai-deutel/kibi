@@ -1,0 +1,78 @@
+{
+  "projectName": "kibi",
+  "projectOwner": "ilai-deutel",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "ilai-deutel",
+      "name": "Ilaï Deutel",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/10098207?v=4",
+      "contributions": [
+        "code",
+        "ideas",
+        "infra",
+        "platform",
+        "test"
+      ]
+    },
+    {
+      "login": "codingonHP",
+      "name": "Vishal Anand",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/7105293?v=4",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "gsbhasin123",
+      "name": "Gurjus Bhasin",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/48339289?v=4",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "ldang0",
+      "name": "Libin Dang",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/1281722?v=4",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "andradei",
+      "name": "Isaac Andrade",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/2653546?v=4",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "frjol",
+      "name": "frjol",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/4422813?v=4",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "tim77",
+      "name": "Artem Polishchuk",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/5614476?v=4",
+      "contributions": [
+        "platform"
+      ]
+    }
+  ],
+  "contributorsPerLine": 6,
+  "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg)](#contributors)",
+  "contributorTemplate": "<a href=\"https://github.com/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"<%= options.imageSize %>px;\" alt=\"\"/><br /><sub><b><%= contributor.name %></b></sub></a><br /><%= contributions %>"
+}
