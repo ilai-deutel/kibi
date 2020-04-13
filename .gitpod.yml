@@ -1,3 +1,6 @@
+image:
+  file: .gitpod.Dockerfile
+
 tasks:
   - init: cargo build
     command: cargo watch -s 'reset; cargo run'
