@@ -207,14 +207,12 @@ This project follows the [all-contributors](https://allcontributors.org/) specif
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/ilai-deutel"><img src="https://avatars0.githubusercontent.com/u/10098207?v=4" width="100px;" alt=""/><br /><sub><b>Ilaï Deutel</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=ilai-deutel" title="Code">💻</a> <a href="#ideas-ilai-deutel" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-ilai-deutel" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#platform-ilai-deutel" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/ilai-deutel/kibi/commits?author=ilai-deutel" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/ilai-deutel"><img src="https://avatars0.githubusercontent.com/u/10098207?v=4" width="100px;" alt=""/><br /><sub><b>Ilaï Deutel</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=ilai-deutel" title="Code">💻</a> <a href="#ideas-ilai-deutel" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-ilai-deutel" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#platform-ilai-deutel" title="Packaging/porting to new platform">📦</a></td>
     <td align="center"><a href="https://github.com/codingonHP"><img src="https://avatars3.githubusercontent.com/u/7105293?v=4" width="100px;" alt=""/><br /><sub><b>Vishal Anand</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/issues?q=author%3AcodingonHP" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/gsbhasin123"><img src="https://avatars2.githubusercontent.com/u/48339289?v=4" width="100px;" alt=""/><br /><sub><b>Gurjus Bhasin</b></sub></a><br /><a href="#ideas-gsbhasin123" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/ldang0"><img src="https://avatars1.githubusercontent.com/u/1281722?v=4" width="100px;" alt=""/><br /><sub><b>Libin Dang</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=ldang0" title="Code">💻</a> <a href="https://github.com/ilai-deutel/kibi/issues?q=author%3Aldang0" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/andradei"><img src="https://avatars0.githubusercontent.com/u/2653546?v=4" width="100px;" alt=""/><br /><sub><b>Isaac Andrade</b></sub></a><br /><a href="#ideas-andradei" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/frjol"><img src="https://avatars2.githubusercontent.com/u/4422813?v=4" width="100px;" alt=""/><br /><sub><b>frjol</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/issues?q=author%3Afrjol" title="Bug reports">🐛</a></td>
-  </tr>
-  <tr>
     <td align="center"><a href="https://github.com/tim77"><img src="https://avatars0.githubusercontent.com/u/5614476?v=4" width="100px;" alt=""/><br /><sub><b>Artem Polishchuk</b></sub></a><br /><a href="#platform-tim77" title="Packaging/porting to new platform">📦</a></td>
   </tr>
 </table>

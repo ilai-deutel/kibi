@@ -18,8 +18,7 @@
         "code",
         "ideas",
         "infra",
-        "platform",
-        "test"
+        "platform"
       ]
     },
     {
@@ -72,7 +71,7 @@
       ]
     }
   ],
-  "contributorsPerLine": 6,
+  "contributorsPerLine": 7,
   "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg)](#contributors)",
   "contributorTemplate": "<a href=\"https://github.com/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"<%= options.imageSize %>px;\" alt=\"\"/><br /><sub><b><%= contributor.name %></b></sub></a><br /><%= contributions %>"
 }
