@@ -5,7 +5,8 @@
 [![AUR](https://img.shields.io/aur/version/kibi.svg?logo=arch-linux)](https://aur.archlinux.org/packages/kibi/)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-blue.svg?logo=rust)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
-[![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
