@@ -188,7 +188,8 @@ impl Row {
     pub(crate) fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
         let mut current_hl_type = HLType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
-        for (c, (i, mut hl_type)) in chars.zip(self.hl.iter().enumerate().skip(offset)) {
+        let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
+        for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
                 buffer.push_str(&format!("{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT,));
@@ -198,10 +199,10 @@ impl Row {
                 }
             } else {
                 if let Some(match_segment) = &self.match_segment {
-                    if match_segment.contains(&i) {
+                    if match_segment.contains(&rx) {
                         // Set the highlight type to Match, i.e. set the background to cyan
                         hl_type = &HLType::Match
-                    } else if i == match_segment.end {
+                    } else if rx == match_segment.end {
                         // Reset the formatting, in particular the background
                         buffer.push_str(RESET_FMT)
                     }
@@ -212,6 +213,7 @@ impl Row {
                 }
                 buffer.push(c as char);
             }
+            rx += c.width().unwrap_or(1);
         }
         buffer.push_str(RESET_FMT);
     }
