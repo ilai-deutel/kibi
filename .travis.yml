@@ -5,6 +5,7 @@ env:
   global:
     - HOST=x86_64-unknown-linux-gnu
     - RUSTFLAGS='-D warnings'
+    - TOKEI_VERSION=v11.1.0
 
 jobs:
   include:
@@ -43,27 +44,31 @@ jobs:
       allow_failures: true
 
     # Static checks
-    - name: LoC and clippy
-      before_script: rustup component add clippy
+    - name: LOC
+      before_install: skip
       install: skip
-      script:
-        - cargo test --test loc
-        - cargo clippy --all-targets -- -D warnings
-    - name: Rustfmt
-      # Install the rustfmt component for the nightly channel
+      before_script: |
+        mkdir -pv ~/.local/bin \
+        && curl -L "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TARGET:-$HOST}.tar.gz" \
+        | tar -xzvf - -C ~/.local/bin tokei
+      script: ./count_loc.sh
+    - name: Rustfmt and Clippy
+      install: skip
+      # Install the rustfmt and clippy components for the nightly channel
       # Sometimes, not all components are available in any given nightly, which causes errors such as
       # https://github.com/ilai-deutel/kibi/issues/24. Therefore, we use the `--allow-downgrade` flag to downgrade
-      # the version if rustfmt is not available for this or any newer nightly.
+      # the version if either rustfmt or clippy are not available for this or any newer nightly.
       # In the future, `rustup component add` will have a `--allow-downgrade` flag
       # (see https://github.com/rust-lang/rustup/issues/2146), but in the meantime we use this work-around:
-      install: skip
-      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt
-      script: cargo fmt -- --check
+      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt -c clippy
+      script: |
+        cargo fmt -- --check
+        cargo clippy --all-targets -- -D warnings
       rust: nightly
-    - name: Dependency Audit
-      install: cargo install cargo-audit
-      script: cargo audit
-      cache: cargo
+#    - name: Dependency Audit
+#      install: cargo install cargo-audit
+#      script: cargo audit
+#      cache: cargo
 
   fast_finish: true
 
