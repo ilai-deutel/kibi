@@ -23,9 +23,6 @@ signal-hook = "0.1.13"
 winapi = { version = "0.3.8", default-features = false, features = ["wincon"] }
 winapi-util = "0.1.4"
 
-[dev-dependencies]
-tokei = "11.0.0"
-
 [badges]
 travis-ci = { repository = "ilai-deutel/kibi", branch = "master" }
 maintenance = { status = "actively-developed" }

@@ -22,7 +22,7 @@ See [comparison](#comparison-with-kilo) below for a list of additional features.
 
 Contributions are welcome! Be careful to stay below the 1024-line limit...
 
-<sub><a name="counted-with">1.</a>: Counted with [`tokei`](https://github.com/XAMPPRocky/tokei)</sub> \
+<sub><a name="counted-with">1.</a>: Counted with [`count_loc.sh`](count_loc.sh)</sub> \
 <sub><a name="windows-version">2.</a>: Kibi requires the terminal to support ANSI escape sequences. Windows 10 version
 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
 April 2017) and above are supported.</sub>
@@ -162,7 +162,7 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 
 `kibi` provides additional features:
 - Support for UTF-8 characters
-- Compatible with Windows
+- Compatibility with Windows
 - Command to jump to a given row/column
 - Handle window resize (UNIX only)
 - Parsing configuration files: global editor configuration, language-specific syntax highlighting configuration
