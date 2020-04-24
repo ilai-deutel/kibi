@@ -80,7 +80,7 @@ install: |
   cargo build --target "${TARGET:-$HOST}" --verbose
   cargo run -- --version
 
-script: skip
+script: cargo test
 
 before_deploy: ci/before_deploy.sh
 

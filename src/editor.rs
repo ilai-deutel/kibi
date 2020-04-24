@@ -799,3 +799,22 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     }
     PromptState::Active(buffer)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_size_output() {
+        assert_eq!(format_size(0), "0B");
+        assert_eq!(format_size(1), "1B");
+        assert_eq!(format_size(1023), "1023B");
+        assert_eq!(format_size(1024), "1.00kB");
+        assert_eq!(format_size(1536), "1.50kB");
+        assert_eq!(format_size(2047), "2.00kB");
+        assert_eq!(format_size(2048), "2.00kB");
+        assert_eq!(format_size(1048575), "1024.00kB");
+        assert_eq!(format_size(1048576), "1.00MB");
+        assert_eq!(format_size(1073741824), "1.00GB");
+    }
+}
