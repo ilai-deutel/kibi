@@ -30,6 +30,7 @@ pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
 pub(crate) fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> { Ok(None) }
 
 /// Set the terminal mode.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub(crate) fn set_term_mode((stdin_mode, stdout_mode): &TermMode) -> Result<(), io::Error> {
     cons::set_mode(HandleRef::stdin(), *stdin_mode)?;
     cons::set_mode(HandleRef::stdout(), *stdout_mode)

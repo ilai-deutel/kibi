@@ -52,7 +52,7 @@ jobs:
         && curl -L "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TARGET:-$HOST}.tar.gz" \
         | tar -xzvf - -C ~/.local/bin tokei
       script: ./count_loc.sh
-    - name: Rustfmt and Clippy
+    - name: Rustfmt and Clippy (Linux)
       install: skip
       # Install the rustfmt and clippy components for the nightly channel
       # Sometimes, not all components are available in any given nightly, which causes errors such as
@@ -65,6 +65,13 @@ jobs:
         cargo fmt -- --check
         cargo clippy --all-targets -- -D warnings
       rust: nightly
+    - name: Clippy (Windows)
+      install: skip
+      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c clippy
+      script: cargo clippy --all-targets -- -D warnings
+      rust: nightly
+      env: TARGET=x86_64-pc-windows-gnu
+      os: windows
 #    - name: Dependency Audit
 #      install: cargo install cargo-audit
 #      script: cargo audit
