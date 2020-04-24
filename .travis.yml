@@ -91,7 +91,8 @@ deploy:
   provider: releases
   api_key:
     secure: Va5HQGJoUwfnsxN8L1zI2RkSt1s0az7v7/NHxQMTv8SffaDOJuhbeWXsr9vFHNIE8wUC2mkLOd6rAGZ9YCtRUKS4nAucPk0gUD083y34j1DMLh6ycMjFtuWdWCaUMHaVqZjXPMCdeL7xZ6SuWqjhBDcOhDW3c63/caCSY6BlLQ2EFfT/GRscO2AzrRW0emHU3S8d9BgTX3YxSvJJnBZaUdLEbHQdLw/6m30MgaUwnPodxjRqzxNSJ+yReDJqwYvLCYCdYvNLlhA5MXM4GfgOsIWFdS1nMUyVKjpDf80f/BRUSLPst9uZ/6EBnFsUOTF7Vfw6FgNknNaqk7dHatIy5bWjjB6z8SPZAwzfnYCFNpFu6567/9i0PUxWd0g8L1lRGf0P+Y2rMJmV2LWpL4zjb7lDUHf9Hbg3ueY/yLguhi/ic7U2+ok2S4OCH+uDs1uSsekpyxYhqHL4zcFxtUTi1zasRI1NEVJr9CcAVoR4p/83N6rX5/0xR7pdhCfDGTlBQQH0AjHU/q8GhVw2mVlyQqefNBszjHrG9tI1oWcRmSruWMG7HX4m3BAci2T1/MlJSmUiwQ27eaBHLw6fROvkH2RD3kowRsM3oCRN6OQLf/HD5OnLfqKhGEaYlAfzpf9O6tQZSCHbIST4rhLYdCkGofNiPjSa3tErmoxWFNhm57E=
-  file: kibi-$TRAVIS_TAG-$TARGET.tar.gz
+  file_glob: true
+  file: release_files/*
   skip_cleanup: true
   draft: true
   on:
