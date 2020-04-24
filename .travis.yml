@@ -21,13 +21,10 @@ jobs:
     # Windows
     - env: TARGET=x86_64-pc-windows-gnu
       os: windows
-      before_install: ci/before_install.bat
     - env: TARGET=x86_64-pc-windows-msvc
       os: windows
-      before_install: ci/before_install.bat
     - env: TARGET=i686-pc-windows-msvc
       os: windows
-      before_install: ci/before_install.bat
 
     # Testing on the nightly channel
     - env: TARGET=x86_64-unknown-linux-gnu
@@ -39,7 +36,6 @@ jobs:
       allow_failures: true
     - env: TARGET=x86_64-pc-windows-gnu
       os: windows
-      before_install: ci/before_install.bat
       rust: nightly
       allow_failures: true
 
@@ -53,21 +49,21 @@ jobs:
         | tar -xzvf - -C ~/.local/bin tokei
       script: ./count_loc.sh
     - name: Rustfmt and Clippy (Linux)
-      install: skip
       # Install the rustfmt and clippy components for the nightly channel
       # Sometimes, not all components are available in any given nightly, which causes errors such as
       # https://github.com/ilai-deutel/kibi/issues/24. Therefore, we use the `--allow-downgrade` flag to downgrade
       # the version if either rustfmt or clippy are not available for this or any newer nightly.
       # In the future, `rustup component add` will have a `--allow-downgrade` flag
       # (see https://github.com/rust-lang/rustup/issues/2146), but in the meantime we use this work-around:
-      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt -c clippy
+      before_install: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt -c clippy
+      install: skip
       script: |
         cargo fmt -- --check
         cargo clippy --all-targets -- -D warnings
       rust: nightly
     - name: Clippy (Windows)
+      before_install: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c clippy
       install: skip
-      before_script: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c clippy
       script: cargo clippy --all-targets -- -D warnings
       rust: nightly
       env: TARGET=x86_64-pc-windows-gnu
