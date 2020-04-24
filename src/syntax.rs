@@ -10,7 +10,7 @@ use crate::{sys, Error};
 /// to the discriminant, modulo 100. The colors are described here:
 /// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
 #[derive(PartialEq, Copy, Clone)]
-pub(crate) enum HLType {
+pub enum HLType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
     Match = 46,      // Cyan
@@ -29,28 +29,28 @@ impl Display for HLType {
 
 /// Configuration for syntax highlighting.
 #[derive(Clone, Default)]
-pub(crate) struct SyntaxConf {
+pub struct Conf {
     /// The name of the language, e.g. "Rust".
-    pub(crate) name: String,
+    pub name: String,
     /// Whether to highlight numbers.
-    pub(crate) highlight_numbers: bool,
+    pub highlight_numbers: bool,
     /// Whether to highlight single-line strings.
-    pub(crate) hightlight_sl_strings: bool,
+    pub hightlight_sl_strings: bool,
     /// The tokens that starts a single-line comment, e.g. "//".
-    pub(crate) sl_comment_start: Vec<String>,
+    pub sl_comment_start: Vec<String>,
     /// The tokens that start and end a multi-line comment, e.g. ("/*", "*/").
-    pub(crate) ml_comment_delims: Option<(String, String)>,
+    pub ml_comment_delims: Option<(String, String)>,
     /// The token that start and end a multi-line strings, e.g. "\"\"\"" for Python.
-    pub(crate) ml_string_delim: Option<String>,
+    pub ml_string_delim: Option<String>,
     /// Keywords to highlight and there corresponding HLType (typically
     /// HLType::Keyword1 or HLType::Keyword2)
-    pub(crate) keywords: Vec<(HLType, Vec<String>)>,
+    pub keywords: Vec<(HLType, Vec<String>)>,
 }
 
-impl SyntaxConf {
+impl Conf {
     /// Return the syntax configuration corresponding to the given file extension, if a matching
     /// INI file is found in a config directory.
-    pub(crate) fn get(ext: &str) -> Result<Option<Self>, Error> {
+    pub fn get(ext: &str) -> Result<Option<Self>, Error> {
         for conf_dir in sys::data_dirs() {
             match PathBuf::from(conf_dir).join("syntax.d").read_dir() {
                 Ok(dir_entries) =>

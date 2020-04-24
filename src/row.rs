@@ -6,12 +6,12 @@
 use std::iter::repeat;
 
 use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
-use crate::syntax::{HLType, SyntaxConf};
+use crate::syntax::{Conf as SyntaxConf, HLType};
 use unicode_width::UnicodeWidthChar;
 
 /// The "Highlight State" of the row
 #[derive(Clone, Copy, PartialEq)]
-pub(crate) enum HLState {
+pub enum HLState {
     /// Normal state.
     Normal,
     /// A multi-line comment has been open, but not yet closed.
@@ -28,32 +28,32 @@ impl Default for HLState {
 
 /// Represents a row of characters and how it is rendered.
 #[derive(Default)]
-pub(crate) struct Row {
+pub struct Row {
     /// The characters of the row.
-    pub(crate) chars: Vec<u8>,
+    pub chars: Vec<u8>,
     /// How the characters are rendered. In particular, tabs are converted into several spaces, and
     /// bytes may be combined into single UTF-8 characters.
     render: String,
     /// Mapping from indices in `self.chars` to the corresponding indices in `self.render`.
-    pub(crate) cx2rx: Vec<usize>,
+    pub cx2rx: Vec<usize>,
     /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
-    pub(crate) rx2cx: Vec<usize>,
+    pub rx2cx: Vec<usize>,
     /// The vector of `HLType` for each rendered character.
     hl: Vec<HLType>,
     /// The final state of the row.
-    pub(crate) hl_state: HLState,
+    pub hl_state: HLState,
     /// If not `None`, the range that is currently matched during a FIND operation.
-    pub(crate) match_segment: Option<std::ops::Range<usize>>,
+    pub match_segment: Option<std::ops::Range<usize>>,
 }
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub(crate) fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
+    pub fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
-    pub(crate) fn update(&mut self, syntax: &SyntaxConf, hl_state: HLState, tab: usize) -> HLState {
+    pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HLState, tab: usize) -> HLState {
         self.render.clear();
         self.cx2rx.clear();
         self.rx2cx.clear();
@@ -81,7 +81,7 @@ impl Row {
     /// Obtain the character size, in bytes, given its position in `self.render`. This is done in
     /// constant time by using the difference between `self.rx2cx[rx]` and the cx for the next
     /// character.
-    pub(crate) fn get_char_size(&self, rx: usize) -> usize {
+    pub fn get_char_size(&self, rx: usize) -> usize {
         let cx0 = self.rx2cx[rx];
         self.rx2cx.iter().skip(rx + 1).map(|cx| cx - cx0).find(|d| *d > 0).unwrap_or(1)
     }
@@ -185,7 +185,7 @@ impl Row {
     /// Draw the row and write the result to a buffer. An `offset` can be given, as well as a limit
     /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
     /// line and move the cursor to the start of the next line.
-    pub(crate) fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
+    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
         let mut current_hl_type = HLType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
