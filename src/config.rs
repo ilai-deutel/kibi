@@ -2,16 +2,14 @@
 //!
 //! Utilities to configure the text editor.
 
-use std::fmt::Display;
-use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::time::Duration;
+use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 
-use crate::{sys::conf_dirs, Error, Error::Config as ConfErr};
+use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
 
 /// The global Kibi configuration.
+#[derive(Debug, PartialEq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
     pub(crate) tab_stop: usize,
@@ -19,28 +17,15 @@ pub struct Config {
     /// file was last changed.
     pub(crate) quit_times: usize,
     /// The duration for which messages are shown in the status bar.
-    pub(crate) message_duration: Duration,
+    pub(crate) message_dur: Duration,
     /// Whether to display line numbers.
     pub(crate) show_line_num: bool,
-    /// The paths to directories that may be used to store Kibi configuration files.
-    pub(crate) conf_dirs: Vec<PathBuf>,
-}
-
-/// Return directories that may contain configuration files for Kibi
-fn kibi_conf_dirs() -> Vec<PathBuf> {
-    conf_dirs().iter().filter_map(Option::as_ref).map(|p| PathBuf::from(p).join("kibi")).collect()
 }
 
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        Self {
-            tab_stop: 4,
-            quit_times: 2,
-            message_duration: Duration::from_secs(3),
-            show_line_num: true,
-            conf_dirs: kibi_conf_dirs(),
-        }
+        Self { tab_stop: 4, quit_times: 2, message_dur: Duration::new(3, 0), show_line_num: true }
     }
 }
 
@@ -52,7 +37,7 @@ impl Config {
     ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
     ///       `$HOME/.config/kibi` otherwise (user-level configuration).
     ///   - On Windows:
-    ///     - `%APPDATA%/kibi`
+    ///     - `%APPDATA%\Kibi`
     ///
     /// # Errors
     ///
@@ -60,10 +45,10 @@ impl Config {
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
-        let conf_paths: Vec<_> = conf.conf_dirs.iter().map(|p| p.join("config.ini")).collect();
+        let dirs: Vec<_> = cdirs().iter().map(|d| PathBuf::from(d).join("config.ini")).collect();
 
-        for path in conf_paths.into_iter().filter(|p| p.exists()) {
-            process_ini_file(&path, &mut |key, value| {
+        for path in dirs.iter().filter(|p| p.exists()).rev() {
+            process_ini_file(path, &mut |key, value| {
                 match key {
                     "tab_stop" => match parse_value(value)? {
                         0 => return Err("tab_stop must be > 0".into()),
@@ -71,7 +56,7 @@ impl Config {
                     },
                     "quit_times" => conf.quit_times = parse_value(value)?,
                     "message_duration" =>
-                        conf.message_duration = Duration::from_secs_f32(parse_value(value)?),
+                        conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {}", key)),
                 };
@@ -90,7 +75,7 @@ impl Config {
 pub(crate) fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
     for (i, line) in BufReader::new(File::open(path)?).lines().enumerate() {
-        let line = line?;
+        let (i, line) = (i + 1, line?);
         let mut parts = line.trim_start().splitn(2, '=');
         match (parts.next(), parts.next()) {
             (Some(comment_line), _) if comment_line.starts_with(&['#', ';'][..]) => (),
@@ -111,4 +96,154 @@ pub(crate) fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Resul
 /// parse it as a Vec.
 pub(crate) fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
     value.split(',').map(parse_value).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsStr;
+    use std::{env, fs};
+
+    use serial_test::serial;
+    use tempfile::TempDir;
+
+    use super::*;
+
+    fn ini_processing_helper<F>(ini_content: &str, kv_fn: &mut F) -> Result<(), Error>
+    where F: FnMut(&str, &str) -> Result<(), String> {
+        let tmp_dir = TempDir::new().expect("Could not create temporary directory");
+        let file_path = tmp_dir.path().join("test_config.ini");
+        fs::write(&file_path, ini_content).expect("Could not write INI file");
+        process_ini_file(&file_path, kv_fn)
+    }
+
+    #[test]
+    fn valid_ini_processing() {
+        let ini_content = "# Comment A
+        ; Comment B
+        a = c
+            # Below is an empty line
+
+           variable    = 4
+        a = d5
+        u = v = w ";
+        let expected = vec![
+            (String::from("a"), String::from(" c")),
+            (String::from("variable"), String::from(" 4")),
+            (String::from("a"), String::from(" d5")),
+            (String::from("u"), String::from(" v = w ")),
+        ];
+
+        let mut kvs = Vec::new();
+        let kv_fn = &mut |key: &str, value: &str| {
+            kvs.push((String::from(key), String::from(value)));
+            Ok(())
+        };
+
+        ini_processing_helper(ini_content, kv_fn).unwrap();
+
+        assert_eq!(kvs, expected);
+    }
+
+    #[test]
+    fn invalid_ini_processing() {
+        let ini_content = "# Comment A
+        ; Comment B
+        a = c
+            # Below is an empty line
+
+           Invalid line
+        a = d5
+        u = v = w ";
+        let kv_fn = &mut |_: &str, _: &str| Ok(());
+        match ini_processing_helper(ini_content, kv_fn) {
+            Ok(_) => panic!("process_ini_file should return an error"),
+            Err(Error::Config(_, 6, s)) if s == "No '='" => (),
+            Err(e) => panic!("Unexpected error {:?}", e),
+        }
+    }
+
+    #[test]
+    fn ini_processing_error_propagation() {
+        let ini_content = "# Comment A
+        ; Comment B
+        a = c
+            # Below is an empty line
+
+           variable    = 4
+        a = d5
+        u = v = w ";
+        let kv_fn = &mut |_: &str, _: &str| Err(String::from("test error"));
+        match ini_processing_helper(ini_content, kv_fn) {
+            Ok(_) => panic!("process_ini_file should return an error"),
+            Err(Error::Config(_, 3, s)) if s == "test error" => (),
+            Err(e) => panic!("Unexpected error {:?}", e),
+        }
+    }
+
+    fn test_config_dir(env_key: &OsStr, env_val: &OsStr, kibi_config_home: &Path) {
+        let custom_config = Config { tab_stop: 99, quit_times: 50, ..Config::default() };
+        let ini_content = format!(
+            "# Configuration file
+             tab_stop  = {}
+             quit_times={}",
+            custom_config.tab_stop, custom_config.quit_times
+        );
+
+        fs::create_dir_all(&kibi_config_home).unwrap();
+
+        fs::write(kibi_config_home.join("config.ini"), ini_content)
+            .expect("Could not write INI file");
+
+        let config = Config::load().expect("Could not load configuration.");
+        assert_ne!(config, custom_config);
+
+        let config = {
+            let orig_value = env::var_os(env_key);
+            env::set_var(env_key, env_val);
+            let config_res = Config::load();
+            match orig_value {
+                Some(orig_value) => env::set_var(env_key, orig_value),
+                None => env::remove_var(env_key),
+            }
+            config_res.expect("Could not load configuration.")
+        };
+
+        assert_eq!(config, custom_config);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    #[serial]
+    fn xdg_config_home() {
+        let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
+        test_config_dir(
+            "XDG_CONFIG_HOME".as_ref(),
+            tmp_config_home.path().as_os_str(),
+            &tmp_config_home.path().join("kibi"),
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    #[serial]
+    fn config_home() {
+        let tmp_home = TempDir::new().expect("Could not create temporary directory");
+        test_config_dir(
+            "HOME".as_ref(),
+            tmp_home.path().as_os_str(),
+            &tmp_home.path().join(".config/kibi"),
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    #[serial]
+    fn app_data() {
+        let tmp_home = TempDir::new().expect("Could not create temporary directory");
+        test_config_dir(
+            "APPDATA".as_ref(),
+            tmp_home.path().as_os_str(),
+            &tmp_home.path().join("Kibi"),
+        );
+    }
 }

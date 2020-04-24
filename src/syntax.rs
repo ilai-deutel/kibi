@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
 
 use crate::config::{self, parse_value as pv, parse_values as pvs};
-use crate::Error;
+use crate::{sys, Error};
 
 /// Type of syntax highlighting for a single rendered character.
 ///
@@ -50,9 +50,9 @@ pub(crate) struct SyntaxConf {
 impl SyntaxConf {
     /// Return the syntax configuration corresponding to the given file extension, if a matching
     /// INI file is found in a config directory.
-    pub(crate) fn get(ext: &str, conf_dirs: &[PathBuf]) -> Result<Option<Self>, Error> {
-        for conf_dir in conf_dirs.iter().rev() {
-            match conf_dir.join("syntax.d").read_dir() {
+    pub(crate) fn get(ext: &str) -> Result<Option<Self>, Error> {
+        for conf_dir in sys::data_dirs() {
+            match PathBuf::from(conf_dir).join("syntax.d").read_dir() {
                 Ok(dir_entries) =>
                     for dir_entry in dir_entries {
                         let (sc, extensions) = Self::from_file(&dir_entry?.path())?;
@@ -76,18 +76,16 @@ impl SyntaxConf {
                 "highlight_numbers" => sc.highlight_numbers = pv(val)?,
                 "highlight_strings" => sc.hightlight_sl_strings = pv(val)?,
                 "singleline_comment_start" => sc.sl_comment_start = pvs(val)?,
-                "multiline_comment_delims" => {
-                    let mut split = val.split(',');
-                    sc.ml_comment_delims = match (split.next(), split.next(), split.next()) {
-                        (Some(v1), Some(v2), None) => Some((pv(v1)?, pv(v2)?)),
-                        _ => return Err(String::from("Expected 2 delimiters")),
-                    }
-                }
+                "multiline_comment_delims" =>
+                    sc.ml_comment_delims = match &val.split(',').collect::<Vec<_>>()[..] {
+                        [v1, v2] => Some((pv(v1)?, pv(v2)?)),
+                        d => return Err(format!("Expected 2 delimiters, got {}", d.len())),
+                    },
                 "multiline_string_delim" => sc.ml_string_delim = Some(pv(val)?),
                 "keywords_1" => sc.keywords.push((HLType::Keyword1, pvs(val)?)),
                 "keywords_2" => sc.keywords.push((HLType::Keyword2, pvs(val)?)),
                 _ => return Err(format!("Invalid key: {}", key)),
-            };
+            }
             Ok(())
         })?;
         Ok((sc, extensions))

@@ -5,7 +5,7 @@
 
 # The lines of codes are counted using `tokei`, after removing the following
 # from the code:
-#   * Clippy directive
+#   * Clippy directives
 #   * Anything after #[cfg(test)]
 
 set -euo pipefail
