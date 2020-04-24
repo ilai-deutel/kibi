@@ -2,7 +2,9 @@
 //!
 //! Windows-specific structs and functions. Will be imported as `sys` on Windows systems.
 
-use std::{env::var, io, sync::mpsc::Receiver};
+#![allow(clippy::wildcard_imports)]
+
+use std::{convert::TryInto, env::var, io, sync::mpsc::Receiver};
 
 use winapi::um::wincon::*;
 use winapi_util::{console as cons, HandleRef};
@@ -21,8 +23,11 @@ pub fn data_dirs() -> Vec<String> { conf_dirs() }
 
 /// Return the current window size as (rows, columns).
 pub fn get_window_size() -> Result<(usize, usize), Error> {
-    let w_rect = cons::screen_buffer_info(HandleRef::stdout())?.window_rect();
-    Ok(((w_rect.bottom - w_rect.top + 1) as usize, (w_rect.right - w_rect.left + 1) as usize))
+    let rect = cons::screen_buffer_info(HandleRef::stdout())?.window_rect();
+    match ((rect.bottom - rect.top + 1).try_into(), (rect.right - rect.left + 1).try_into()) {
+        (Ok(rows), Ok(cols)) => Ok((rows, cols)),
+        _ => Err(Error::InvalidWindowSize),
+    }
 }
 
 pub fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> { Ok(None) }
