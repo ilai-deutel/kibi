@@ -10,7 +10,7 @@ use nix::{pty::Winsize, sys::termios};
 use signal_hook::{iterator::Signals, SIGWINCH};
 
 // On UNIX systems, Termios represents the terminal mode.
-pub(crate) use nix::sys::termios::Termios as TermMode;
+pub use nix::sys::termios::Termios as TermMode;
 
 use crate::Error;
 
@@ -39,10 +39,10 @@ fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String
 }
 
 /// Return configuration directories for UNIX systems
-pub(crate) fn conf_dirs() -> Vec<String> { xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc") }
+pub fn conf_dirs() -> Vec<String> { xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc") }
 
 /// Return syntax directories for UNIX systems
-pub(crate) fn data_dirs() -> Vec<String> {
+pub fn data_dirs() -> Vec<String> {
     xdg_dirs("DATA", "/.local/share", "/usr/local/share/:/usr/share/")
 }
 
@@ -51,7 +51,7 @@ pub(crate) fn data_dirs() -> Vec<String> {
 /// We use the `TIOCGWINSZ` ioctl to get window size. If it succeeds, a `Winsize` struct will be
 /// populated.
 /// This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
-pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
+pub fn get_window_size() -> Result<(usize, usize), Error> {
     nix::ioctl_read_bad!(get_ws, TIOCGWINSZ, Winsize);
 
     let mut maybe_ws = std::mem::MaybeUninit::<Winsize>::uninit();
@@ -62,7 +62,7 @@ pub(crate) fn get_window_size() -> Result<(usize, usize), Error> {
 }
 
 /// Return a MPSC receiver that receives a message whenever the window size is updated.
-pub(crate) fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> {
+pub fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> {
     // Create a channel for receiving window size update requests
     let (ws_changed_tx, ws_changed_rx) = mpsc::sync_channel(1);
     // Spawn a new thread that will push to the aforementioned channel every time the SIGWINCH
@@ -73,14 +73,14 @@ pub(crate) fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, 
 }
 
 /// Set the terminal mode.
-pub(crate) fn set_term_mode(term: &TermMode) -> Result<(), nix::Error> {
+pub fn set_term_mode(term: &TermMode) -> Result<(), nix::Error> {
     termios::tcsetattr(STDIN_FILENO, termios::SetArg::TCSAFLUSH, term)
 }
 
 /// Setup the termios to enable raw mode, and return the original termios.
 ///
 /// termios manual is available at: <http://man7.org/linux/man-pages/man3/termios.3.html>
-pub(crate) fn enable_raw_mode() -> Result<TermMode, Error> {
+pub fn enable_raw_mode() -> Result<TermMode, Error> {
     let orig_termios = termios::tcgetattr(STDIN_FILENO)?;
     let mut term = orig_termios.clone();
     termios::cfmakeraw(&mut term);

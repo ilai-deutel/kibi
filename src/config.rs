@@ -12,14 +12,14 @@ use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
 #[derive(Debug, PartialEq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
-    pub(crate) tab_stop: usize,
+    pub tab_stop: usize,
     /// The number of confirmations needed before quitting, when changes have been made since the
     /// file was last changed.
-    pub(crate) quit_times: usize,
+    pub quit_times: usize,
     /// The duration for which messages are shown in the status bar.
-    pub(crate) message_dur: Duration,
+    pub message_dur: Duration,
     /// Whether to display line numbers.
-    pub(crate) show_line_num: bool,
+    pub show_line_num: bool,
 }
 
 impl Default for Config {
@@ -72,7 +72,7 @@ impl Config {
 ///
 /// The `kv_fn` function will be called for each key-value pair in the file. Typically, this
 /// function will update a configuration instance.
-pub(crate) fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
+pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
     for (i, line) in BufReader::new(File::open(path)?).lines().enumerate() {
         let (i, line) = (i + 1, line?);
@@ -88,13 +88,13 @@ where F: FnMut(&str, &str) -> Result<(), String> {
 }
 
 /// Trim a value (right-hand side of a key=value INI line) and parses it.
-pub(crate) fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<T, String> {
+pub fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<T, String> {
     value.trim().parse().map_err(|e| format!("Parser error: {}", e))
 }
 
 /// Split a comma-separated list of values (right-hand side of a key=value1,value2,... INI line) and
 /// parse it as a Vec.
-pub(crate) fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
+pub fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
     value.split(',').map(parse_value).collect()
 }
 

@@ -6,7 +6,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::{fmt::Display, fs::File, path::Path, thread, time::Instant};
 
 use crate::row::{HLState, Row};
-use crate::{ansi_escape::*, syntax::SyntaxConf, sys, terminal, Config, Error};
+use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
