@@ -2,14 +2,11 @@
 //!
 //! Utilities to configure the text editor.
 
-use std::fmt::Display;
-use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::time::Duration;
+use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 
-use crate::{sys::conf_dirs, Error, Error::Config as ConfErr};
+use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
 
 /// The global Kibi configuration.
 pub struct Config {
@@ -19,28 +16,15 @@ pub struct Config {
     /// file was last changed.
     pub(crate) quit_times: usize,
     /// The duration for which messages are shown in the status bar.
-    pub(crate) message_duration: Duration,
+    pub(crate) message_dur: Duration,
     /// Whether to display line numbers.
     pub(crate) show_line_num: bool,
-    /// The paths to directories that may be used to store Kibi configuration files.
-    pub(crate) conf_dirs: Vec<PathBuf>,
-}
-
-/// Return directories that may contain configuration files for Kibi
-fn kibi_conf_dirs() -> Vec<PathBuf> {
-    conf_dirs().iter().filter_map(Option::as_ref).map(|p| PathBuf::from(p).join("kibi")).collect()
 }
 
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        Self {
-            tab_stop: 4,
-            quit_times: 2,
-            message_duration: Duration::from_secs(3),
-            show_line_num: true,
-            conf_dirs: kibi_conf_dirs(),
-        }
+        Self { tab_stop: 4, quit_times: 2, message_dur: Duration::new(3, 0), show_line_num: true }
     }
 }
 
@@ -52,7 +36,7 @@ impl Config {
     ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
     ///       `$HOME/.config/kibi` otherwise (user-level configuration).
     ///   - On Windows:
-    ///     - `%APPDATA%/kibi`
+    ///     - `%APPDATA%\Kibi`
     ///
     /// # Errors
     ///
@@ -60,10 +44,10 @@ impl Config {
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
-        let conf_paths: Vec<_> = conf.conf_dirs.iter().map(|p| p.join("config.ini")).collect();
+        let dirs: Vec<_> = cdirs().iter().map(|d| PathBuf::from(d).join("config.ini")).collect();
 
-        for path in conf_paths.into_iter().filter(|p| p.exists()) {
-            process_ini_file(&path, &mut |key, value| {
+        for path in dirs.iter().filter(|p| p.exists()).rev() {
+            process_ini_file(path, &mut |key, value| {
                 match key {
                     "tab_stop" => match parse_value(value)? {
                         0 => return Err("tab_stop must be > 0".into()),
@@ -71,7 +55,7 @@ impl Config {
                     },
                     "quit_times" => conf.quit_times = parse_value(value)?,
                     "message_duration" =>
-                        conf.message_duration = Duration::from_secs_f32(parse_value(value)?),
+                        conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {}", key)),
                 };
@@ -90,7 +74,7 @@ impl Config {
 pub(crate) fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
     for (i, line) in BufReader::new(File::open(path)?).lines().enumerate() {
-        let line = line?;
+        let (i, line) = (i + 1, line?);
         let mut parts = line.trim_start().splitn(2, '=');
         match (parts.next(), parts.next()) {
             (Some(comment_line), _) if comment_line.starts_with(&['#', ';'][..]) => (),

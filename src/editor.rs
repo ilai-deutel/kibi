@@ -1,3 +1,5 @@
+#![allow(clippy::wildcard_imports)]
+
 use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
 use std::sync::mpsc::{Receiver, TryRecvError};
@@ -122,6 +124,7 @@ impl StatusMessage {
 
 /// Pretty-format a size in bytes.
 fn format_size(n: u64) -> String {
+    #![allow(clippy::cast_precision_loss)]
     let quo_rem = successors(Some((n, 0)), |(q, _)| Some((q / 1024, q % 1024)).filter(|u| u.0 > 0));
     // unwrap(): quo_rem is never empty (since `successors` has an initial value), so _.last()
     // cannot be None
@@ -292,9 +295,8 @@ impl Editor {
     /// extension in one of the config directories (`/etc/kibi/syntax.d`, etc.). If such a
     /// configuration is found, set the `syntax` attribute of the editor.
     fn select_syntax_highlight(&mut self, path: &Path) -> Result<(), Error> {
-        let conf_dirs = &self.config.conf_dirs;
         let extension = path.extension().and_then(std::ffi::OsStr::to_str);
-        if let Some(s) = extension.and_then(|e| SyntaxConf::get(e, conf_dirs).transpose()) {
+        if let Some(s) = extension.and_then(|e| SyntaxConf::get(e).transpose()) {
             self.syntax = s?
         }
         Ok(())
@@ -547,7 +549,7 @@ impl Editor {
     /// Draw the message bar on the terminal, by adding characters to the buffer.
     fn draw_message_bar(&self, buffer: &mut String) {
         buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
-        let msg_duration = self.config.message_duration;
+        let msg_duration = self.config.message_dur;
         if let Some(sm) = self.status_msg.as_ref().filter(|sm| sm.time.elapsed() < msg_duration) {
             buffer.push_str(&sm.msg[..sm.msg.len().min(self.window_width)]);
         }

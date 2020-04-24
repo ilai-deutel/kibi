@@ -1,4 +1,5 @@
-# Kibi: A text editor in ≤1024 lines of code, written in Rust
+Kibi: A text editor in ≤1024 lines of code, written in Rust
+===========================================================
 
 [![Build Status](https://img.shields.io/travis/com/ilai-deutel/kibi/master?logo=travis)](https://travis-ci.com/ilai-deutel/kibi)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
@@ -27,6 +28,23 @@ Contributions are welcome! Be careful to stay below the 1024-line limit...
 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
 April 2017) and above are supported.</sub>
 
+## Table of contents
+
+* [Installation](#installation)
+  * [With cargo](#with-cargo)
+  * [Arch User Repository (Arch Linux)](#arch-user-repository-arch-linux)
+  * [Fedora/CentOS](#fedoracentos)
+* [Usage](#usage)
+  * [Keyboard shortcuts](#keyboard-shortcuts)
+  * [Configuration](#configuration)
+     * [Global configuration](#global-configuration)
+     * [Syntax highlighting](#syntax-highlighting)
+* [Comparison with kilo](#comparison-with-kilo)
+* [Dependencies](#dependencies)
+* [Why Kibi?](#why-kibi)
+* [Contributors](#contributors)
+* [License](#license)
+
 ## Installation
 
 ### With `cargo`
@@ -37,8 +55,8 @@ You can install Kibi with [`cargo`](https://github.com/rust-lang/cargo/):
 $ cargo install kibi
 ```
 
-Syntax highlighting configuration files are available in the [`config_example/syntax.d`](config_example/syntax.d)
-directory of this repository. They need to be placed in one of the configuration directories mentioned in the
+Syntax highlighting configuration files are available in the [`syntax.d`](syntax.d) directory of this repository. They
+need to be placed in one of the configuration directories mentioned in the
 [Configuration/Syntax Highlighting](#syntax-highlighting) section.
 
 For instance:
@@ -46,13 +64,14 @@ For instance:
 ```bash
 $ cd ~/repos
 $ git clone https://github.com/ilai-deutel/kibi.git
-$ mkdir -p ~/.config/kibi
-$ ln -sr ./kibi/syntax ~/.config/kibi/syntax.d
+$ mkdir -p ~/.local/share/kibi/
+$ ln -sr ./kibi/syntax.d ~/.local/share/kibi/syntax.d
 ```
 
 ### Arch User Repository (Arch Linux)
 
-2 packages are available on the AUR: [`kibi`](https://aur.archlinux.org/packages/kibi/) and [`kibi-git`](https://aur.archlinux.org/packages/kibi-git/).
+2 packages are available on the AUR: [`kibi`](https://aur.archlinux.org/packages/kibi/) and
+[`kibi-git`](https://aur.archlinux.org/packages/kibi-git/).
 
 #### Installation with an AUR helper
 
@@ -101,17 +120,8 @@ kibi --version    # Print version information and exit
 
 #### Global configuration
 
-Kibi can be configured using configuration files. The location of these files is described below.
+Kibi can be configured using a configuration file. It must follow this format:
 
-* Linux / macOS:
-    * `/etc/kibi/config.ini` (system-wide configuration file)
-    * A user-level configuration file can be located located at:
-      * `$XDG_CONFIG_HOME/kibi/config.ini` if environment variable `$XDG_CONFIG_HOME` is defined
-      * `~/.config/kibi/config.ini` otherwise
-* Windows:
-    * `%APPDATA%\kibi\config.ini`
-
-Example configuration file:
 ```ini
 # The size of a tab. Must be > 0.
 tab_stop=4
@@ -124,22 +134,27 @@ message_duration=3
 show_line_numbers=true
 ```
 
-#### Syntax Highlighting
+The location of these files is described below.
 
-Syntax highlighting can be configured using INI files located at:
+##### Linux / macOS
 
-* Linux / macOS:
-    * `/etc/kibi/syntax.d/<file_name>.ini` for system-wide availability
-    * For user-level configuration files:
-      * `$XDG_CONFIG_HOME/kibi/syntax.d/<file_name>.ini` if environment variable `$XDG_CONFIG_HOME` is defined
-      * `~/.config/kibi/syntax.d/<file_name>.ini` otherwise
-* Windows:
-    * `%APPDATA%\kibi\syntax.d\<file_name>.ini`
+kibi follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
-Syntax highlighting configuration follows this format:
+* A user-level configuration file can be located at `$XDG_CONFIG_HOME/kibi/config.ini` if environment variable
+  `$XDG_CONFIG_HOME` is defined, `~/.config/kibi/config.ini` otherwise.
+* A system-wide configuration file can be located at `$XDG_CONFIG_DIRS/kibi/config.ini` if environment variable
+  `$XDG_CONFIG_DIRS` is defined, `/etc/kibi/config.ini` or `/etc/xdg/kibi/config.ini` otherwise.
+
+##### Windows
+
+A configuration file can be located at `%APPDATA%\Kibi\config.ini`.
+
+#### Syntax highlighting
+
+Syntax highlighting can be configured using INI files which follow this format:
 
 ```ini
-### /etc/kibi/syntax.d/rust.ini ###
+### /usr/share/kibi/syntax.d/rust.ini ###
 # Kibi syntax highlighting configuration for Rust
 
 name=Rust
@@ -154,6 +169,23 @@ multiline_string_delim="
 keywords_1=abstract, as, async, await, become, box, break, const, continue, crate, do, dyn, else, enum, extern, false, final, fn, for, if, impl, in, let, loop, macro, match, mod, move, mut, override, priv, pub, ref, return, self, Self, static, struct, super, trait, true, try, type, typeof, unsafe, unsized, use, virtual, where, while, yield
 keywords_2=i8, i16, i32, i64, i128, isize, u8, u16, u32, u36, u128, usize, f32, f64, bool, char, str
 ```
+
+
+The location of these files is described below.
+
+##### Linux / macOS
+
+kibi follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
+
+* User-level syntax highlighting configuration files can be located at `$XDG_DATA_HOME/kibi/syntax.d/<file_name>.ini`
+  if environment variable `$XDG_DATA_HOME` is defined, `~/.local/share/kibi/syntax.d/<file_name>.ini` otherwise.
+* System-wide syntax highlighting configuration files can be located at `$XDG_DATA_DIRS/kibi/syntax.d/<file_name>.ini`
+  if environment variable `$XDG_DATA_DIRS` is defined, `/usr/local/share/kibi/syntax.d/<file_name>.ini` or
+  `/usr/share/kibi/syntax.d/<file_name>.ini` otherwise.
+
+##### Windows
+
+Syntax highlighting configuration files can be located at `%APPDATA%\Kibi\syntax.d\<file_name>.ini`.
 
 ## Comparison with `kilo`
 
@@ -178,7 +210,8 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
 [`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
 
-The following dependencies provide wrappers around system calls. Safe wrappers are preferred to avoid using `unsafe` code as much as possible:
+The following dependencies provide wrappers around system calls. Safe wrappers are preferred to avoid using `unsafe`
+code as much as possible:
 
 * On UNIX systems (Linux, macOS):
     * `libc`

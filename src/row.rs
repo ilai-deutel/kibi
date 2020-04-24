@@ -33,13 +33,13 @@ pub(crate) struct Row {
     pub(crate) chars: Vec<u8>,
     /// How the characters are rendered. In particular, tabs are converted into several spaces, and
     /// bytes may be combined into single UTF-8 characters.
-    pub(crate) render: String,
+    render: String,
     /// Mapping from indices in `self.chars` to the corresponding indices in `self.render`.
     pub(crate) cx2rx: Vec<usize>,
     /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
     pub(crate) rx2cx: Vec<usize>,
     /// The vector of `HLType` for each rendered character.
-    pub(crate) hl: Vec<HLType>,
+    hl: Vec<HLType>,
     /// The final state of the row.
     pub(crate) hl_state: HLState,
     /// If not `None`, the range that is currently matched during a FIND operation.
