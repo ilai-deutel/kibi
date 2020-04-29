@@ -33,6 +33,7 @@ April 2017) and above are supported.</sub>
 * [Installation](#installation)
   * [With cargo](#with-cargo)
   * [Arch User Repository (Arch Linux)](#arch-user-repository-arch-linux)
+  * [Android (with Termux)](#android-with-termux)
   * [Fedora/CentOS](#fedoracentos)
 * [Usage](#usage)
   * [Keyboard shortcuts](#keyboard-shortcuts)
@@ -70,33 +71,51 @@ $ ln -sr ./kibi/syntax.d ~/.local/share/kibi/syntax.d
 
 ### Arch User Repository (Arch Linux)
 
-2 packages are available on the AUR: [`kibi`](https://aur.archlinux.org/packages/kibi/) and
-[`kibi-git`](https://aur.archlinux.org/packages/kibi-git/).
+2 packages are available on the AUR: [`kibi`](https://aur.archlinux.org/packages/kibi) and
+[`kibi-git`](https://aur.archlinux.org/packages/kibi-git).
 
-#### Installation with an AUR helper
+<details><summary>Installation instructions</summary>
 
-For instance, using `yay`:
+1. Installation with an AUR helper, for instance using `yay`:
 
 ```bash
-yay -Syu kibi
+yay -Syu kibi  # or yay -Syu kibi-git
 ```
 
-#### Manual installation with `makepkg`
+2. Install manually with `makepkg`:
 
 ```bash
-git clone https://aur.archlinux.org/kibi.git
+git clone https://aur.archlinux.org/kibi.git  # or git clone https://aur.archlinux.org/kibi-git.git
 cd kibi
 makepkg -si
 ```
+</details>
+
+### Android (with Termux)
+
+Kibi is available as [a Termux package](https://github.com/termux/termux-packages/tree/master/packages/kibi).
+
+<details><summary>Installation instructions</summary>
+
+1. Install Termux:
+
+[![Get it on F-Droid"](https://user-images.githubusercontent.com/10098207/80576418-fe805600-89b9-11ea-82a5-7dc00c0ccc50.png)](https://f-droid.org/repository/browse/?fdid=com.termux)[![Get it on Google Play"](https://user-images.githubusercontent.com/10098207/80576344-e27cb480-89b9-11ea-9fa6-08ec94af10cb.png)](https://play.google.com/store/apps/details?id=com.termux)
+
+2. Install Kibi within Termux: `pkg install kibi`
+</details>
+
 
 ### Fedora/CentOS
 
-Available in [COPR](https://copr.fedorainfracloud.org/coprs/atim/kibi/).
+The package is available in COPR as [`atim/kibi`](https://copr.fedorainfracloud.org/coprs/atim/kibi).
+
+<details><summary>Installation instructions</summary>
 
 ```bash
 sudo dnf copr enable atim/kibi -y
 sudo dnf install kibi
 ```
+</details>
 
 ## Usage
 
