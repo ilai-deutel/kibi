@@ -133,21 +133,18 @@ impl Row {
             let c = line[i];
 
             // At this point, hl_state is Normal or String
-
-            if syntax.hightlight_sl_strings {
-                if let HLState::String(quote) = hl_state {
+            if let HLState::String(quote) = hl_state {
+                self.hl.push(HLType::String);
+                if c == quote {
+                    hl_state = HLState::Normal;
+                } else if c == b'\\' && i != line.len() - 1 {
                     self.hl.push(HLType::String);
-                    if c == quote {
-                        hl_state = HLState::Normal;
-                    } else if c == b'\\' && i != line.len() - 1 {
-                        self.hl.push(HLType::String);
-                    }
-                    continue;
-                } else if c == b'"' || c == b'\'' {
-                    hl_state = HLState::String(c);
-                    self.hl.push(HLType::String);
-                    continue;
                 }
+                continue;
+            } else if syntax.sl_string_quotes.contains(&(c as char)) {
+                hl_state = HLState::String(c);
+                self.hl.push(HLType::String);
+                continue;
             }
 
             let prev_sep = (i == 0) || is_sep(line[i - 1]);

@@ -34,8 +34,8 @@ pub struct Conf {
     pub name: String,
     /// Whether to highlight numbers.
     pub highlight_numbers: bool,
-    /// Whether to highlight single-line strings.
-    pub hightlight_sl_strings: bool,
+    /// Quotes for single-line strings.
+    pub sl_string_quotes: Vec<char>,
     /// The tokens that starts a single-line comment, e.g. "//".
     pub sl_comment_start: Vec<String>,
     /// The tokens that start and end a multi-line comment, e.g. ("/*", "*/").
@@ -74,7 +74,7 @@ impl Conf {
                 "name" => sc.name = pv(val)?,
                 "extensions" => extensions.extend(val.split(',').map(|u| String::from(u.trim()))),
                 "highlight_numbers" => sc.highlight_numbers = pv(val)?,
-                "highlight_strings" => sc.hightlight_sl_strings = pv(val)?,
+                "singleline_string_quotes" => sc.sl_string_quotes = pvs(val)?,
                 "singleline_comment_start" => sc.sl_comment_start = pvs(val)?,
                 "multiline_comment_delims" =>
                     sc.ml_comment_delims = match &val.split(',').collect::<Vec<_>>()[..] {
@@ -89,5 +89,27 @@ impl Conf {
             Ok(())
         })?;
         Ok((sc, extensions))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn syntax_d_files() {
+        let mut file_count = 0;
+        let mut syntax_names = HashSet::new();
+        for path in fs::read_dir("./syntax.d").unwrap() {
+            let (conf, extensions) = Conf::from_file(&path.unwrap().path()).unwrap();
+            assert!(!extensions.is_empty());
+            syntax_names.insert(conf.name);
+            file_count += 1;
+        }
+        assert!(file_count > 0);
+        assert_eq!(file_count, syntax_names.len());
     }
 }
