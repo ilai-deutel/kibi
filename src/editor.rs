@@ -124,12 +124,16 @@ impl StatusMessage {
 
 /// Pretty-format a size in bytes.
 fn format_size(n: u64) -> String {
-    #![allow(clippy::cast_precision_loss)]
-    let quo_rem = successors(Some((n, 0)), |(q, _)| Some((q / 1024, q % 1024)).filter(|u| u.0 > 0));
-    // unwrap(): quo_rem is never empty (since `successors` has an initial value), so _.last()
-    // cannot be None
-    let ((q, r), prefix) = quo_rem.zip(&["", "k", "M", "G", "T", "P", "E", "Z"]).last().unwrap();
-    format!("{:.2$}{}B", q as f32 + r as f32 / 1024., prefix, p = if *prefix == "" { 0 } else { 2 })
+    if n < 1024 {
+        return format!("{}B", n);
+    }
+    // i is the largest value such that 1024 ^ i < n
+    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract -1 from b
+    let i = ((64 - n.leading_zeros()) as f64 / 10.0).ceil() as usize - 1;
+    // Compute the size multiplied by 100 as u64. We get two decimal places
+    // without using float formatting -- which reduces de binary size
+    let q = (100.0 * n as f64 / (1024 << ((i - 1) * 10)) as f64).round() as u64;
+    format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i] as char)
 }
 
 /// `slice_find` returns the index of `needle` in slice `s` if `needle` is a subslice of `s`,
@@ -813,6 +817,8 @@ mod tests {
         assert_eq!(format_size(1536), "1.50kB");
         assert_eq!(format_size(2047), "2.00kB");
         assert_eq!(format_size(2048), "2.00kB");
+        assert_eq!(format_size(1024 * 21 - 5), "21.00kB");
+        assert_eq!(format_size(1024 * 21 - 6), "20.99kB");
         assert_eq!(format_size(1048575), "1024.00kB");
         assert_eq!(format_size(1048576), "1.00MB");
         assert_eq!(format_size(1073741824), "1.00GB");
