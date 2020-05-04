@@ -4,7 +4,7 @@
 
 #![allow(clippy::wildcard_imports)]
 
-use std::{convert::TryInto, env::var, io, sync::mpsc::Receiver};
+use std::{convert::TryInto, env::var, io};
 
 use winapi::um::wincon::*;
 use winapi_util::{console as cons, HandleRef};
@@ -30,7 +30,9 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
     }
 }
 
-pub fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> { Ok(None) }
+pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
+
+pub fn get_windows_size_was_changed() -> bool { false }
 
 /// Set the terminal mode.
 #[allow(clippy::trivially_copy_pass_by_ref)]
