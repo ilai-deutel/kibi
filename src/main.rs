@@ -12,7 +12,7 @@ fn main() -> Result<(), Error> {
     let mut args = std::env::args();
     match (args.nth(1), args.nth(2)) {
         (_, Some(_)) => return Err(Error::TooManyArguments(args.len() - 1)),
-        (Some(arg), _) if arg == "--version" => println!("kibi, v{}", env!("CARGO_PKG_VERSION")),
+        (Some(arg), _) if arg == "--version" => println!(concat!("kibi, v", env!("CARGO_PKG_VERSION"))),
         (file_name, None) => Editor::new(Config::load()?)?.run(file_name)?,
     }
     Ok(())
