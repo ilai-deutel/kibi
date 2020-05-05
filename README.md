@@ -7,7 +7,7 @@ Kibi: A text editor in ≤1024 lines of code, written in Rust
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -270,6 +270,9 @@ This project follows the [all-contributors](https://allcontributors.org/) specif
     <td align="center"><a href="https://github.com/andradei"><img src="https://avatars0.githubusercontent.com/u/2653546?v=4" width="100px;" alt=""/><br /><sub><b>Isaac Andrade</b></sub></a><br /><a href="#ideas-andradei" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/frjol"><img src="https://avatars2.githubusercontent.com/u/4422813?v=4" width="100px;" alt=""/><br /><sub><b>frjol</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/issues?q=author%3Afrjol" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/tim77"><img src="https://avatars0.githubusercontent.com/u/5614476?v=4" width="100px;" alt=""/><br /><sub><b>Artem Polishchuk</b></sub></a><br /><a href="#platform-tim77" title="Packaging/porting to new platform">📦</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/malbarbo"><img src="https://avatars3.githubusercontent.com/u/1678126?v=4" width="100px;" alt=""/><br /><sub><b>Marco A L Barbosa</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=malbarbo" title="Code">💻</a></td>
   </tr>
 </table>
 
