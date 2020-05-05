@@ -58,8 +58,8 @@ jobs:
       before_install: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c rustfmt -c clippy
       install: skip
       script: |
-        cargo fmt -- --check
-        cargo clippy --all-targets -- -D warnings
+        cargo fmt -- --check \
+        && cargo clippy --all-targets -- -D warnings
       rust: nightly
     - name: Clippy (Windows)
       before_install: rustup toolchain install $TRAVIS_RUST_VERSION --allow-downgrade -c clippy
