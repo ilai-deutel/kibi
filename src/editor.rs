@@ -205,7 +205,7 @@ impl Editor {
     fn loop_until_keypress(&mut self) -> Result<Key, Error> {
         loop {
             // Handle window size if a signal has be received
-            if sys::get_windows_size_was_changed() {
+            if sys::has_window_size_changed() {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }

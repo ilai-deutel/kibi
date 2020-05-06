@@ -32,7 +32,7 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
 
 pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
-pub fn get_windows_size_was_changed() -> bool { false }
+pub fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode.
 #[allow(clippy::trivially_copy_pass_by_ref)]
