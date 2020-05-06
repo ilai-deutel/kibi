@@ -3,16 +3,22 @@
 //! UNIX-specific structs and functions. Will be imported as `sys` on UNIX systems.
 
 use std::env::var;
-use std::sync::mpsc::{self, Receiver};
+use std::sync::atomic::{AtomicBool, Ordering};
 
-use libc::{STDIN_FILENO, STDOUT_FILENO, TIOCGWINSZ, VMIN, VTIME};
-use nix::{pty::Winsize, sys::termios};
-use signal_hook::{iterator::Signals, SIGWINCH};
-
-// On UNIX systems, Termios represents the terminal mode.
-pub use nix::sys::termios::Termios as TermMode;
+// On UNIX systems, termios represents the terminal mode.
+pub use libc::termios as TermMode;
+use libc::{c_int, c_void, sigaction, sighandler_t, siginfo_t, winsize};
+use libc::{SA_SIGINFO, STDIN_FILENO, STDOUT_FILENO, TCSAFLUSH, TIOCGWINSZ, VMIN, VTIME};
 
 use crate::Error;
+
+fn cerr(err: c_int) -> Result<(), Error> {
+    if err < 0 {
+        Err(std::io::Error::last_os_error().into())
+    } else {
+        Ok(())
+    }
+}
 
 /// Return directories following the XDG Base Directory Specification
 ///
@@ -52,42 +58,55 @@ pub fn data_dirs() -> Vec<String> {
 /// populated.
 /// This ioctl is described here: <http://man7.org/linux/man-pages/man4/tty_ioctl.4.html>
 pub fn get_window_size() -> Result<(usize, usize), Error> {
-    nix::ioctl_read_bad!(get_ws, TIOCGWINSZ, Winsize);
-
-    let mut maybe_ws = std::mem::MaybeUninit::<Winsize>::uninit();
-
-    unsafe { get_ws(STDOUT_FILENO, maybe_ws.as_mut_ptr()).ok().map(|_| maybe_ws.assume_init()) }
+    let mut maybe_ws = std::mem::MaybeUninit::<winsize>::uninit();
+    cerr(unsafe { libc::ioctl(STDOUT_FILENO, TIOCGWINSZ, maybe_ws.as_mut_ptr()) })
+        .map_or(None, |_| unsafe { Some(maybe_ws.assume_init()) })
         .filter(|ws| ws.ws_col != 0 && ws.ws_row != 0)
         .map_or(Err(Error::InvalidWindowSize), |ws| Ok((ws.ws_row as usize, ws.ws_col as usize)))
 }
 
-/// Return a MPSC receiver that receives a message whenever the window size is updated.
-pub fn get_window_size_update_receiver() -> Result<Option<Receiver<()>>, Error> {
-    // Create a channel for receiving window size update requests
-    let (ws_changed_tx, ws_changed_rx) = mpsc::sync_channel(1);
-    // Spawn a new thread that will push to the aforementioned channel every time the SIGWINCH
-    // signal is received
-    let signals = Signals::new(&[SIGWINCH])?;
-    std::thread::spawn(move || signals.forever().for_each(|_| ws_changed_tx.send(()).unwrap()));
-    Ok(Some(ws_changed_rx))
+/// Register a signal handler that sets a global variable when the window size changes.
+/// After calling this function, use has_window_size_changed to query the global variable.
+pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
+    #[no_mangle]
+    extern "C" fn handle_window_size_changed(_: c_int, _: *mut siginfo_t, _: *mut c_void) {
+        WIN_CHANGED.store(true, Ordering::Relaxed);
+    }
+    unsafe {
+        let mut maybe_sa = std::mem::MaybeUninit::<sigaction>::uninit();
+        cerr(libc::sigemptyset(&mut (*maybe_sa.as_mut_ptr()).sa_mask))?;
+        // We could use sa_handler here, however, sigaction defined in libc does not have
+        // sa_handler field, so we use sa_sigaction instead.
+        (*maybe_sa.as_mut_ptr()).sa_flags = SA_SIGINFO;
+        (*maybe_sa.as_mut_ptr()).sa_sigaction = handle_window_size_changed as sighandler_t;
+        cerr(libc::sigaction(libc::SIGWINCH, maybe_sa.as_ptr(), std::ptr::null_mut()))
+    }
 }
 
+static WIN_CHANGED: AtomicBool = AtomicBool::new(false);
+
+/// Check if the windows size has changed since the last call to this function.
+/// The register_winsize_change_signal_handler needs to be called before this function.
+pub fn has_window_size_changed() -> bool { WIN_CHANGED.swap(false, Ordering::Relaxed) }
+
 /// Set the terminal mode.
-pub fn set_term_mode(term: &TermMode) -> Result<(), nix::Error> {
-    termios::tcsetattr(STDIN_FILENO, termios::SetArg::TCSAFLUSH, term)
+pub fn set_term_mode(term: &TermMode) -> Result<(), Error> {
+    cerr(unsafe { libc::tcsetattr(STDIN_FILENO, TCSAFLUSH, term) })
 }
 
 /// Setup the termios to enable raw mode, and return the original termios.
 ///
 /// termios manual is available at: <http://man7.org/linux/man-pages/man3/termios.3.html>
 pub fn enable_raw_mode() -> Result<TermMode, Error> {
-    let orig_termios = termios::tcgetattr(STDIN_FILENO)?;
-    let mut term = orig_termios.clone();
-    termios::cfmakeraw(&mut term);
+    let mut maybe_term = std::mem::MaybeUninit::<TermMode>::uninit();
+    let orig_term = cerr(unsafe { libc::tcgetattr(STDIN_FILENO, maybe_term.as_mut_ptr()) })
+        .map(|_| unsafe { maybe_term.assume_init() })?;
+    let mut term = orig_term;
+    unsafe { libc::cfmakeraw(&mut term) };
     // Set the minimum number of characters for non-canonical reads
-    term.control_chars[VMIN] = 0;
+    term.c_cc[VMIN] = 0;
     // Set the timeout in deciseconds for non-canonical reads
-    term.control_chars[VTIME] = 1;
+    term.c_cc[VTIME] = 1;
     set_term_mode(&term)?;
-    Ok(orig_termios)
+    Ok(orig_term)
 }

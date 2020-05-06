@@ -2,7 +2,6 @@
 
 use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::sync::mpsc::{Receiver, TryRecvError};
 use std::{fmt::Display, fs::File, path::Path, thread, time::Instant};
 
 use crate::row::{HLState, Row};
@@ -102,9 +101,6 @@ pub struct Editor {
     syntax: SyntaxConf,
     /// The number of bytes contained in `rows`. This excludes new lines.
     n_bytes: u64,
-    /// A channel receiver for the "window size changed" message. A message is received shortly
-    /// after a SIGWINCH signal is received.
-    ws_changed_receiver: Option<Receiver<()>>,
     /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
 }
@@ -146,10 +142,10 @@ impl Editor {
     /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
     /// or when obtaining the terminal window size.
     pub fn new(config: Config) -> Result<Self, Error> {
+        sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
         editor.quit_times = config.quit_times;
         editor.config = config;
-        editor.ws_changed_receiver = sys::get_window_size_update_receiver()?;
 
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
@@ -209,16 +205,9 @@ impl Editor {
     fn loop_until_keypress(&mut self) -> Result<Key, Error> {
         loop {
             // Handle window size if a signal has be received
-            match self.ws_changed_receiver.as_ref().map(Receiver::try_recv) {
-                // If there is no receiver or no "window size updated" signal has been received, do
-                // nothing.
-                None | Some(Err(TryRecvError::Empty)) => (),
-                // A "window size updated" signal has been received
-                Some(Ok(())) => {
-                    self.update_window_size()?;
-                    self.refresh_screen()?;
-                }
-                Some(Err(err)) => return Err(Error::MPSCTryRecv(err)),
+            if sys::has_window_size_changed() {
+                self.update_window_size()?;
+                self.refresh_screen()?;
             }
             let mut bytes = io::stdin().bytes();
             // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on the next
