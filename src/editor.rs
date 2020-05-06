@@ -128,12 +128,12 @@ fn format_size(n: u64) -> String {
         return format!("{}B", n);
     }
     // i is the largest value such that 1024 ^ i < n
-    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract -1 from b
-    let i = ((64 - n.leading_zeros()) as f64 / 10.0).ceil() as usize - 1;
-    // Compute the size multiplied by 100 as u64. We get two decimal places
-    // without using float formatting -- which reduces de binary size
-    let q = (100.0 * n as f64 / (1024 << ((i - 1) * 10)) as f64).round() as u64;
-    format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i] as char)
+    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1 from it
+    let i = (64 - n.leading_zeros() + 9) / 10 - 1;
+    // Compute the size with two decimal places (rounded down) as the last two digits of q
+    // This avoid float formatting reducing the binary size
+    let q = 100 * n / (1024 << ((i - 1) * 10));
+    format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i as usize] as char)
 }
 
 /// `slice_find` returns the index of `needle` in slice `s` if `needle` is a subslice of `s`,
@@ -815,12 +815,18 @@ mod tests {
         assert_eq!(format_size(1023), "1023B");
         assert_eq!(format_size(1024), "1.00kB");
         assert_eq!(format_size(1536), "1.50kB");
-        assert_eq!(format_size(2047), "2.00kB");
-        assert_eq!(format_size(2048), "2.00kB");
-        assert_eq!(format_size(1024 * 21 - 5), "21.00kB");
-        assert_eq!(format_size(1024 * 21 - 6), "20.99kB");
-        assert_eq!(format_size(1048575), "1024.00kB");
-        assert_eq!(format_size(1048576), "1.00MB");
-        assert_eq!(format_size(1073741824), "1.00GB");
+        // round down!
+        assert_eq!(format_size(21 * 1024 - 11), "20.98kB");
+        assert_eq!(format_size(21 * 1024 - 10), "20.99kB");
+        assert_eq!(format_size(21 * 1024 - 3), "20.99kB");
+        assert_eq!(format_size(21 * 1024), "21.00kB");
+        assert_eq!(format_size(21 * 1024 + 3), "21.00kB");
+        assert_eq!(format_size(21 * 1024 + 10), "21.00kB");
+        assert_eq!(format_size(21 * 1024 + 11), "21.01kB");
+        assert_eq!(format_size(1024 * 1024 - 1), "1023.99kB");
+        assert_eq!(format_size(1024 * 1024), "1.00MB");
+        assert_eq!(format_size(1024 * 1024 + 1), "1.00MB");
+        assert_eq!(format_size(100 * 1024 * 1024 * 1024), "100.00GB");
+        assert_eq!(format_size(313 * 1024 * 1024 * 1024 * 1024), "313.00TB");
     }
 }
