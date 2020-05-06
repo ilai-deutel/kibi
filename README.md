@@ -232,13 +232,10 @@ This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text ed
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
 [`toml`](https://crates.io/crates/toml) or [`ansi-escapes`](https://crates.io/crates/ansi-escapes) would be cheating.
 
-The following dependencies provide wrappers around system calls. Safe wrappers are preferred to avoid using `unsafe`
-code as much as possible:
+The following dependencies provide wrappers around system calls.
 
 * On UNIX systems (Linux, macOS):
     * `libc`
-    * `nix`
-    * `signal-hook`
 * On Windows:
     * `winapi`
     * `winapi-util`
