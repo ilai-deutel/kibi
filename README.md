@@ -282,6 +282,13 @@ This project follows the [all-contributors](https://allcontributors.org/) specif
 
 ## License
 
-Kibi is distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+This project is licensed under either of
 
-See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT), and [COPYRIGHT](COPYRIGHT) for details.
+* [Apache License, Version 2.0](LICENSE-APACHE)
+* [MIT License](LICENSE-MIT)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in Kibi by you shall be dual licensed as above, without any additional terms or conditions.
