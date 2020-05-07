@@ -1,10 +1,22 @@
 # Changelog
 
+## [Next release]
+
+### Added
+- Add syntax configuration `singleline_string_quotes`, which specifies the list of characters to consider as quote (e.g. `", '` for Rust, `"` for JSON) ([#46](https://github.com/ilai-deutel/kibi/pull/46))
+
+### Changes
+- Internal code changes to reduce the binary size, and remove dependencies `nix` and `signal-hooks` ([#50](https://github.com/ilai-deutel/kibi/pull/50), [#48](https://github.com/ilai-deutel/kibi/pull/48))
+
+### Removed
+- Remove boolean syntax configuration `highlight_strings`; use `singleline_string_quotes` instead ([#46](https://github.com/ilai-deutel/kibi/pull/46))
+
+
 ## [0.2.0] - 2020-04-24
 
 ### Added
 - Add support for Windows 10 ([#26](https://github.com/ilai-deutel/kibi/issues/26), [#34](https://github.com/ilai-deutel/kibi/issues/34), [#36](https://github.com/ilai-deutel/kibi/issues/36))
-- Add a `--version` argument to the binary ([#31](https://github.com/ilai-deutel/kibi/issues/31))
+- Add a `--version` argument to the binary ([#31](https://github.com/ilai-deutel/kibi/pull/31))
 
 ### Changed
 - Simplify `Row::update_syntax()`
@@ -47,6 +59,7 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the [crates.io
 ## [0.1.0] - 2020-02-11 [YANKED]
 Initial release
 
+[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0
 [0.1.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.1.2
 [0.1.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.1.1
