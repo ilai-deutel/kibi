@@ -182,7 +182,7 @@ Syntax highlighting can be configured using INI files which follow this format:
 name=Rust
 extensions=rs
 highlight_numbers=true
-singleline_string_quotes=", '
+singleline_string_quotes="
 singleline_comment_start=//
 multiline_comment_delims=/*, */
 ; In Rust, the multi-line string delimiter is the same as the single-line string delimiter
