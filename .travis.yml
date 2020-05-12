@@ -5,7 +5,7 @@ env:
   global:
     - HOST=x86_64-unknown-linux-gnu
     - RUSTFLAGS='-D warnings'
-    - TOKEI_VERSION=v11.1.0
+    - TOKEI_VERSION=v11.1.1
 
 jobs:
   include:
@@ -42,8 +42,7 @@ jobs:
     # Static checks
     - name: LOC
       before_install: skip
-      install: skip
-      before_script: |
+      install: |
         mkdir -pv ~/.local/bin \
         && curl -L "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TARGET:-$HOST}.tar.gz" \
         | tar -xzvf - -C ~/.local/bin tokei
@@ -69,6 +68,7 @@ jobs:
       env: TARGET=x86_64-pc-windows-gnu
       os: windows
 #    - name: Dependency Audit
+#      before_install: skip
 #      install: cargo install cargo-audit
 #      script: cargo audit
 #      cache: cargo
