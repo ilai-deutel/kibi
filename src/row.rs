@@ -16,7 +16,7 @@ pub enum HLState {
     Normal,
     /// A multi-line comment has been open, but not yet closed.
     MultiLineComment,
-    /// A string has been open with the given quote character (b'\'' or b'"'), but not yet closed.
+    /// A string has been open with the given quote character (for instance b'\'' or b'"'), but not yet closed.
     String(u8),
     /// A multi-line string has been open, but not yet closed.
     MultiLineString,
