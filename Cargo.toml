@@ -15,7 +15,7 @@ include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
 unicode-width = "0.1.7"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.70"
+libc = "0.2.71"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.8", default-features = false, features = ["wincon"] }
