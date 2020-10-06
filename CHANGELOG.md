@@ -1,12 +1,12 @@
 # Changelog
 
-## [Next release]
+## [0.2.1] - 2020-10-05
 
 ### Added
 - Add syntax configuration `singleline_string_quotes`, which specifies the list of characters to consider as quote (e.g. `", '` for Rust, `"` for JSON) ([#46](https://github.com/ilai-deutel/kibi/pull/46))
 
 ### Changes
-- Internal code changes to reduce the binary size, and remove dependencies `nix` and `signal-hooks` ([#50](https://github.com/ilai-deutel/kibi/pull/50), [#48](https://github.com/ilai-deutel/kibi/pull/48))
+- Internal code changes to reduce the binary size, and remove dependencies `nix` and `signal-hooks` ([#48](https://github.com/ilai-deutel/kibi/pull/48), [#49](https://github.com/ilai-deutel/kibi/pull/49), [#50](https://github.com/ilai-deutel/kibi/pull/50))
 
 ### Removed
 - Remove boolean syntax configuration `highlight_strings`; use `singleline_string_quotes` instead ([#46](https://github.com/ilai-deutel/kibi/pull/46))
@@ -59,7 +59,8 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the [crates.io
 ## [0.1.0] - 2020-02-11 [YANKED]
 Initial release
 
-[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.0...HEAD
+[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1
 [0.2.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0
 [0.1.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.1.2
 [0.1.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.1.1
