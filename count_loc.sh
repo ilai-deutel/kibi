@@ -13,7 +13,7 @@ set -euo pipefail
 declare -i file_loc total_loc left_col_width
 declare -A file_locs
 
-paths=("$(dirname "${BASH_SOURCE[0]}")/src"/*.rs)
+paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/src"/*.rs)
 
 left_col_width=6
 total_loc=0
@@ -26,7 +26,7 @@ for path in "${paths[@]}"; do
   code=$(grep -v -P '^\s*#!\[(?:allow|warn|deny)\(clippy::' "$path")
   # Ignore everything after #[cfg(test)]
   echo "${code%'#[cfg(test)]'*}" > "$tempfile"
-  file_loc=$(tokei "$tempfile" -t=Rust -o json | jq .inner.Rust.code)
+  file_loc=$(tokei "$tempfile" -t=Rust -o json | jq .Rust.code)
   rm "$tempfile"
 
   file_locs[$path]=$file_loc
