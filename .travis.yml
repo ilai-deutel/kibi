@@ -5,7 +5,7 @@ env:
   global:
     - HOST=x86_64-unknown-linux-gnu
     - RUSTFLAGS='-D warnings'
-    - TOKEI_VERSION=v11.1.1
+    - TOKEI_VERSION=v12.0.4
 
 jobs:
   include:
