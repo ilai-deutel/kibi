@@ -1,0 +1,24 @@
+{
+    "MD003": {
+        "style": "atx"
+    },
+    "MD013": {
+        "tables": false
+    },
+    "MD024": {
+        "siblings_only": true
+    },
+    "MD026": {
+        "punctuation": ".,;:!。，；：！"
+    },
+    "MD029": {
+        "style": "ordered"
+    },
+    "MD033": {
+        "allowed_elements": [
+            "details",
+            "summary",
+            "sup"
+        ]
+    }
+}
