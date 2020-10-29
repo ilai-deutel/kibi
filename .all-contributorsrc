@@ -78,6 +78,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "voidpin",
+      "name": "pin",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/35956139?v=4",
+      "profile": "https://github.com/voidpin",
+      "contributions": [
+        "platform"
+      ]
     }
   ],
   "contributorsPerLine": 7,
