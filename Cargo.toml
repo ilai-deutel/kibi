@@ -23,7 +23,7 @@ winapi-util = "0.1.4"
 
 [dev-dependencies]
 tempfile = "3.1.0"
-serial_test = "0.5.0"
+serial_test = "0.5.1"
 
 [badges]
 travis-ci = { repository = "ilai-deutel/kibi", branch = "master" }
