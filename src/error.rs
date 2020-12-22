@@ -13,7 +13,7 @@ pub enum Error {
     /// error message.
     Config(std::path::PathBuf, usize, String),
     /// Too many arguments given to kibi. The attribute corresponds to the total number of command
-    /// line armuments.
+    /// line arguments.
     TooManyArguments(usize),
 }
 
