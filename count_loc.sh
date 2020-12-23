@@ -23,7 +23,7 @@ for path in "${paths[@]}"; do
 
   tempfile=$(mktemp --suffix .rs)
   # Ignore Clippy directives
-  code=$(grep -v -P '^\s*#!\[(?:allow|warn|deny)\(clippy::' "$path")
+  code=$(grep -v -P '^\s*#!?\[(?:allow|warn|deny)\(clippy::' "$path")
   # Ignore everything after #[cfg(test)]
   echo "${code%'#[cfg(test)]'*}" > "$tempfile"
   file_loc=$(tokei "$tempfile" -t=Rust -o json | jq .Rust.code)

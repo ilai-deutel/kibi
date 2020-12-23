@@ -145,6 +145,7 @@ impl Editor {
     ///
     /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
     /// or when obtaining the terminal window size.
+    #[allow(clippy::field_reassign_with_default)] // False positive : https://github.com/rust-lang/rust-clippy/issues/6312
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
@@ -570,7 +571,7 @@ impl Editor {
 
     /// Process a key that has been pressed, when not in prompt mode. Returns whether the program
     /// should exit, and optionally the prompt mode to switch to.
-    fn process_keypress(&mut self, key: &Key) -> Result<(bool, Option<PromptMode>), Error> {
+    fn process_keypress(&mut self, key: &Key) -> (bool, Option<PromptMode>) {
         // This won't be mutated, unless key is Key::Character(EXIT)
         let mut quit_times = self.config.quit_times;
         let mut prompt_mode = None;
@@ -598,7 +599,7 @@ impl Editor {
             Key::Char(EXIT) => {
                 quit_times = self.quit_times - 1;
                 if !self.dirty || quit_times == 0 {
-                    return Ok((true, None));
+                    return (true, None);
                 }
                 let times = if quit_times > 1 { "times" } else { "time" };
                 set_status!(self, "Press Ctrl+Q {} more {} to quit.", quit_times, times);
@@ -618,7 +619,7 @@ impl Editor {
             Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;
-        Ok((false, prompt_mode))
+        (false, prompt_mode)
     }
 
     /// Try to find a query, this is called after pressing Ctrl-F and for each key that is pressed.
@@ -667,7 +668,7 @@ impl Editor {
             // TODO: Can we avoid using take()?
             self.prompt_mode = match self.prompt_mode.take() {
                 // process_keypress returns (should_quit, prompt_mode)
-                None => match self.process_keypress(&key)? {
+                None => match self.process_keypress(&key) {
                     (true, _) => return Ok(()),
                     (false, prompt_mode) => prompt_mode,
                 },
