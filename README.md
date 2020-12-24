@@ -175,6 +175,7 @@ kibi --version    # Print version information and exit
 | Ctrl-G            | Go to `<line number>[:<column number>]` position              |
 | Ctrl-Q            | Quit                                                          |
 | Ctrl-D            | Duplicate the current row                                     |
+| Ctrl-E            | Execute an external command and paste its output              |
 
 ### Configuration
 
@@ -273,6 +274,7 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * Syntax highlighting: multi-line strings
 * *Save as* prompt when no file name has been provided
 * Command to duplicate the current row
+* Ability to execute an external command from the editor and paste its output
 * Memory safety, thanks to Rust!
 * Many bug fixes
 

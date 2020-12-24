@@ -1,5 +1,11 @@
 # Changelog
 
+## [Next release]
+
+### Added
+- Add syntax highlighting configuration for V ([#78](https://github.com/ilai-deutel/kibi/pull/78))
+- Add the ability to execute external commands from the editor ([#83](https://github.com/ilai-deutel/kibi/pull/83))
+
 ## [0.2.1] - 2020-10-05
 
 ### Added
