@@ -445,17 +445,15 @@ impl Editor {
     /// Save the text to a file and handle all errors. Errors and success messages will be printed
     /// to the status bar. Return whether the file was successfully saved.
     fn save_and_handle_io_errors(&mut self, file_name: &str) -> bool {
-        match self.save(file_name) {
-            Ok(written) => {
-                self.dirty = false;
-                set_status!(self, "{} written to {}", format_size(written as u64), file_name);
-                true
-            }
-            Err(err) => {
-                set_status!(self, "Can't save! I/O error: {}", err);
-                false
-            }
+        let saved = self.save(file_name);
+        // Print error or success message to the status bar
+        match saved.as_ref() {
+            Ok(w) => set_status!(self, "{} written to {}", format_size(*w as u64), file_name),
+            Err(err) => set_status!(self, "Can't save! I/O error: {}", err),
         }
+        // If save was successful, set dirty to false.
+        self.dirty &= saved.is_err();
+        saved.is_ok()
     }
 
     /// Save to a file after obtaining the file path from the prompt. If successful, the `file_name`
