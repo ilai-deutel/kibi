@@ -98,6 +98,14 @@
       "contributions": [
         "platform"
       ]
+    },
+    {
+      "login": "Uniminin",
+      "name": "Uniminin",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/42061747?v=4",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
   ]
 }
