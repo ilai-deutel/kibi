@@ -2,7 +2,7 @@
 
 use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::{fmt::Display, fs::File, path::Path, thread, time::Instant};
+use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
 
 use crate::row::{HLState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
@@ -15,10 +15,11 @@ const SAVE: u8 = ctrl_key(b'S');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
 const DUPLICATE: u8 = ctrl_key(b'D');
+const EXECUTE: u8 = ctrl_key(b'E');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str =
-    "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate";
+    "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate | Ctrl-E = execute";
 
 /// set_status! sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
@@ -445,17 +446,15 @@ impl Editor {
     /// Save the text to a file and handle all errors. Errors and success messages will be printed
     /// to the status bar. Return whether the file was successfully saved.
     fn save_and_handle_io_errors(&mut self, file_name: &str) -> bool {
-        match self.save(file_name) {
-            Ok(written) => {
-                self.dirty = false;
-                set_status!(self, "{} written to {}", format_size(written as u64), file_name);
-                true
-            }
-            Err(err) => {
-                set_status!(self, "Can't save! I/O error: {}", err);
-                false
-            }
+        let saved = self.save(file_name);
+        // Print error or success message to the status bar
+        match saved.as_ref() {
+            Ok(w) => set_status!(self, "{} written to {}", format_size(*w as u64), file_name),
+            Err(err) => set_status!(self, "Can't save! I/O error: {}", err),
         }
+        // If save was successful, set dirty to false.
+        self.dirty &= saved.is_err();
+        saved.is_ok()
     }
 
     /// Save to a file after obtaining the file path from the prompt. If successful, the `file_name`
@@ -616,6 +615,7 @@ impl Editor {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
+            Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;
@@ -699,6 +699,8 @@ enum PromptMode {
     Find(String, CursorState, Option<usize>),
     /// GoTo(prompt buffer)
     GoTo(String),
+    /// Execute(prompt buffer)
+    Execute(String),
 }
 
 // TODO: Use trait with mode_status_msg and process_keypress, implement the trait for separate
@@ -710,6 +712,7 @@ impl PromptMode {
             Self::Save(buffer) => format!("Save as: {}", buffer),
             Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {}", buffer),
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {}", buffer),
+            Self::Execute(buffer) => format!("Command to execute: {}", buffer),
         }
     }
 
@@ -762,6 +765,22 @@ impl PromptMode {
                         }
                         (Err(e), _) | (_, Err(e)) => set_status!(ed, "Parsing error: {}", e),
                         (Ok(None), _) => (),
+                    }
+                }
+            },
+            Self::Execute(b) => match process_prompt_keypress(b, key) {
+                PromptState::Active(b) => return Ok(Some(Self::Execute(b))),
+                PromptState::Cancelled => (),
+                PromptState::Completed(b) => {
+                    let mut args = b.split_whitespace();
+                    match Command::new(args.next().unwrap_or_default()).args(args).output() {
+                        Ok(out) if !out.status.success() =>
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) => out.stdout.into_iter().for_each(|c| match c {
+                            b'\n' => ed.insert_new_line(),
+                            c => ed.insert_byte(c),
+                        }),
+                        Err(e) => set_status!(ed, "{}", e),
                     }
                 }
             },

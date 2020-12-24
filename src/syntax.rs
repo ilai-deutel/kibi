@@ -94,10 +94,10 @@ impl Conf {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use std::fs;
 
     use super::*;
-    use std::collections::HashSet;
 
     #[test]
     fn syntax_d_files() {
