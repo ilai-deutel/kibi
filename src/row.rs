@@ -5,9 +5,10 @@
 
 use std::iter::repeat;
 
+use unicode_width::UnicodeWidthChar;
+
 use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
 use crate::syntax::{Conf as SyntaxConf, HLType};
-use unicode_width::UnicodeWidthChar;
 
 /// The "Highlight State" of the row
 #[derive(Clone, Copy, PartialEq)]
