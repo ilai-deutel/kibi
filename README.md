@@ -41,6 +41,7 @@ April 2017) and above are supported.</sub>
   * [Arch User Repository (Arch Linux)](#arch-user-repository-arch-linux)
   * [Android (with Termux)](#android-with-termux)
   * [Fedora/CentOS](#fedoracentos)
+  * [NetBSD](#netbsd)
 * [Usage](#usage)
   * [Keyboard shortcuts](#keyboard-shortcuts)
   * [Configuration](#configuration)
@@ -131,6 +132,28 @@ The package is available in COPR as [`atim/kibi`](https://copr.fedorainfracloud.
 ```bash
 sudo dnf copr enable atim/kibi -y
 sudo dnf install kibi
+```
+
+</details>
+
+### NetBSD
+
+Kibi is available from [the official repos](https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc/editors/kibi/README.html).
+
+
+<details><summary>Installation instructions</summary>
+
+Install using:
+
+```bash
+pkgin install kibi
+```
+
+or build from source:
+
+```bash
+cd /usr/pkgsrc/editors/kibi
+make install
 ```
 
 </details>
