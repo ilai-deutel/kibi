@@ -4,7 +4,7 @@ use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
 use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
 
-use crate::row::{HLState, Row};
+use crate::row::{HlState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
@@ -301,7 +301,7 @@ impl Editor {
     /// has changed during the update (for instance, it is now in "multi-line comment" state, keep
     /// updating the next rows
     fn update_row(&mut self, y: usize, ignore_following_rows: bool) {
-        let mut hl_state = if y > 0 { self.rows[y - 1].hl_state } else { HLState::Normal };
+        let mut hl_state = if y > 0 { self.rows[y - 1].hl_state } else { HlState::Normal };
         for row in self.rows.iter_mut().skip(y) {
             let previous_hl_state = row.hl_state;
             hl_state = row.update(&self.syntax, hl_state, self.config.tab_stop);
@@ -315,7 +315,7 @@ impl Editor {
 
     /// Update all the rows.
     fn update_all_rows(&mut self) {
-        let mut hl_state = HLState::Normal;
+        let mut hl_state = HlState::Normal;
         for row in &mut self.rows {
             hl_state = row.update(&self.syntax, hl_state, self.config.tab_stop);
         }

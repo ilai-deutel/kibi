@@ -4,7 +4,7 @@
 #[derive(Debug)]
 pub enum Error {
     /// Wrapper around `std::io::Error`
-    IO(std::io::Error),
+    Io(std::io::Error),
     /// Error returned when the window size obtained through a system call is invalid.
     InvalidWindowSize,
     /// Error setting or retrieving the cursor position.
@@ -19,5 +19,5 @@ pub enum Error {
 
 impl From<std::io::Error> for Error {
     /// Convert an IO Error into a Kibi Error.
-    fn from(err: std::io::Error) -> Self { Self::IO(err) }
+    fn from(err: std::io::Error) -> Self { Self::Io(err) }
 }
