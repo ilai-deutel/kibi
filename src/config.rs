@@ -45,9 +45,9 @@ impl Config {
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
-        let dirs: Vec<_> = cdirs().iter().map(|d| PathBuf::from(d).join("config.ini")).collect();
+        let paths: Vec<_> = cdirs().iter().map(|d| PathBuf::from(d).join("config.ini")).collect();
 
-        for path in dirs.iter().filter(|p| p.exists()).rev() {
+        for path in paths.iter().filter(|p| p.is_file()).rev() {
             process_ini_file(path, &mut |key, value| {
                 match key {
                     "tab_stop" => match parse_value(value)? {
@@ -74,7 +74,8 @@ impl Config {
 /// function will update a configuration instance.
 pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
-    for (i, line) in BufReader::new(File::open(path)?).lines().enumerate() {
+    let file = File::open(path).map_err(|e| ConfErr(path.into(), 0, e.to_string()))?;
+    for (i, line) in BufReader::new(file).lines().enumerate() {
         let (i, line) = (i + 1, line?);
         let mut parts = line.trim_start().splitn(2, '=');
         match (parts.next(), parts.next()) {
@@ -176,6 +177,18 @@ mod tests {
         match ini_processing_helper(ini_content, kv_fn) {
             Ok(_) => panic!("process_ini_file should return an error"),
             Err(Error::Config(_, 3, s)) if s == "test error" => (),
+            Err(e) => panic!("Unexpected error {:?}", e),
+        }
+    }
+
+    #[test]
+    fn ini_processing_invalid_path() {
+        let kv_fn = &mut |_: &str, _: &str| Ok(());
+        let tmp_dir = TempDir::new().expect("Could not create temporary directory");
+        let tmp_path = tmp_dir.path().join("path_does_not_exist.ini");
+        match process_ini_file(&tmp_path, kv_fn) {
+            Ok(_) => panic!("process_ini_file should return an error"),
+            Err(Error::Config(path, 0, _)) if path == tmp_path => (),
             Err(e) => panic!("Unexpected error {:?}", e),
         }
     }

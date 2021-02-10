@@ -67,7 +67,7 @@ impl Conf {
         Ok(None)
     }
     /// Load a `SyntaxConf` from file.
-    fn from_file(path: &Path) -> Result<(Self, Vec<String>), Error> {
+    pub fn from_file(path: &Path) -> Result<(Self, Vec<String>), Error> {
         let (mut sc, mut extensions) = (Self::default(), Vec::new());
         config::process_ini_file(path, &mut |key, val| {
             match key {
@@ -97,6 +97,8 @@ mod tests {
     use std::collections::HashSet;
     use std::fs;
 
+    use tempfile::TempDir;
+
     use super::*;
 
     #[test]
@@ -111,5 +113,16 @@ mod tests {
         }
         assert!(file_count > 0);
         assert_eq!(file_count, syntax_names.len());
+    }
+
+    #[test]
+    fn conf_from_invalid_path() {
+        let tmp_dir = TempDir::new().expect("Could not create temporary directory");
+        let tmp_path = tmp_dir.path().join("path_does_not_exist.ini");
+        match Conf::from_file(&tmp_path) {
+            Ok(_) => panic!("Conf::from_file should return an error"),
+            Err(Error::Config(path, 0, _)) if path == tmp_path => (),
+            Err(e) => panic!("Unexpected error {:?}", e),
+        }
     }
 }
