@@ -10,19 +10,19 @@ use crate::{sys, Error};
 /// to the discriminant, modulo 100. The colors are described here:
 /// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
 #[derive(PartialEq, Copy, Clone)]
-pub enum HLType {
+pub enum HlType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
     Match = 46,      // Cyan
     String = 32,     // Green
-    MLString = 132,  // Green
+    MlString = 132,  // Green
     Comment = 34,    // Blue
-    MLComment = 134, // Blue
+    MlComment = 134, // Blue
     Keyword1 = 33,   // Yellow
     Keyword2 = 35,   // Magenta
 }
 
-impl Display for HLType {
+impl Display for HlType {
     /// Write the ANSI color escape sequence for the `HLType` using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "\x1b[{}m", (*self as u32) % 100) }
 }
@@ -44,7 +44,7 @@ pub struct Conf {
     pub ml_string_delim: Option<String>,
     /// Keywords to highlight and there corresponding HLType (typically
     /// HLType::Keyword1 or HLType::Keyword2)
-    pub keywords: Vec<(HLType, Vec<String>)>,
+    pub keywords: Vec<(HlType, Vec<String>)>,
 }
 
 impl Conf {
@@ -82,8 +82,8 @@ impl Conf {
                         d => return Err(format!("Expected 2 delimiters, got {}", d.len())),
                     },
                 "multiline_string_delim" => sc.ml_string_delim = Some(pv(val)?),
-                "keywords_1" => sc.keywords.push((HLType::Keyword1, pvs(val)?)),
-                "keywords_2" => sc.keywords.push((HLType::Keyword2, pvs(val)?)),
+                "keywords_1" => sc.keywords.push((HlType::Keyword1, pvs(val)?)),
+                "keywords_2" => sc.keywords.push((HlType::Keyword2, pvs(val)?)),
                 _ => return Err(format!("Invalid key: {}", key)),
             }
             Ok(())

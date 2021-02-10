@@ -8,11 +8,11 @@ use std::iter::repeat;
 use unicode_width::UnicodeWidthChar;
 
 use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
-use crate::syntax::{Conf as SyntaxConf, HLType};
+use crate::syntax::{Conf as SyntaxConf, HlType};
 
 /// The "Highlight State" of the row
 #[derive(Clone, Copy, PartialEq)]
-pub enum HLState {
+pub enum HlState {
     /// Normal state.
     Normal,
     /// A multi-line comment has been open, but not yet closed.
@@ -23,7 +23,7 @@ pub enum HLState {
     MultiLineString,
 }
 
-impl Default for HLState {
+impl Default for HlState {
     fn default() -> Self { Self::Normal }
 }
 
@@ -40,9 +40,9 @@ pub struct Row {
     /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
     pub rx2cx: Vec<usize>,
     /// The vector of `HLType` for each rendered character.
-    hl: Vec<HLType>,
+    hl: Vec<HlType>,
     /// The final state of the row.
-    pub hl_state: HLState,
+    pub hl_state: HlState,
     /// If not `None`, the range that is currently matched during a FIND operation.
     pub match_segment: Option<std::ops::Range<usize>>,
 }
@@ -54,7 +54,7 @@ impl Row {
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
-    pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HLState, tab: usize) -> HLState {
+    pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: usize) -> HlState {
         self.render.clear();
         self.cx2rx.clear();
         self.rx2cx.clear();
@@ -88,7 +88,7 @@ impl Row {
     }
 
     /// Update the syntax highlighting types of the row.
-    fn update_syntax(&mut self, syntax: &SyntaxConf, mut hl_state: HLState) -> HLState {
+    fn update_syntax(&mut self, syntax: &SyntaxConf, mut hl_state: HlState) -> HlState {
         self.hl.clear();
         let line = self.render.as_bytes();
 
@@ -101,28 +101,28 @@ impl Row {
             let find_str =
                 |s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
 
-            if hl_state == HLState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
-                self.hl.extend(repeat(HLType::Comment).take(line.len() - i));
+            if hl_state == HlState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
+                self.hl.extend(repeat(HlType::Comment).take(line.len() - i));
                 continue;
             }
 
             // Multi-line strings and multi-line comments have the same behavior; the only
             // differences are: the start/end delimiters, the `HLState`, the `HLType`.
             for (delims, mstate, mtype) in &[
-                (ml_comment_delims, HLState::MultiLineComment, HLType::MLComment),
-                (ml_string_delims, HLState::MultiLineString, HLType::MLString),
+                (ml_comment_delims, HlState::MultiLineComment, HlType::MlComment),
+                (ml_string_delims, HlState::MultiLineString, HlType::MlString),
             ] {
                 if let Some((start, end)) = delims {
                     if hl_state == *mstate {
                         if find_str(end) {
                             // Highlight the remaining symbols of the multi line comment end
                             self.hl.extend(repeat(mtype).take(end.len()));
-                            hl_state = HLState::Normal;
+                            hl_state = HlState::Normal;
                         } else {
                             self.hl.push(*mtype);
                         }
                         continue 'syntax_loop;
-                    } else if hl_state == HLState::Normal && find_str(start) {
+                    } else if hl_state == HlState::Normal && find_str(start) {
                         // Highlight the remaining symbols of the multi line comment start
                         self.hl.extend(repeat(mtype).take(start.len()));
                         hl_state = *mstate;
@@ -134,17 +134,17 @@ impl Row {
             let c = line[i];
 
             // At this point, hl_state is Normal or String
-            if let HLState::String(quote) = hl_state {
-                self.hl.push(HLType::String);
+            if let HlState::String(quote) = hl_state {
+                self.hl.push(HlType::String);
                 if c == quote {
-                    hl_state = HLState::Normal;
+                    hl_state = HlState::Normal;
                 } else if c == b'\\' && i != line.len() - 1 {
-                    self.hl.push(HLType::String);
+                    self.hl.push(HlType::String);
                 }
                 continue;
             } else if syntax.sl_string_quotes.contains(&(c as char)) {
-                hl_state = HLState::String(c);
-                self.hl.push(HLType::String);
+                hl_state = HlState::String(c);
+                self.hl.push(HlType::String);
                 continue;
             }
 
@@ -152,9 +152,9 @@ impl Row {
 
             if syntax.highlight_numbers
                 && ((c.is_ascii_digit() && prev_sep)
-                    || (i != 0 && self.hl[i - 1] == HLType::Number && !prev_sep && !is_sep(c)))
+                    || (i != 0 && self.hl[i - 1] == HlType::Number && !prev_sep && !is_sep(c)))
             {
-                self.hl.push(HLType::Number);
+                self.hl.push(HlType::Number);
                 continue;
             }
 
@@ -170,11 +170,11 @@ impl Row {
                 }
             }
 
-            self.hl.push(HLType::Normal);
+            self.hl.push(HlType::Normal);
         }
         self.hl_state = match hl_state {
             // String state doesn't propagate to the next row
-            HLState::String(_) => HLState::Normal,
+            HlState::String(_) => HlState::Normal,
             _ => hl_state,
         };
         self.hl_state
@@ -184,7 +184,7 @@ impl Row {
     /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
     /// line and move the cursor to the start of the next line.
     pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
-        let mut current_hl_type = HLType::Normal;
+        let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
@@ -192,14 +192,14 @@ impl Row {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
                 buffer.push_str(&format!("{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT,));
                 // Restore previous color
-                if current_hl_type != HLType::Normal {
+                if current_hl_type != HlType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
                 }
             } else {
                 if let Some(match_segment) = &self.match_segment {
                     if match_segment.contains(&rx) {
                         // Set the highlight type to Match, i.e. set the background to cyan
-                        hl_type = &HLType::Match
+                        hl_type = &HlType::Match
                     } else if rx == match_segment.end {
                         // Reset the formatting, in particular the background
                         buffer.push_str(RESET_FMT)
