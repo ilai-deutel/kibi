@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 // On UNIX systems, termios represents the terminal mode.
 pub use libc::termios as TermMode;
 use libc::{c_int, c_void, sigaction, sighandler_t, siginfo_t, winsize};
-use libc::{SA_SIGINFO, STDIN_FILENO, STDOUT_FILENO, TCSAFLUSH, TIOCGWINSZ, VMIN, VTIME};
+use libc::{SA_SIGINFO, STDIN_FILENO, STDOUT_FILENO, TCSADRAIN, TIOCGWINSZ, VMIN, VTIME};
 
 use crate::Error;
 
@@ -91,7 +91,7 @@ pub fn has_window_size_changed() -> bool { WIN_CHANGED.swap(false, Ordering::Rel
 
 /// Set the terminal mode.
 pub fn set_term_mode(term: &TermMode) -> Result<(), Error> {
-    cerr(unsafe { libc::tcsetattr(STDIN_FILENO, TCSAFLUSH, term) })
+    cerr(unsafe { libc::tcsetattr(STDIN_FILENO, TCSADRAIN, term) })
 }
 
 /// Setup the termios to enable raw mode, and return the original termios.
