@@ -1,10 +1,16 @@
 # Changelog
 
-## [Next release]
+## [0.2.2] - 2021-02-12
 
 ### Added
 - Add syntax highlighting configuration for V ([#78](https://github.com/ilai-deutel/kibi/pull/78))
 - Add the ability to execute external commands from the editor ([#83](https://github.com/ilai-deutel/kibi/pull/83))
+- Improve file opening error messages for config files ([#91](https://github.com/ilai-deutel/kibi/pull/91))
+
+### Fixed
+- Android: fix a bug ([#87](https://github.com/ilai-deutel/kibi/issues/87)) related to a SELinux policy that would cause
+  Kibi to crash on certain Android versions when setting the termios
+  ([#92](https://github.com/ilai-deutel/kibi/pull/92)). 
 
 ## [0.2.1] - 2020-10-05
 
@@ -92,7 +98,8 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 Initial release
 
-[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.1...HEAD
+[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2
 [0.2.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1
 [0.2.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0
 [0.1.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.1.2
