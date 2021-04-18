@@ -115,6 +115,14 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "quadroli",
+      "name": "quadroli",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58091631?v=4",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
   ]
 }
