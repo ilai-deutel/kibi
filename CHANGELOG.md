@@ -1,5 +1,9 @@
 # Changelog
 
+## [Next release]
+- Add syntax highlighting configuration for C ([#98](https://github.com/ilai-deutel/kibi/pull/98))
+- Add syntax highlighting configuration for Nim ([#106](https://github.com/ilai-deutel/kibi/pull/106))
+
 ## [0.2.2] - 2021-02-12
 
 ### Added
