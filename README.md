@@ -176,7 +176,7 @@ kibi --version    # Print version information and exit
 | Ctrl-Q            | Quit                                                          |
 | Ctrl-D            | Duplicate the current row                                     |
 | Ctrl-E            | Execute an external command and paste its output              |
-| Ctrl-R			| Erase the current line										|
+| Ctrl-R            | Remove an entire line                                         |
 
 ### Configuration
 
