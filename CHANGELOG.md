@@ -1,8 +1,15 @@
 # Changelog
 
-## [Next release]
+## [0.2.3] - 2021-09-30
+
+### Added
 - Add syntax highlighting configuration for C ([#98](https://github.com/ilai-deutel/kibi/pull/98))
 - Add syntax highlighting configuration for Nim ([#106](https://github.com/ilai-deutel/kibi/pull/106))
+- Add syntax highlighting configuration for Lua ([#108](https://github.com/ilai-deutel/kibi/pull/108))
+- Add syntax highlighting configuration for Javascript ([#108](https://github.com/ilai-deutel/kibi/pull/108))
+
+### Updated
+- Updated syntax highlighting configuration for V ([#108](https://github.com/ilai-deutel/kibi/pull/108))
 
 ## [0.2.2] - 2021-02-12
 
@@ -102,7 +109,8 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 Initial release
 
-[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.2...HEAD
+[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.3
 [0.2.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2
 [0.2.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1
 [0.2.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0
