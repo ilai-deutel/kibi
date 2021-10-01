@@ -23,23 +23,23 @@ for path in "${paths[@]}"; do
 
   tempfile=$(mktemp --suffix .rs)
   # Ignore Clippy directives
-  code=$(grep -v -P '^\s*#!?\[(?:allow|warn|deny)\(clippy::' "$path")
+  code=$(grep -v -P '^\s*#!?\[(?:allow|warn|deny)\(clippy::' "${path}")
   # Ignore everything after #[cfg(test)]
-  echo "${code%'#[cfg(test)]'*}" > "$tempfile"
-  file_loc=$(tokei "$tempfile" -t=Rust -o json | jq .Rust.code)
-  rm "$tempfile"
+  echo "${code%'#[cfg(test)]'*}" > "${tempfile}"
+  file_loc=$(tokei "${tempfile}" -t=Rust -o json | jq .Rust.code)
+  rm "${tempfile}"
 
-  file_locs[$path]=$file_loc
-  total_loc+=$file_loc
+  file_locs[${path}]=${file_loc}
+  total_loc+=${file_loc}
 done
 
 for path in "${paths[@]}"; do
-  printf "%-${left_col_width}s %${#total_loc}s\n" "$path" "${file_locs[$path]}"
+  printf "%-${left_col_width}s %${#total_loc}s\n" "${path}" "${file_locs[${path}]}"
 done
 
-printf "%b%-${left_col_width}s %i %b" '\x1b[1m' 'Total' "$total_loc" '\x1b[0m'
+printf "%b%-${left_col_width}s %i %b" '\x1b[1m' 'Total' "${total_loc}" '\x1b[0m'
 
-if [[ $total_loc -gt 1024 ]]; then
+if [[ ${total_loc} -gt 1024 ]]; then
   echo -e ' \x1b[31m(> 1024)\x1b[0m'
   exit 1
 else
