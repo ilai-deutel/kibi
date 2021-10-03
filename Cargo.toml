@@ -26,5 +26,4 @@ tempfile = "3.2.0"
 serial_test = "0.5.1"
 
 [badges]
-travis-ci = { repository = "ilai-deutel/kibi", branch = "master" }
 maintenance = { status = "actively-developed" }
