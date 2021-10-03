@@ -101,7 +101,7 @@ pub fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsStr;
+    use std::ffi::{OsStr, OsString};
     use std::{env, fs};
 
     use serial_test::serial;
@@ -193,6 +193,31 @@ mod tests {
         }
     }
 
+    struct TempEnvVar {
+        key: OsString,
+        orig_value: Option<OsString>,
+    }
+
+    impl TempEnvVar {
+        fn new(key: &OsStr, value: Option<&OsStr>) -> TempEnvVar {
+            let orig_value = env::var_os(key);
+            match value {
+                Some(value) => env::set_var(key, value),
+                None => env::remove_var(key),
+            }
+            TempEnvVar { key: key.into(), orig_value }
+        }
+    }
+
+    impl Drop for TempEnvVar {
+        fn drop(&mut self) {
+            match self.orig_value {
+                Some(ref orig_value) => env::set_var(&self.key, orig_value),
+                None => env::remove_var(&self.key),
+            }
+        }
+    }
+
     fn test_config_dir(env_key: &OsStr, env_val: &OsStr, kibi_config_home: &Path) {
         let custom_config = Config { tab_stop: 99, quit_times: 50, ..Config::default() };
         let ini_content = format!(
@@ -211,13 +236,8 @@ mod tests {
         assert_ne!(config, custom_config);
 
         let config = {
-            let orig_value = env::var_os(env_key);
-            env::set_var(env_key, env_val);
+            let _temp_env_var = TempEnvVar::new(env_key, Some(env_val));
             let config_res = Config::load();
-            match orig_value {
-                Some(orig_value) => env::set_var(env_key, orig_value),
-                None => env::remove_var(env_key),
-            }
             config_res.expect("Could not load configuration.")
         };
 
@@ -240,6 +260,7 @@ mod tests {
     #[test]
     #[serial]
     fn config_home() {
+        let _temp_env_var = TempEnvVar::new(OsStr::new("XDG_CONFIG_HOME"), None);
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
             "HOME".as_ref(),
