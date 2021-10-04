@@ -389,15 +389,12 @@ impl Editor {
     }
 
     fn delete_current_row(&mut self) {
-        if self.cursor.y < self.rows.len() && self.cursor.y >= 0 {
-            let row = &mut self.rows[self.cursor.y];
-            row.chars.clear();
+        if self.cursor.y < self.rows.len() {
+            self.rows[self.cursor.y].chars.clear();
             self.update_row(self.cursor.y, false);
             self.cursor.x = 0;
-            self.dirty = if self.is_empty() { self.file_name.is_some() } else { true };
-        } 
-        self.delete_char();
-        self.update_screen_cols()
+            self.delete_char();
+        }
     }
 
     fn duplicate_current_row(&mut self) {
