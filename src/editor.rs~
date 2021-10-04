@@ -389,14 +389,16 @@ impl Editor {
     }
 
     fn delete_current_row(&mut self) {
-        if self.cursor.y < self.rows.len() && self.cursor.y >= 0 {
+        if self.cursor.y < self.rows.len() && self.cursor.y > 0 {
             let row = &mut self.rows[self.cursor.y];
             row.chars.clear();
             self.update_row(self.cursor.y, false);
             self.cursor.x = 0;
             self.dirty = if self.is_empty() { self.file_name.is_some() } else { true };
-        } 
-        self.delete_char();
+        } else if self.cursor.y == self.rows.len() {
+            self.move_cursor(&AKey::Left);
+        }
+        // The lines numbers has changed 
         self.update_screen_cols()
     }
 
