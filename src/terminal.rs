@@ -25,8 +25,6 @@ fn read_value_until<T: std::str::FromStr>(stop_byte: u8) -> Result<T, Error> {
     let mut buf = Vec::new();
     io::stdin().lock().read_until(stop_byte, &mut buf)?;
     // Check that we have reached `stop_byte`, not EOF.
-    if buf.pop().filter(|u| *u == stop_byte).is_none() {
-        return Err(Error::CursorPosition);
-    }
+    buf.pop().filter(|u| *u == stop_byte).ok_or(Error::CursorPosition)?;
     std::str::from_utf8(&buf).or(Err(Error::CursorPosition))?.parse().or(Err(Error::CursorPosition))
 }
