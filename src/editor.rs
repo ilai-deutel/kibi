@@ -393,6 +393,7 @@ impl Editor {
             self.rows[self.cursor.y].chars.clear();
             self.update_row(self.cursor.y, false);
             self.cursor.x = 0;
+            self.cursor.y += 1;
             self.delete_char();
         }
     }
