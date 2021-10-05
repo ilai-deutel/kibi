@@ -16,6 +16,7 @@ const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
+const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str =
@@ -387,6 +388,16 @@ impl Editor {
         }
     }
 
+    fn delete_current_row(&mut self) {
+        if self.cursor.y < self.rows.len() {
+            self.rows[self.cursor.y].chars.clear();
+            self.update_row(self.cursor.y, false);
+            self.cursor.x = 0;
+            self.cursor.y += 1;
+            self.delete_char();
+        }
+    }
+
     fn duplicate_current_row(&mut self) {
         if let Some(row) = self.current_row() {
             let new_row = Row::new(row.chars.clone());
@@ -590,6 +601,7 @@ impl Editor {
             Key::End => self.cursor.x = self.current_row().map_or(0, |row| row.chars.len()),
             Key::Char(b'\r') => self.insert_new_line(), // Enter
             Key::Char(BACKSPACE) | Key::Char(DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
+            Key::Char(REMOVE_LINE) => self.delete_current_row(),
             Key::Delete => {
                 self.move_cursor(&AKey::Right);
                 self.delete_char()
