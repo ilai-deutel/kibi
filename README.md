@@ -9,7 +9,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -333,6 +333,7 @@ any kind welcome!
     <td align="center"><a href="https://github.com/Woomy4680-exe"><img src="https://avatars.githubusercontent.com/u/57042741?v=4" width="100px;" alt=""/><br /><sub><b>Woomy4680-exe</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/issues?q=author%3AWoomy4680-exe" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/quadroli"><img src="https://avatars.githubusercontent.com/u/58091631?v=4" width="100px;" alt=""/><br /><sub><b>quadroli</b></sub></a><br /><a href="#syntax-highlighting-quadroli" title="Contributing to syntax highlighting configuration files">💠</a></td>
     <td align="center"><a href="https://github.com/m0lese"><img src="https://avatars.githubusercontent.com/u/86180257?v=4" width="100px;" alt=""/><br /><sub><b>molese</b></sub></a><br /><a href="#syntax-highlighting-m0lese" title="Contributing to syntax highlighting configuration files">💠</a></td>
+    <td align="center"><a href="https://github.com/imreyesjorge"><img src="https://avatars.githubusercontent.com/u/40706868?v=4" width="100px;" alt=""/><br /><sub><b>Jorge Reyes</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=imreyesjorge" title="Code">💻</a></td>
   </tr>
 </table>
 
