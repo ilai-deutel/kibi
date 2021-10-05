@@ -180,7 +180,7 @@ impl Editor {
                 // position will be adjusted after this `match` to accommodate the current row
                 // length, so we can just set here to the maximum possible value here.
                 self.cursor.y -= 1;
-                self.cursor.x = usize::max_value();
+                self.cursor.x = usize::MAX;
             }
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
                 self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),

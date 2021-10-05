@@ -1,0 +1,24 @@
+on:
+  pull_request:
+    paths:
+      - '**.rs'
+      - 'count_loc.sh'
+
+name: 'LOC'
+
+jobs:
+
+  check_lines_of_code:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install tokei
+        uses: actions-rs/install@v0.1
+        with:
+          crate: tokei
+          version: latest
+          use-tool-cache: true
+      - name: Check LOC <= 1024
+        run: ./count_loc.sh

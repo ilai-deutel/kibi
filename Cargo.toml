@@ -1,6 +1,7 @@
 [package]
 name = "kibi"
 version = "0.2.2"
+rust = "1.41"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
@@ -12,10 +13,10 @@ categories = ["text-editors", "development-tools"]
 include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
 
 [dependencies]
-unicode-width = "0.1.8"
+unicode-width = "0.1.9"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.98"
+libc = "0.2.103"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
@@ -26,5 +27,4 @@ tempfile = "3.2.0"
 serial_test = "0.5.1"
 
 [badges]
-travis-ci = { repository = "ilai-deutel/kibi", branch = "master" }
 maintenance = { status = "actively-developed" }

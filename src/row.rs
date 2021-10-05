@@ -64,11 +64,7 @@ impl Row {
             let n_bytes = c.len_utf8();
             // The number of rendered characters
             let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
-            if c == '\t' {
-                self.render.push_str(&" ".repeat(n_rend_chars))
-            } else {
-                self.render.push(c)
-            }
+            self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
             self.cx2rx.extend(std::iter::repeat(rx).take(n_bytes));
             self.rx2cx.extend(std::iter::repeat(cx).take(n_rend_chars));
             rx += n_rend_chars;
@@ -199,10 +195,10 @@ impl Row {
                 if let Some(match_segment) = &self.match_segment {
                     if match_segment.contains(&rx) {
                         // Set the highlight type to Match, i.e. set the background to cyan
-                        hl_type = &HlType::Match
+                        hl_type = &HlType::Match;
                     } else if rx == match_segment.end {
                         // Reset the formatting, in particular the background
-                        buffer.push_str(RESET_FMT)
+                        buffer.push_str(RESET_FMT);
                     }
                 }
                 if current_hl_type != *hl_type {
