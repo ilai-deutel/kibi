@@ -24,7 +24,9 @@ pub enum HlState {
 }
 
 impl Default for HlState {
-    fn default() -> Self { Self::Normal }
+    fn default() -> Self {
+        Self::Normal
+    }
 }
 
 /// Represents a row of characters and how it is rendered.
@@ -49,7 +51,9 @@ pub struct Row {
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
+    pub fn new(chars: Vec<u8>) -> Self {
+        Self { chars, cx2rx: vec![0], ..Self::default() }
+    }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
@@ -81,6 +85,32 @@ impl Row {
     pub fn get_char_size(&self, rx: usize) -> usize {
         let cx0 = self.rx2cx[rx];
         self.rx2cx.iter().skip(rx + 1).map(|cx| cx - cx0).find(|d| *d > 0).unwrap_or(1)
+    }
+
+    /// Obtain the index of the first character of the next word.
+    pub fn find_next_word_index(&self, rx: usize) -> usize {
+        *self
+            .rx2cx
+            .iter()
+            .skip(rx + 1)
+            .skip_while(|cx| self.chars[*cx - 1].is_ascii_alphanumeric())
+            .find(|cx| self.chars[**cx].is_ascii_alphanumeric())
+            .unwrap_or(&(self.rx2cx.len() - 1))
+    }
+
+    /// Obtain the index of the first character of the previous word.
+    pub fn find_previous_word_index(&self, rx: usize) -> usize {
+        let rx2cx_end = self.rx2cx.len() - 1;
+
+        *self
+            .rx2cx
+            .iter()
+            .skip(1)
+            .rev()
+            .skip(rx2cx_end - rx)
+            .skip_while(|cx| !self.chars[*cx - 1].is_ascii_alphanumeric())
+            .find(|cx| !self.chars[*cx - 1].is_ascii_alphanumeric())
+            .unwrap_or(&0)
     }
 
     /// Update the syntax highlighting types of the row.
