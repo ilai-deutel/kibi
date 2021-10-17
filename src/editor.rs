@@ -850,4 +850,37 @@ mod tests {
         assert_eq!(format_size(100 * 1024 * 1024 * 1024), "100.00GB");
         assert_eq!(format_size(313 * 1024 * 1024 * 1024 * 1024), "313.00TB");
     }
+
+    #[test]
+    fn editor_insert_byte() {
+        let mut editor = Editor::default();
+        let editor_cursor_x_before = editor.cursor.x;
+
+        editor.insert_byte(b'X');
+        editor.insert_byte(b'Y');
+        editor.insert_byte(b'Z');
+
+        assert_eq!(editor.cursor.x, editor_cursor_x_before + 3);
+        assert_eq!(editor.rows.len(), 1);
+        assert_eq!(editor.n_bytes, 3);
+        assert_eq!(editor.rows[0].chars, [b'X', b'Y', b'Z']);
+    }
+
+    #[test]
+    fn editor_insert_new_line() {
+        let mut editor = Editor::default();
+        let editor_cursor_y_before = editor.cursor.y;
+
+        for _ in 0..3 {
+            editor.insert_new_line();
+        }
+
+        assert_eq!(editor.cursor.y, editor_cursor_y_before + 3);
+        assert_eq!(editor.rows.len(), 3);
+        assert_eq!(editor.n_bytes, 0);
+
+        for row in editor.rows.iter() {
+            assert_eq!(row.chars, []);
+        }
+    }
 }
