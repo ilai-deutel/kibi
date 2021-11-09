@@ -140,6 +140,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "gVirtu",
+      "name": "Giancarlo França",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15658199?v=4",
+      "profile": "https://github.com/gVirtu",
+      "contributions": [
+        "test"
+      ]
     }
   ]
 }
