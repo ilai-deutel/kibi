@@ -1,0 +1,22 @@
+name: Appstream metadata validation
+
+# Run when the Appstream metadata is updated, or once a month
+on:
+  pull_request:
+    paths:
+      - 'kibi.metainfo.xml'
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  appstream_validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Appstream validator
+        run: |
+          sudo apt-get install flatpak
+          flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y flathub org.freedesktop.appstream-glib
+      - name: Validate Appstream metadata
+        run: flatpak run org.freedesktop.appstream-glib validate kibi.metainfo.xml
