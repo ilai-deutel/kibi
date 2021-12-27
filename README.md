@@ -5,6 +5,7 @@
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41+-blue.svg?logo=rust)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
+[![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
