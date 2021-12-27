@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright Ilaï Deutel -->
+<component type="console-application">
+    <id>com.github.ilai_deutel.kibi</id>
+    <project_license>Apache-2.0 AND MIT</project_license>
+    <metadata_license>MIT</metadata_license>
+    <name>Kibi</name>
+    <summary>A text editor in ≤1024 lines of code, written in Rust</summary>
+    <description>
+        <p>
+            Kibi is a configurable text editor with UTF-8 support, incremental
+            search, syntax highlighting, line numbers and more, written in
+            less than 1024 lines of Rust with minimal dependencies.
+        </p>
+        <p>
+            Kibi is compatible with Linux, macOS, and Windows 10 (version 1703
+            and above).
+        </p>
+        <p>
+            This project is inspired by kilo, a text editor written in C.
+        </p>
+    </description>
+    <categories>
+        <category>Development</category>
+        <category>Utility</category>
+        <category>ConsoleOnly</category>
+        <category>TextEditor</category>
+    </categories>
+    <url type="homepage">https://github.com/ilai-deutel/kibi</url>
+    <url type="bugtracker">https://github.com/ilai-deutel/kibi/issues</url>
+    <releases>
+        <release version="0.2.2" date="2021-02-13">
+            <url type="details">https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2</url>
+        </release>
+        <release version="0.2.1" date="2020-10-05">
+            <url type="details">https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1</url>
+        </release>
+        <release version="0.2.0" date="2020-04-24">
+            <url type="details">https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0</url>
+        </release>
+        <release version="0.1.2" date="2020-02-17">
+            <url type="details">https://github.com/ilai-deutel/kibi/releases/tag/v0.1.2</url>
+        </release>
+        <release version="0.1.1" date="2020-02-10">
+            <url type="details">https://github.com/ilai-deutel/kibi/releases/tag/v0.1.1</url>
+        </release>
+        <release version="0.1.0" date="2020-02-10">
+            <description>
+                <p>Initial release.</p>
+            </description>
+        </release>
+    </releases>
+    <provides>
+        <binary>kibi</binary>
+    </provides>
+    <content_rating type="oars-1.0" />
+</component>
