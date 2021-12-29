@@ -44,6 +44,7 @@ April 2017) and above are supported.</sub>
   * [Android (with Termux)](#android-with-termux)
   * [Fedora/CentOS](#fedoracentos)
   * [NetBSD](#netbsd)
+  * [Flatpak](#flatpak)
 * [Usage](#usage)
   * [Keyboard shortcuts](#keyboard-shortcuts)
   * [Configuration](#configuration)
@@ -158,6 +159,24 @@ cd /usr/pkgsrc/editors/kibi
 make install
 ```
 
+</details>
+
+### Flatpak
+
+Kibi is available on Flathub.
+
+<details><summary>Command line instructions</summary>
+ The flatpak can be installed using:
+ 
+```bash
+flatpak install flathub com.github.ilai_deutel.kibi
+```
+
+You can then run Kibi with:
+ 
+ ```bash
+ flatpak run com.github.ilai_deutel.kibi
+ ```
 </details>
 
 ## Usage
