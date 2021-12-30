@@ -1,3 +1,5 @@
+![logo](assets/logo.svg)
+
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
 [![Build Status](https://img.shields.io/github/workflow/status/ilai-deutel/kibi/CI/master?logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
@@ -13,7 +15,7 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-[![asciicast](https://gist.githubusercontent.com/ilai-deutel/39670157dd008d9932b2f2fd3c885cca/raw/bfdbfc96181c4f6e3ce2663c25c6e97bf57c8684/kibi.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
+[![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
 A configurable text editor with UTF-8 support, incremental search, syntax
 highlighting, line numbers and more, written in less than 1024
