@@ -2,7 +2,7 @@
 Name=Kibi
 GenericName=Text Editor
 GenericName[fr]=Éditeur de texte
-Exec=/usr/bin/kibi %f
+Exec=kibi %f
 Type=Application
 Terminal=true
 Categories=Development;Utility;ConsoleOnly;TextEditor
