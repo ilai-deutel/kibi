@@ -39,6 +39,15 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-msvc
 
+          # MSRV (Linux)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            toolchain: 1.50.0
+          # MSRV (Windows)
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            toolchain: 1.50.0
+
     env:
       RUSTFLAGS: -D warnings
 
@@ -50,14 +59,9 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain || 'stable' }}
           target: ${{ matrix.target }}
           override: true
-      - name: Environment
-        run: |
-          env
-          cargo --version
-          rustc --version
       - name: Build
         uses: actions-rs/cargo@v1
         with:
