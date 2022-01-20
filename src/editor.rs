@@ -67,6 +67,20 @@ struct CursorState {
     coff: usize,
 }
 
+impl CursorState {
+    fn move_to_next_line(&mut self) {
+        self.y += 1;
+        self.x = 0;
+    }
+
+    /// Scroll the terminal window vertically and horizontally (i.e. adjusting the row offset and
+    /// the column offset) so that the cursor can be shown.
+    fn scroll(&mut self, rx: usize, screen_rows: usize, screen_cols: usize) {
+        self.roff = self.roff.clamp(self.y.saturating_sub(screen_rows.saturating_sub(1)), self.y);
+        self.coff = self.coff.clamp(rx.saturating_sub(screen_cols.saturating_sub(1)), rx);
+    }
+}
+
 /// The `Editor` struct, contains the state and configuration of the text editor.
 #[derive(Default)]
 pub struct Editor {
@@ -184,11 +198,7 @@ impl Editor {
             }
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
                 self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
-            (AKey::Right, Some(_)) => {
-                // Move to the next line
-                self.cursor.y += 1;
-                self.cursor.x = 0;
-            }
+            (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
             //  characters, i.e. according to rx
             (AKey::Up, _) if self.cursor.y > 0 => self.cursor.y -= 1,
@@ -352,8 +362,7 @@ impl Editor {
         self.rows.insert(position, Row::new(new_row_chars));
         self.update_row(position, false);
         self.update_screen_cols();
-        self.cursor.y += 1;
-        self.cursor.x = 0;
+        self.cursor.move_to_next_line();
         self.dirty = true;
     }
 
@@ -392,8 +401,7 @@ impl Editor {
         if self.cursor.y < self.rows.len() {
             self.rows[self.cursor.y].chars.clear();
             self.update_row(self.cursor.y, false);
-            self.cursor.x = 0;
-            self.cursor.y += 1;
+            self.cursor.move_to_next_line();
             self.delete_char();
         }
     }
@@ -481,23 +489,6 @@ impl Editor {
         Ok(())
     }
 
-    /// Scroll the terminal window vertically and horizontally (i.e. adjusting the row offset and
-    /// the column offset) so that the cursor can be shown.
-    fn scroll(&mut self) {
-        let rx = self.rx();
-        if self.cursor.y < self.cursor.roff {
-            self.cursor.roff = self.cursor.y;
-        } else if self.cursor.y >= self.cursor.roff + self.screen_rows {
-            self.cursor.roff = self.cursor.y - self.screen_rows + 1;
-        }
-
-        if rx < self.cursor.coff {
-            self.cursor.coff = rx;
-        } else if rx >= self.cursor.coff + self.screen_cols {
-            self.cursor.coff = rx - self.screen_cols + 1;
-        }
-    }
-
     /// Draw the left part of the screen: line numbers and vertical bar.
     fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) {
         if self.ln_pad >= 2 {
@@ -562,7 +553,7 @@ impl Editor {
     /// Refresh the screen: update the offsets, draw the rows, the status bar, the message bar, and
     /// move the cursor to the correct position.
     fn refresh_screen(&mut self) -> Result<(), Error> {
-        self.scroll();
+        self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
         let mut buffer = format!("{}{}", HIDE_CURSOR, MOVE_CURSOR_TO_START);
         self.draw_rows(&mut buffer);
         self.draw_status_bar(&mut buffer);
@@ -648,7 +639,7 @@ impl Editor {
                 self.cursor.y = current as usize;
                 self.cursor.x = cx;
                 // Try to reset the column offset; if the match is after the offset, this
-                // will be updated in self.scroll() so that the result is visible
+                // will be updated in self.cursor.scroll() so that the result is visible
                 self.cursor.coff = 0;
                 let rx = row.cx2rx[cx];
                 row.match_segment = Some(rx..rx + query.len());
