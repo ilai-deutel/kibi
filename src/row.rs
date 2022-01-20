@@ -168,11 +168,10 @@ impl Row {
 
             self.hl.push(HlType::Normal);
         }
-        self.hl_state = match hl_state {
-            // String state doesn't propagate to the next row
-            HlState::String(_) => HlState::Normal,
-            _ => hl_state,
-        };
+
+        // String state doesn't propagate to the next row
+        self.hl_state =
+            if matches!(hl_state, HlState::String(_)) { HlState::Normal } else { hl_state };
         self.hl_state
     }
 
