@@ -1,5 +1,3 @@
-![logo](assets/logo.svg)
-
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
 [![Build Status](https://img.shields.io/github/workflow/status/ilai-deutel/kibi/CI/master?logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
