@@ -1,0 +1,27 @@
+[package]
+name = "kibi-fuzz"
+version = "0.0.0"
+authors = ["Ilaï Deutel"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+tempfile = "3.3.0"
+env-test-util = "1.0.1"
+
+[dependencies.kibi]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_config_load"
+path = "fuzz_targets/fuzz_config_load.rs"
+test = false
+doc = false
