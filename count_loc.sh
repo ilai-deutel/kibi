@@ -31,9 +31,9 @@ for path in "${paths[@]}"; do
   # Ignore unix, wasi and windows platform files
   # (these are only indirectly related to the program itself and thus are
   #  treated the same as library dependencies and ignored)
-  if [ "${path}" == "./src/unix.rs" ]; then file_loc=0; fi
-  if [ "${path}" == "./src/wasi.rs" ]; then file_loc=0; fi
-  if [ "${path}" == "./src/windows.rs" ]; then file_loc=0; fi
+  if [[ "${path}" == "./src/unix.rs" ]]; then file_loc=0; fi
+  if [[ "${path}" == "./src/wasi.rs" ]]; then file_loc=0; fi
+  if [[ "${path}" == "./src/windows.rs" ]]; then file_loc=0; fi
 
   file_locs[${path}]=${file_loc}
   total_loc+=${file_loc}
