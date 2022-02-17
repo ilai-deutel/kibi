@@ -109,3 +109,11 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     set_term_mode(&term)?;
     Ok(orig_term)
 }
+
+pub fn stdin() -> Box<dyn std::io::Read> {
+    Box::new(std::io::stdin())
+}
+
+pub fn path(filename: &String) -> std::path::PathBuf {
+    std::path::PathBuf::from(filename)
+}

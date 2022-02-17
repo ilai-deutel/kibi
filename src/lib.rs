@@ -17,3 +17,6 @@ mod terminal;
 
 #[cfg(unix)] mod unix;
 #[cfg(unix)] use unix as sys;
+
+#[cfg(target_os="wasi")] mod wasi;
+#[cfg(target_os="wasi")] use wasi as sys;
