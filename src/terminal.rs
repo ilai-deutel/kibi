@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, Read, Write};
 
-use crate::{sys, ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, Error};
+use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, sys, Error};
 
 /// Obtain the window size using the cursor position.
 ///

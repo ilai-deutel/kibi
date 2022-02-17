@@ -7,7 +7,9 @@ use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::In
 use crate::row::{HlState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
 
-const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
+const fn ctrl_key(key: u8) -> u8 {
+    key & 0x1f
+}
 const EXIT: u8 = ctrl_key(b'Q');
 const DELETE_BIS: u8 = ctrl_key(b'H');
 const REFRESH_SCREEN: u8 = ctrl_key(b'L');
@@ -131,7 +133,9 @@ struct StatusMessage {
 
 impl StatusMessage {
     /// Create a new status message and set time to the current date/time.
-    fn new(msg: String) -> Self { Self { msg, time: Instant::now() } }
+    fn new(msg: String) -> Self {
+        Self { msg, time: Instant::now() }
+    }
 }
 
 /// Pretty-format a size in bytes.
@@ -178,17 +182,22 @@ impl Editor {
     }
 
     /// Return the current row if the cursor points to an existing row, `None` otherwise.
-    fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
+    fn current_row(&self) -> Option<&Row> {
+        self.rows.get(self.cursor.y)
+    }
 
     /// Return the position of the cursor, in terms of rendered characters (as opposed to
     /// `self.cursor.x`, which is the position of the cursor in terms of bytes).
-    fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
+    fn rx(&self) -> usize {
+        self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x])
+    }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
         match (key, self.current_row()) {
-            (AKey::Left, Some(row)) if self.cursor.x > 0 =>
-                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1),
+            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
+                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1)
+            }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
@@ -196,8 +205,9 @@ impl Editor {
                 self.cursor.y -= 1;
                 self.cursor.x = usize::MAX;
             }
-            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
-                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
+                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x])
+            }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
             //  characters, i.e. according to rx
@@ -500,7 +510,9 @@ impl Editor {
 
     /// Return whether the file being edited is empty or not. If there is more than one row, even if
     /// all the rows are empty, `is_empty` returns `false`, since the text contains new lines.
-    fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
+    fn is_empty(&self) -> bool {
+        self.rows.len() <= 1 && self.n_bytes == 0
+    }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
     fn draw_rows(&self, buffer: &mut String) {
@@ -615,8 +627,9 @@ impl Editor {
                 }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
-            Key::Char(FIND) =>
-                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
+            Key::Char(FIND) => {
+                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
+            }
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
@@ -736,8 +749,9 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right) | Key::Arrow(AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true),
+                            Key::Arrow(AKey::Right) | Key::Arrow(AKey::Down) | Key::Char(FIND) => {
+                                (last_match, true)
+                            }
                             Key::Arrow(AKey::Left) | Key::Arrow(AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
@@ -778,8 +792,9 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() =>
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) if !out.status.success() => {
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                        }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),

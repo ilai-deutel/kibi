@@ -7,9 +7,7 @@ use std::env::var;
 use crate::Error;
 
 #[allow(unused)]
-pub struct TermMode
-{
-}
+pub struct TermMode {}
 
 /// Return directories following the XDG Base Directory Specification
 ///
@@ -36,7 +34,9 @@ fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String
 }
 
 /// Return configuration directories for UNIX systems
-pub fn conf_dirs() -> Vec<String> { xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc") }
+pub fn conf_dirs() -> Vec<String> {
+    xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc")
+}
 
 /// Return syntax directories for UNIX systems
 pub fn data_dirs() -> Vec<String> {

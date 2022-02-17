@@ -24,7 +24,9 @@ pub enum HlState {
 }
 
 impl Default for HlState {
-    fn default() -> Self { Self::Normal }
+    fn default() -> Self {
+        Self::Normal
+    }
 }
 
 /// Represents a row of characters and how it is rendered.
@@ -49,7 +51,9 @@ pub struct Row {
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
+    pub fn new(chars: Vec<u8>) -> Self {
+        Self { chars, cx2rx: vec![0], ..Self::default() }
+    }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols

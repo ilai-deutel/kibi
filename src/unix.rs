@@ -44,7 +44,9 @@ fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String
 }
 
 /// Return configuration directories for UNIX systems
-pub fn conf_dirs() -> Vec<String> { xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc") }
+pub fn conf_dirs() -> Vec<String> {
+    xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc")
+}
 
 /// Return syntax directories for UNIX systems
 pub fn data_dirs() -> Vec<String> {
@@ -68,7 +70,9 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
 static WSC: AtomicBool = AtomicBool::new(false);
 
 /// Handle a change in window size.
-extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.store(true, Relaxed) }
+extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) {
+    WSC.store(true, Relaxed)
+}
 
 /// Register a signal handler that sets a global variable when the window size changes.
 /// After calling this function, use has_window_size_changed to query the global variable.
@@ -86,7 +90,9 @@ pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
 
 /// Check if the windows size has changed since the last call to this function.
 /// The register_winsize_change_signal_handler needs to be called before this function.
-pub fn has_window_size_changed() -> bool { WSC.swap(false, Relaxed) }
+pub fn has_window_size_changed() -> bool {
+    WSC.swap(false, Relaxed)
+}
 
 /// Set the terminal mode.
 pub fn set_term_mode(term: &TermMode) -> Result<(), Error> {

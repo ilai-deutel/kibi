@@ -16,10 +16,14 @@ use crate::Error;
 pub type TermMode = (u32, u32);
 
 /// Return configuration directories for Windows systems
-pub fn conf_dirs() -> Vec<String> { var("APPDATA").map(|d| d + "/Kibi").into_iter().collect() }
+pub fn conf_dirs() -> Vec<String> {
+    var("APPDATA").map(|d| d + "/Kibi").into_iter().collect()
+}
 
 /// Return data directories for Windows systems
-pub fn data_dirs() -> Vec<String> { conf_dirs() }
+pub fn data_dirs() -> Vec<String> {
+    conf_dirs()
+}
 
 /// Return the current window size as (rows, columns).
 pub fn get_window_size() -> Result<(usize, usize), Error> {
@@ -30,9 +34,13 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
     }
 }
 
-pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
+pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
+    Ok(())
+}
 
-pub fn has_window_size_changed() -> bool { false }
+pub fn has_window_size_changed() -> bool {
+    false
+}
 
 /// Set the terminal mode.
 #[allow(clippy::trivially_copy_pass_by_ref)]
