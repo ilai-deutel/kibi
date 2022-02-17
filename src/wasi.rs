@@ -34,9 +34,7 @@ fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String
 }
 
 /// Return configuration directories for UNIX systems
-pub fn conf_dirs() -> Vec<String> {
-    xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc")
-}
+pub fn conf_dirs() -> Vec<String> { xdg_dirs("CONFIG", "/.config", "/etc/xdg:/etc") }
 
 /// Return syntax directories for UNIX systems
 pub fn data_dirs() -> Vec<String> {
@@ -45,35 +43,23 @@ pub fn data_dirs() -> Vec<String> {
 
 /// Return the current window size as (rows, columns).
 /// By returning an error we cause kibi to fall back to another method of getting the window size
-pub fn get_window_size() -> Result<(usize, usize), Error> {
-    Err(Error::InvalidWindowSize)
-}
+pub fn get_window_size() -> Result<(usize, usize), Error> { Err(Error::InvalidWindowSize) }
 
 /// Register a signal handler that sets a global variable when the window size changes.
 /// After calling this function, use has_window_size_changed to query the global variable.
-pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
-    Ok(())
-}
+pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
 /// Check if the windows size has changed since the last call to this function.
 /// The register_winsize_change_signal_handler needs to be called before this function.
-pub fn has_window_size_changed() -> bool {
-    false
-}
+pub fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode (this does nothing)
-pub fn set_term_mode(_term: &TermMode) -> Result<(), Error> {
-    Ok(())
-}
+pub fn set_term_mode(_term: &TermMode) -> Result<(), Error> { Ok(()) }
 
 /// Opening the file /dev/tty is effectively the same as raw_mode
-pub fn enable_raw_mode() -> Result<TermMode, Error> {
-    Ok(TermMode {})
-}
+pub fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
 
-pub fn stdin() -> Box<dyn std::io::Read> {
-    Box::new(std::fs::File::open("/dev/tty").unwrap())
-}
+pub fn stdin() -> Box<dyn std::io::Read> { Box::new(std::fs::File::open("/dev/tty").unwrap()) }
 
 pub fn path(filename: &String) -> std::path::PathBuf {
     if filename.starts_with("/") {

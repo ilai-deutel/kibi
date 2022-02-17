@@ -21,7 +21,5 @@ pub enum Error {
 
 impl From<std::io::Error> for Error {
     /// Convert an IO Error into a Kibi Error.
-    fn from(err: std::io::Error) -> Self {
-        Self::Io(err)
-    }
+    fn from(err: std::io::Error) -> Self { Self::Io(err) }
 }
