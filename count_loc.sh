@@ -11,12 +11,13 @@
 set -euo pipefail
 
 declare -i file_loc total_loc left_col_width
-declare -A file_locs
+declare -A file_locs per_platform_total_locs
 
 paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/src"/*.rs)
 
 left_col_width=6
-total_loc=0
+per_platform_total_locs['unix']=0
+per_platform_total_locs['windows']=0
 
 for path in "${paths[@]}"; do
   if (( ${#path} > left_col_width )); then left_col_width=${#path}; fi;
@@ -36,18 +37,34 @@ for path in "${paths[@]}"; do
   if [[ "${path}" == "./src/windows.rs" ]]; then file_loc=0; fi
 
   file_locs[${path}]=${file_loc}
-  total_loc+=${file_loc}
+
+  if [[ "${path}" == "./src/unix.rs" ]]; then
+    per_platform_total_locs['unix']=$((per_platform_total_locs['unix'] + file_loc))
+  elif [[ "${path}" == "./src/windows.rs" ]]; then
+    per_platform_total_locs['windows']=$((per_platform_total_locs['windows'] + file_loc))
+  else
+    for platform in "${!per_platform_total_locs[@]}"; do
+      per_platform_total_locs[${platform}]=$((per_platform_total_locs[${platform}] + file_loc))
+    done
+  fi
 done
 
 for path in "${paths[@]}"; do
-  printf "%-${left_col_width}s %${#total_loc}s\n" "${path}" "${file_locs[${path}]}"
+  printf "%-${left_col_width}s %4i\n" "${path}" "${file_locs[${path}]}"
 done
 
-printf "%b%-${left_col_width}s %i %b" '\x1b[1m' 'Total' "${total_loc}" '\x1b[0m'
+loc_too_high=false
+for platform in "${!per_platform_total_locs[@]}"; do
+  total_loc=${per_platform_total_locs[${platform}]}
+  printf "%b%-${left_col_width}s %4i %b" '\x1b[1m' "Total (${platform})" "${total_loc}" '\x1b[0m'
+  if [[ ${total_loc} -gt 1024 ]]; then
+    echo -e ' \x1b[31m(> 1024)\x1b[0m'
+    loc_too_high=true
+  else
+    echo -e ' \x1b[32m(≤ 1024)\x1b[0m'
+  fi
+done
 
-if [[ ${total_loc} -gt 1024 ]]; then
-  echo -e ' \x1b[31m(> 1024)\x1b[0m'
+if [[ ${loc_too_high} = true ]]; then
   exit 1
-else
-  echo -e ' \x1b[32m(≤ 1024)\x1b[0m'
 fi
