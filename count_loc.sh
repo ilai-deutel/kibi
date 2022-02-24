@@ -17,6 +17,7 @@ paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/src"/*.rs)
 
 left_col_width=6
 per_platform_total_locs['unix']=0
+per_platform_total_locs['wasi']=0
 per_platform_total_locs['windows']=0
 
 for path in "${paths[@]}"; do
@@ -29,17 +30,13 @@ for path in "${paths[@]}"; do
   echo "${code%'#[cfg(test)]'*}" > "${tempfile}"
   file_loc=$(tokei "${tempfile}" -t=Rust -o json | jq .Rust.code)
   rm "${tempfile}"
-  # Ignore unix, wasi and windows platform files
-  # (these are only indirectly related to the program itself and thus are
-  #  treated the same as library dependencies and ignored)
-  if [[ "${path}" == "./src/unix.rs" ]]; then file_loc=0; fi
-  if [[ "${path}" == "./src/wasi.rs" ]]; then file_loc=0; fi
-  if [[ "${path}" == "./src/windows.rs" ]]; then file_loc=0; fi
 
   file_locs[${path}]=${file_loc}
 
   if [[ "${path}" == "./src/unix.rs" ]]; then
     per_platform_total_locs['unix']=$((per_platform_total_locs['unix'] + file_loc))
+  elif [[ "${path}" == "./src/wasi.rs" ]]; then
+    per_platform_total_locs['wasi']=$((per_platform_total_locs['wasi'] + file_loc))
   elif [[ "${path}" == "./src/windows.rs" ]]; then
     per_platform_total_locs['windows']=$((per_platform_total_locs['windows'] + file_loc))
   else
