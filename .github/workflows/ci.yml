@@ -73,6 +73,27 @@ jobs:
           command: test
           args: --verbose --target ${{ matrix.target }}
 
+  wasi:
+    name: wasi
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true    
+      - name: Install WASI
+        run: cargo install cargo-wasi    
+      - name: Run build on wasm32-wasi
+        run: |
+          cargo wasi build
+
   static_checks:
 
     runs-on: ubuntu-latest
