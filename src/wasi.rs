@@ -1,11 +1,11 @@
 //! # sys (WASI)
 //!
 //! WASI-specific structs and functions. Will be imported as `sys` on WASI systems.
- 
+
 use std::env::var;
 
-use crate::Error;
 pub use crate::xdg::*;
+use crate::Error;
 
 pub struct TermMode {}
 

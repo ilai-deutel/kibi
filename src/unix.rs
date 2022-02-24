@@ -9,8 +9,8 @@ pub use libc::termios as TermMode;
 use libc::{c_int, c_void, sigaction, sighandler_t, siginfo_t, winsize};
 use libc::{SA_SIGINFO, STDIN_FILENO, STDOUT_FILENO, TCSADRAIN, TIOCGWINSZ, VMIN, VTIME};
 
-use crate::Error;
 pub use crate::xdg::*;
+use crate::Error;
 
 fn cerr(err: c_int) -> Result<(), Error> {
     match err {
