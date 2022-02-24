@@ -59,6 +59,6 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok((mode_in0, mode_out0))
 }
 
-pub fn stdin() -> Box<dyn std::io::Read> { Box::new(std::io::stdin()) }
+pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
 
 pub fn path(filename: &String) -> std::path::PathBuf { std::path::PathBuf::from(filename) }
