@@ -29,7 +29,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
 
 pub fn stdin() -> std::io::Result<std::fs::File> { std::fs::File::open("/dev/tty") }
 
-pub fn path(filename: &String) -> std::path::PathBuf {
+pub fn path(filename: &str) -> std::path::PathBuf {
     // If the filename is absolute then it starts with a forward slash and we
     // can just open the file however if it lacks a forwrad slash then its
     // relative to the current working directory. As WASI does not have an ABI

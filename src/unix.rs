@@ -80,4 +80,4 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
 
 pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
 
-pub fn path(filename: &String) -> std::path::PathBuf { std::path::PathBuf::from(filename) }
+pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

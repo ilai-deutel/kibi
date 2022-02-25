@@ -655,13 +655,13 @@ impl Editor {
     ///
     /// Will Return `Err` if any error occur.
     pub fn run(&mut self, file_name: Option<String>) -> Result<(), Error> {
-        if let Some(path) = file_name.as_ref().map(sys::path) {
+        if let Some(path) = file_name.as_ref().map(|p| sys::path(p.as_str())) {
             self.select_syntax_highlight(path.as_path())?;
             self.load(path.as_path())?;
             self.file_name = Some(path.to_string_lossy().to_string());
         } else {
             self.rows.push(Row::new(Vec::new()));
-            self.file_name = file_name;
+            self.file_name = None;
         }
         loop {
             if let Some(mode) = self.prompt_mode.as_ref() {
