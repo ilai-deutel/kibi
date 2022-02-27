@@ -226,7 +226,7 @@ impl Editor {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
-            let mut bytes = io::stdin().bytes();
+            let mut bytes = sys::stdin()?.bytes();
             // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on the next
             // few bytes.
             match bytes.next().transpose()? {
@@ -590,7 +590,7 @@ impl Editor {
             }
             Key::Home => self.cursor.x = 0,
             Key::End => self.cursor.x = self.current_row().map_or(0, |row| row.chars.len()),
-            Key::Char(b'\r') => self.insert_new_line(), // Enter
+            Key::Char(b'\r') | Key::Char(b'\n') => self.insert_new_line(), // Enter
             Key::Char(BACKSPACE) | Key::Char(DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
             Key::Char(REMOVE_LINE) => self.delete_current_row(),
             Key::Delete => {
@@ -655,13 +655,14 @@ impl Editor {
     ///
     /// Will Return `Err` if any error occur.
     pub fn run(&mut self, file_name: Option<String>) -> Result<(), Error> {
-        if let Some(path) = file_name.as_ref().map(Path::new) {
-            self.select_syntax_highlight(path)?;
-            self.load(path)?;
+        if let Some(path) = file_name.as_ref().map(|p| sys::path(p.as_str())) {
+            self.select_syntax_highlight(path.as_path())?;
+            self.load(path.as_path())?;
+            self.file_name = Some(path.to_string_lossy().to_string());
         } else {
             self.rows.push(Row::new(Vec::new()));
+            self.file_name = None;
         }
-        self.file_name = file_name;
         loop {
             if let Some(mode) = self.prompt_mode.as_ref() {
                 set_status!(self, "{}", mode.status_msg());
@@ -777,8 +778,9 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() =>
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) if !out.status.success() => {
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                        }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),

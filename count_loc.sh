@@ -17,6 +17,7 @@ paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/src"/*.rs)
 
 left_col_width=6
 per_platform_total_locs['unix']=0
+per_platform_total_locs['wasi']=0
 per_platform_total_locs['windows']=0
 
 for path in "${paths[@]}"; do
@@ -34,6 +35,8 @@ for path in "${paths[@]}"; do
 
   if [[ "${path}" == "./src/unix.rs" ]]; then
     per_platform_total_locs['unix']=$((per_platform_total_locs['unix'] + file_loc))
+  elif [[ "${path}" == "./src/wasi.rs" ]]; then
+    per_platform_total_locs['wasi']=$((per_platform_total_locs['wasi'] + file_loc))
   elif [[ "${path}" == "./src/windows.rs" ]]; then
     per_platform_total_locs['windows']=$((per_platform_total_locs['windows'] + file_loc))
   else

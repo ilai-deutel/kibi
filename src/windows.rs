@@ -58,3 +58,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     set_term_mode(&(mode_in, mode_out))?;
     Ok((mode_in0, mode_out0))
 }
+
+pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
+
+pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

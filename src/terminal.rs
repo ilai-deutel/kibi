@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, Read, Write};
 
-use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, Error};
+use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, sys, Error};
 
 /// Obtain the window size using the cursor position.
 ///
@@ -10,10 +10,11 @@ use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_EN
 ///
 /// It is used as an alternative method if `sys::get_window_size()` returns an error.
 pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
+    let mut stdin = sys::stdin()?;
     print!("{}{}", REPOSITION_CURSOR_END, DEVICE_STATUS_REPORT);
     io::stdout().flush()?;
     let mut prefix_buffer = [0_u8; 2];
-    io::stdin().read_exact(&mut prefix_buffer)?;
+    stdin.read_exact(&mut prefix_buffer)?;
     if prefix_buffer != [b'\x1b', b'['] {
         return Err(Error::CursorPosition);
     }
