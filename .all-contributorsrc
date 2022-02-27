@@ -149,6 +149,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "john-",
+      "name": "john-",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2359125?v=4",
+      "profile": "https://github.com/john-",
+      "contributions": [
+        "code"
+      ]
     }
   ]
 }
