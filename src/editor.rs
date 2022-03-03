@@ -1,6 +1,8 @@
 #![allow(clippy::wildcard_imports)]
 
-use std::io::{self, BufRead, BufReader, ErrorKind::NotFound, Read, Seek, Write};
+use std::io::{
+    self, BufRead, BufReader, ErrorKind::InvalidInput, ErrorKind::NotFound, Read, Seek, Write,
+};
 use std::iter::{self, repeat, successors};
 use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
 
@@ -422,6 +424,10 @@ impl Editor {
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
     /// If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
+        if !std::fs::metadata(path)?.file_type().is_file() {
+            return Err(io::Error::new(InvalidInput, "Invalid input file type").into());
+        }
+
         match File::open(path) {
             Ok(file) => {
                 for line in BufReader::new(file).split(b'\n') {
