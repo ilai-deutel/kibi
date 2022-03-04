@@ -43,11 +43,29 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             toolchain: 1.50.0
+          # MSRV (MacOS)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            toolchain: 1.50.0
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
             toolchain: 1.50.0
 
+          # Nightly (Linux)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            toolchain: nightly
+            coverage: true
+          # Nightly (MacOS)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            toolchain: nightly
+            coverage: true
+          # Nightly (Windows)
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            toolchain: nightly
     env:
       RUSTFLAGS: -D warnings
 
@@ -68,36 +86,61 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --target ${{ matrix.target }}
-      - name: Run tests
+      - name: Run tests without coverage instrumentation
+        if: ${{ ! matrix.coverage }}
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --target ${{ matrix.target }}
+          args: --verbose --all-features --no-fail-fast
+      - name: Run tests with coverage instrumentation
+        if: matrix.coverage
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --all-features --no-fail-fast
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      - name: Collect code coverage results
+        if: matrix.coverage
+        uses: actions-rs/grcov@v0.1
+        id: coverage
+      - name: Upload code coverage results
+        if: matrix.coverage
+        uses: codecov/codecov-action@v2
+        with:
+          files: ${{ steps.coverage.outputs.report }}
+          flags: ${{ matrix.target }}
+          fail_ci_if_error: true
+          verbose: true
 
   wasi:
     name: wasi
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust:
+        toolchain:
           - stable
-          - beta
+          - 1.50.0  # MSRV
           - nightly
     env:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          submodules: true    
+          toolchain: ${{ matrix.toolchain }}
+          target: wasm32-wasi
+          override: true
       - name: Install WASI
-        run: cargo install cargo-wasi    
+        run: cargo install cargo-wasi
       - name: Run build on wasm32-wasi
         run: |
           cargo wasi build
 
   static_checks:
-
     runs-on: ubuntu-latest
 
     steps:
