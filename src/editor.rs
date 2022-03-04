@@ -876,4 +876,17 @@ mod tests {
             assert_eq!(row.chars, []);
         }
     }
+    #[test]
+    fn editor_delete_char() {
+        let mut editor = Editor::default();
+        for b in "Hello!".as_bytes() {
+            editor.insert_byte(*b);
+        }
+        editor.delete_char();
+        assert_eq!(editor.rows[0].chars, "Hello".as_bytes());
+        editor.move_cursor(&AKey::Left);
+        editor.move_cursor(&AKey::Left);
+        editor.delete_char();
+        assert_eq!(editor.rows[0].chars, "Helo".as_bytes());
+    }
 }
