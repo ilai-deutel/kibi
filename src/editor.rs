@@ -424,7 +424,8 @@ impl Editor {
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
     /// If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
-        if !std::fs::metadata(path)?.file_type().is_file() {
+        let ft = std::fs::metadata(path)?.file_type();
+        if !(ft.is_file() || ft.is_symlink()) {
             return Err(io::Error::new(InvalidInput, "Invalid input file type").into());
         }
 
