@@ -180,5 +180,5 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --target ${{ matrix.target }} -- -D warnings
+          args: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
           name: clippy-${{ matrix.target }}

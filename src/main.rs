@@ -13,7 +13,7 @@ fn main() -> Result<(), Error> {
     match (args.nth(1), /*remaining_args=*/ args.len()) {
         (Some(arg), 0) if arg == "--version" => println!("kibi, v{}", env!("CARGO_PKG_VERSION")),
         (Some(arg), 0) if arg.starts_with('-') => return Err(Error::UnrecognizedOption(arg)),
-        (file_name, 0) => Editor::new(Config::load()?)?.run(file_name)?,
+        (file_name, 0) => Editor::new(Config::load()?)?.run(&file_name)?,
         (_, n_remaining_args) => return Err(Error::TooManyArguments(n_remaining_args + 1)),
     }
     Ok(())
