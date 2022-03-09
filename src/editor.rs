@@ -24,7 +24,7 @@ const BACKSPACE: u8 = 127;
 const HELP_MESSAGE: &str =
     "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate | Ctrl-E = execute";
 
-/// set_status! sets a formatted status message for the editor.
+/// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
 macro_rules! set_status {
     ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*))))
@@ -207,14 +207,14 @@ impl Editor {
             (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
         }
-        self.update_cursor_x_position()
+        self.update_cursor_x_position();
     }
 
     /// Update the cursor x position. If the cursor y position has changed, the current position
     /// might be illegal (x is further right than the last character of the row). If that is the
     /// case, clamp `self.cursor.x`.
     fn update_cursor_x_position(&mut self) {
-        self.cursor.x = self.cursor.x.min(self.current_row().map_or(0, |row| row.chars.len()))
+        self.cursor.x = self.cursor.x.min(self.current_row().map_or(0, |row| row.chars.len()));
     }
 
     /// Run a loop to obtain the key that was pressed. At each iteration of the loop (until a key is
@@ -234,13 +234,13 @@ impl Editor {
             match bytes.next().transpose()? {
                 Some(b'\x1b') => {
                     return Ok(match bytes.next().transpose()? {
-                        Some(b @ b'[') | Some(b @ b'O') => match (b, bytes.next().transpose()?) {
+                        Some(b @ (b'[' | b'O')) => match (b, bytes.next().transpose()?) {
                             (b'[', Some(b'A')) => Key::Arrow(AKey::Up),
                             (b'[', Some(b'B')) => Key::Arrow(AKey::Down),
                             (b'[', Some(b'C')) => Key::Arrow(AKey::Right),
                             (b'[', Some(b'D')) => Key::Arrow(AKey::Left),
-                            (b'[', Some(b'H')) | (b'O', Some(b'H')) => Key::Home,
-                            (b'[', Some(b'F')) | (b'O', Some(b'F')) => Key::End,
+                            (b'[' | b'O', Some(b'H')) => Key::Home,
+                            (b'[' | b'O', Some(b'F')) => Key::End,
                             (b'[', mut c @ Some(b'0'..=b'8')) => {
                                 let mut d = bytes.next().transpose()?;
                                 if let (Some(b'1'), Some(b';')) = (c, d) {
@@ -305,7 +305,7 @@ impl Editor {
     fn select_syntax_highlight(&mut self, path: &Path) -> Result<(), Error> {
         let extension = path.extension().and_then(std::ffi::OsStr::to_str);
         if let Some(s) = extension.and_then(|e| SyntaxConf::get(e).transpose()) {
-            self.syntax = s?
+            self.syntax = s?;
         }
         Ok(())
     }
@@ -338,7 +338,7 @@ impl Editor {
     /// position, add a new row and insert the byte.
     fn insert_byte(&mut self, c: u8) {
         if let Some(row) = self.rows.get_mut(self.cursor.y) {
-            row.chars.insert(self.cursor.x, c)
+            row.chars.insert(self.cursor.x, c);
         } else {
             self.rows.push(Row::new(vec![c]));
             // The number of rows has changed. The left padding may need to be updated.
@@ -347,7 +347,7 @@ impl Editor {
         self.update_row(self.cursor.y, false);
         self.cursor.x += 1;
         self.n_bytes += 1;
-        self.dirty = true
+        self.dirty = true;
     }
 
     /// Insert a new line at the current cursor position and move the cursor to the start of the new
@@ -462,7 +462,7 @@ impl Editor {
             written += row.chars.len();
             if i != (self.rows.len() - 1) {
                 file.write_all(&[b'\n'])?;
-                written += 1
+                written += 1;
             }
         }
         file.sync_all()?;
@@ -501,7 +501,7 @@ impl Editor {
         if self.ln_pad >= 2 {
             // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
             buffer.push_str(&format!("\x1b[38;5;240m{:>1$} \u{2502}", val, self.ln_pad - 2));
-            buffer.push_str(RESET_FMT)
+            buffer.push_str(RESET_FMT);
         }
     }
 
@@ -597,12 +597,12 @@ impl Editor {
             }
             Key::Home => self.cursor.x = 0,
             Key::End => self.cursor.x = self.current_row().map_or(0, |row| row.chars.len()),
-            Key::Char(b'\r') | Key::Char(b'\n') => self.insert_new_line(), // Enter
-            Key::Char(BACKSPACE) | Key::Char(DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
+            Key::Char(b'\r' | b'\n') => self.insert_new_line(), // Enter
+            Key::Char(BACKSPACE | DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
             Key::Char(REMOVE_LINE) => self.delete_current_row(),
             Key::Delete => {
                 self.move_cursor(&AKey::Right);
-                self.delete_char()
+                self.delete_char();
             }
             Key::Escape | Key::Char(REFRESH_SCREEN) => (),
             Key::Char(EXIT) => {
@@ -617,7 +617,7 @@ impl Editor {
                 // TODO: Can we avoid using take() then reassigning the value to file_name?
                 Some(file_name) => {
                     self.save_and_handle_io_errors(&file_name);
-                    self.file_name = Some(file_name)
+                    self.file_name = Some(file_name);
                 }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
@@ -635,6 +635,7 @@ impl Editor {
     /// Try to find a query, this is called after pressing Ctrl-F and for each key that is pressed.
     /// `last_match` is the last row that was matched, `forward` indicates whether to search forward
     /// or backward. Returns the row of a new match, or `None` if the search was unsuccessful.
+    #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
     fn find(&mut self, query: &str, last_match: &Option<usize>, forward: bool) -> Option<usize> {
         let num_rows = self.rows.len();
         let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
@@ -661,7 +662,7 @@ impl Editor {
     /// # Errors
     ///
     /// Will Return `Err` if any error occur.
-    pub fn run(&mut self, file_name: Option<String>) -> Result<(), Error> {
+    pub fn run(&mut self, file_name: &Option<String>) -> Result<(), Error> {
         if let Some(path) = file_name.as_ref().map(|p| sys::path(p.as_str())) {
             self.select_syntax_highlight(path.as_path())?;
             self.load(path.as_path())?;
@@ -693,11 +694,11 @@ impl Drop for Editor {
     /// When the editor is dropped, restore the original terminal mode.
     fn drop(&mut self) {
         if let Some(orig_term_mode) = self.orig_term_mode.take() {
-            sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.")
+            sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.");
         }
         if !thread::panicking() {
             print!("{}{}", CLEAR_SCREEN, MOVE_CURSOR_TO_START);
-            io::stdout().flush().expect("Could not flush stdout")
+            io::stdout().flush().expect("Could not flush stdout");
         }
     }
 }
@@ -738,14 +739,14 @@ impl PromptMode {
             },
             Self::Find(b, saved_cursor, last_match) => {
                 if let Some(row_idx) = last_match {
-                    ed.rows[row_idx].match_segment = None
+                    ed.rows[row_idx].match_segment = None;
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right) | Key::Arrow(AKey::Down) | Key::Char(FIND) =>
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
                                 (last_match, true),
-                            Key::Arrow(AKey::Left) | Key::Arrow(AKey::Up) => (last_match, false),
+                            Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
                         let curr_match = ed.find(&query, &last_match, forward);
@@ -785,9 +786,8 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() => {
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
-                        }
+                        Ok(out) if !out.status.success() =>
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
@@ -815,7 +815,7 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
-        Key::Char(BACKSPACE) | Key::Char(DELETE_BIS) => {
+        Key::Char(BACKSPACE | DELETE_BIS) => {
             buffer.pop();
         }
         Key::Char(c @ 0..=126) if !c.is_ascii_control() => buffer.push(*c as char),
@@ -879,7 +879,7 @@ mod tests {
         assert_eq!(editor.rows.len(), 3);
         assert_eq!(editor.n_bytes, 0);
 
-        for row in editor.rows.iter() {
+        for row in &editor.rows {
             assert_eq!(row.chars, []);
         }
     }

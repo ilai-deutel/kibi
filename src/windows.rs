@@ -30,6 +30,7 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
     }
 }
 
+#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
 pub fn has_window_size_changed() -> bool { false }
@@ -59,6 +60,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok((mode_in0, mode_out0))
 }
 
+#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

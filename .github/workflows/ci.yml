@@ -13,9 +13,6 @@ env:
 
 jobs:
   build_and_test:
-
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         include:
@@ -42,15 +39,15 @@ jobs:
           # MSRV (Linux)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            toolchain: 1.50.0
+            toolchain: 1.53.0
           # MSRV (MacOS)
           - os: macos-latest
             target: x86_64-apple-darwin
-            toolchain: 1.50.0
+            toolchain: 1.53.0
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
-            toolchain: 1.50.0
+            toolchain: 1.53.0
 
           # Nightly (Linux)
           - os: ubuntu-latest
@@ -66,6 +63,9 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-gnu
             toolchain: nightly
+
+    runs-on: ${{ matrix.os }}
+
     env:
       RUSTFLAGS: -D warnings
 
@@ -112,7 +112,7 @@ jobs:
         with:
           files: ${{ steps.coverage.outputs.report }}
           flags: ${{ matrix.target }}
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
 
   wasi:
@@ -122,7 +122,7 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - 1.50.0  # MSRV
+          - 1.53.0  # MSRV
           - nightly
     env:
       CARGO_TERM_COLOR: always
@@ -137,11 +137,29 @@ jobs:
       - name: Install WASI
         run: cargo install cargo-wasi
       - name: Run build on wasm32-wasi
-        run: |
-          cargo wasi build
+        run: cargo wasi build
 
   static_checks:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Unix
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          # MacOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+
+          # WASI
+          - os: ubuntu-latest
+            target: wasm32-wasi
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -150,11 +168,16 @@ jobs:
         with:
           toolchain: nightly
           components: rustfmt, clippy
+          target: ${{ matrix.target }}
+          override: true
       - name: Run rustfmt check
-        run: cargo +nightly fmt -- --check
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
       - name: Run Clippy
         uses: actions-rs/clippy-check@v1
         with:
-          toolchain: nightly
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --all-targets -- -D warnings
+          args: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
+          name: clippy-${{ matrix.target }}
