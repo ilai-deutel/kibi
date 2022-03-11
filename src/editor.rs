@@ -522,7 +522,7 @@ impl Editor {
                 // Draw an empty row
                 self.draw_left_padding(buffer, '~');
                 if self.is_empty() && i == self.screen_rows / 3 {
-                    let welcome_message = concat!("Kibi - version ", env!("CARGO_PKG_VERSION"));
+                    let welcome_message = concat!("Kibi ", env!("KIBI_VERSION"));
                     buffer.push_str(&format!("{:^1$.1$}", welcome_message, self.screen_cols));
                 }
             }
