@@ -13,7 +13,7 @@ set -euo pipefail
 declare -i file_loc total_loc left_col_width
 declare -A file_locs per_platform_total_locs
 
-paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/src"/*.rs)
+paths=("$(dirname "${BASH_SOURCE[0]:-$0}")/"{.,src}/*.rs)
 
 left_col_width=6
 per_platform_total_locs['unix']=0
