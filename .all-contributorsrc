@@ -159,6 +159,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "Arkaeriit",
+      "name": "Maxime Bouillot",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47985708?v=4",
+      "profile": "https://github.com/Arkaeriit",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
   ]
 }
