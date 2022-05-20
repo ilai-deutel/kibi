@@ -3,11 +3,12 @@
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered string and the syntax
 //! highlighting information.
 
-use std::iter::repeat;
+use std::{fmt::Write, iter::repeat};
 
 use unicode_width::UnicodeWidthChar;
 
 use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
+use crate::error::Error;
 use crate::syntax::{Conf as SyntaxConf, HlType};
 
 /// The "Highlight State" of the row
@@ -178,14 +179,14 @@ impl Row {
     /// Draw the row and write the result to a buffer. An `offset` can be given, as well as a limit
     /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
     /// line and move the cursor to the start of the next line.
-    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) {
+    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) -> Result<(), Error> {
         let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
-                buffer.push_str(&format!("{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT,));
+                write!(buffer, "{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT)?;
                 // Restore previous color
                 if current_hl_type != HlType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
@@ -209,6 +210,7 @@ impl Row {
             rx += c.width().unwrap_or(1);
         }
         buffer.push_str(RESET_FMT);
+        Ok(())
     }
 }
 
