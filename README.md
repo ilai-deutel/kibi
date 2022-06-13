@@ -16,7 +16,7 @@ Melda natively supports the JSON data format and provides a way to synchronize c
 
 ## Usage of Kibi w/Melda
 For the majority of the functionalities, this version works as the main version of [Kibi](https://github.com/ilai-deutel/kibi). 
-However, it is now possible to use one of the following CRDT storage bakcends when opening a document from the command line:
+However, it is now possible to use one of the following CRDT storage backends when opening a document from the command line:
 | Storage type      | Example path                                              | Description |
 | ----------------- | ------------------------------------------------------------- | -------------------------- |
 | Folder (file://)           | file://$(pwd)/mycrdtdocument                   | The absolute path of a folder (can be on a network share) |
