@@ -1,19 +1,31 @@
 #![allow(clippy::wildcard_imports)]
 
+use crate::row::{HlState, Row, UuidChar};
+use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
+use melda::flate2adapter::Flate2Adapter;
+use melda::{
+    adapter::Adapter, filesystemadapter::FilesystemAdapter, melda::Melda,
+    memoryadapter::MemoryAdapter, solidadapter::SolidAdapter,
+};
+use serde_json::{json, Map, Value};
+use std::env;
 use std::io::{
     self, BufRead, BufReader, ErrorKind::InvalidInput, ErrorKind::NotFound, Read, Seek, Write,
 };
 use std::iter::{self, repeat, successors};
+use std::sync::{Arc, RwLock};
 use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
+use url::Url;
 
-use crate::row::{HlState, Row};
-use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
-
-const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
+const fn ctrl_key(key: u8) -> u8 {
+    key & 0x1f
+}
 const EXIT: u8 = ctrl_key(b'Q');
 const DELETE_BIS: u8 = ctrl_key(b'H');
 const REFRESH_SCREEN: u8 = ctrl_key(b'L');
+const REFRESH_REPLICA: u8 = ctrl_key(b'P');
 const SAVE: u8 = ctrl_key(b'S');
+const SAVE_AS: u8 = ctrl_key(b'N');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
 const DUPLICATE: u8 = ctrl_key(b'D');
@@ -83,6 +95,11 @@ impl CursorState {
     }
 }
 
+enum AdapterReadyFor {
+    LOADING,
+    SAVING,
+}
+
 /// The `Editor` struct, contains the state and configuration of the text editor.
 #[derive(Default)]
 pub struct Editor {
@@ -121,6 +138,18 @@ pub struct Editor {
     n_bytes: u64,
     /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
+    /// Local Document replica
+    local_replica: Option<Melda>,
+    /// Currently loaded url
+    remote_url: Option<Url>,
+    /// Remote Document replica
+    remote_replica: Option<Melda>,
+    /// Adapter status
+    ready_for: Option<AdapterReadyFor>,
+    // Username
+    username: Option<String>,
+    // Password
+    password: Option<String>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -133,7 +162,9 @@ struct StatusMessage {
 
 impl StatusMessage {
     /// Create a new status message and set time to the current date/time.
-    fn new(msg: String) -> Self { Self { msg, time: Instant::now() } }
+    fn new(msg: String) -> Self {
+        Self { msg, time: Instant::now() }
+    }
 }
 
 /// Pretty-format a size in bytes.
@@ -167,6 +198,8 @@ impl Editor {
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
+        editor.initialize_local_replica();
+
         editor.quit_times = config.quit_times;
         editor.config = config;
 
@@ -179,18 +212,120 @@ impl Editor {
         Ok(editor)
     }
 
+    fn initialize_local_replica(&mut self) {
+        // Initialize local replica
+        let adapter = Box::new(MemoryAdapter::new());
+        self.local_replica = Some(Melda::new(Arc::new(RwLock::new(adapter))).unwrap());
+    }
+
+    fn initialize_remote_replica(&mut self, url: &Url) {
+        if self.remote_url.is_none() || self.remote_url.as_ref().unwrap().ne(&url) {
+            let adapter: Box<dyn Adapter> = if url.scheme().eq("file") {
+                Box::new(FilesystemAdapter::new(url.path()).expect("cannot_initialize_adapter"))
+            } else if url.scheme().eq("file+flate") {
+                Box::new(Flate2Adapter::new(Arc::new(RwLock::new(Box::new(
+                    FilesystemAdapter::new(url.path()).expect("cannot_initialize_adapter"),
+                )))))
+            } else if url.scheme().eq("solid") {
+                Box::new(
+                    SolidAdapter::new(
+                        "https://".to_string() + &url.host().unwrap().to_string(),
+                        url.path().to_string() + "/",
+                        self.username.clone(),
+                        self.password.clone(),
+                    )
+                    .expect("cannot_initialize_adapter"),
+                )
+            } else if url.scheme().eq("solid+flate") {
+                Box::new(Flate2Adapter::new(Arc::new(RwLock::new(Box::new(
+                    SolidAdapter::new(
+                        "https://".to_string() + &url.host().unwrap().to_string(),
+                        url.path().to_string() + "/",
+                        self.username.clone(),
+                        self.password.clone(),
+                    )
+                    .expect("cannot_initialize_adapter"),
+                )))))
+            } else {
+                panic!("invalid_adapter");
+            };
+            self.remote_replica = Some(Melda::new(Arc::new(RwLock::new(adapter))).unwrap());
+            self.remote_url = Some(url.clone());
+        } else if self.remote_replica.is_some() {
+            self.remote_replica.as_mut().unwrap().reload().expect("cannot_reload");
+        }
+    }
+
+    fn serialize(&self) -> Map<String, Value> {
+        let mut rows = vec![];
+        for (_, row) in self.rows.iter().enumerate() {
+            let mut rowdata = Map::<String, Value>::new();
+            rowdata.insert("_id".to_string(), Value::from(row.uuid.clone()));
+            let mut rowchars = vec![];
+            for c in &row.chars {
+                let mut chardata = Map::<String, Value>::new();
+                chardata.insert("#".to_string(), Value::from(c.0.to_string()));
+                chardata.insert("_id".to_string(), Value::from(c.1.clone()));
+                rowchars.push(Value::from(chardata));
+            }
+            rowdata.insert("\u{0394}c\u{266D}".to_string(), Value::from(rowchars));
+            rows.push(Value::from(rowdata));
+        }
+        json!({ "\u{0394}rows\u{266D}": Value::from(rows) }).as_object().unwrap().clone()
+    }
+
+    fn deserialize(&mut self) -> u64 {
+        let mut total = 0;
+        match self.local_replica.as_ref().unwrap().read() {
+            Ok(data) => {
+                self.rows.clear();
+                let rows = data.get("\u{0394}rows\u{266D}").unwrap().as_array().unwrap();
+                for r in rows {
+                    let row = r.as_object().unwrap();
+                    let rid = row.get("_id").unwrap().as_str().unwrap();
+                    let rowchars = row.get("\u{0394}c\u{266D}").unwrap().as_array().unwrap();
+                    let mut chars = vec![];
+                    for c in rowchars {
+                        let chardata = c.as_object().unwrap();
+                        let cvalue =
+                            chardata.get("#").unwrap().as_str().unwrap().parse::<u8>().unwrap();
+                        let cid = chardata.get("_id").unwrap().as_str().unwrap();
+                        chars.push(UuidChar(cvalue, cid.to_string()));
+                        total += 1;
+                    }
+                    self.rows.push(Row::new(chars, Some(rid.to_string())));
+                }
+                self.update_all_rows();
+                self.update_screen_cols();
+                self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
+            }
+            Err(e) => set_status!(self, "Error: {}", e),
+        }
+        total
+    }
+
     /// Return the current row if the cursor points to an existing row, `None` otherwise.
-    fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
+    fn current_row(&self) -> Option<&Row> {
+        self.rows.get(self.cursor.y)
+    }
 
     /// Return the position of the cursor, in terms of rendered characters (as opposed to
     /// `self.cursor.x`, which is the position of the cursor in terms of bytes).
-    fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
+    fn rx(&self) -> usize {
+        self.current_row().map_or(0, |r| {
+            let fpos = std::cmp::min(r.cx2rx.len() - 1, self.cursor.x);
+            r.cx2rx[fpos]
+        })
+    }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
         match (key, self.current_row()) {
-            (AKey::Left, Some(row)) if self.cursor.x > 0 =>
-                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1),
+            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
+                self.cursor.x -= row.get_char_size(
+                    row.cx2rx[std::cmp::max(row.cx2rx.len() - 1, self.cursor.x - 1)] - 1,
+                )
+            }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
@@ -198,8 +333,9 @@ impl Editor {
                 self.cursor.y -= 1;
                 self.cursor.x = usize::MAX;
             }
-            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
-                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
+                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x])
+            }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
             //  characters, i.e. according to rx
@@ -338,9 +474,9 @@ impl Editor {
     /// position, add a new row and insert the byte.
     fn insert_byte(&mut self, c: u8) {
         if let Some(row) = self.rows.get_mut(self.cursor.y) {
-            row.chars.insert(self.cursor.x, c);
+            row.chars.insert(self.cursor.x, UuidChar::new(c, None))
         } else {
-            self.rows.push(Row::new(vec![c]));
+            self.rows.push(Row::new(vec![UuidChar::new(c, None)], None));
             // The number of rows has changed. The left padding may need to be updated.
             self.update_screen_cols();
         }
@@ -361,7 +497,7 @@ impl Editor {
             self.update_row(self.cursor.y, false);
             (self.cursor.y + 1, new_chars)
         };
-        self.rows.insert(position, Row::new(new_row_chars));
+        self.rows.insert(position, Row::new(new_row_chars, None));
         self.update_row(position, false);
         self.update_screen_cols();
         self.cursor.move_to_next_line();
@@ -374,7 +510,10 @@ impl Editor {
     fn delete_char(&mut self) {
         if self.cursor.x > 0 {
             let row = &mut self.rows[self.cursor.y];
-            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8 character size).
+            if self.cursor.x >= row.cx2rx.len() || row.cx2rx[self.cursor.x] <= 0 {
+                self.cursor.x = 0;
+                return;
+            }
             let n_bytes_to_remove = row.get_char_size(row.cx2rx[self.cursor.x] - 1);
             row.chars.splice(self.cursor.x - n_bytes_to_remove..self.cursor.x, iter::empty());
             self.update_row(self.cursor.y, false);
@@ -385,7 +524,9 @@ impl Editor {
             let row = self.rows.remove(self.cursor.y);
             let previous_row = &mut self.rows[self.cursor.y - 1];
             self.cursor.x = previous_row.chars.len();
-            previous_row.chars.extend(&row.chars);
+            for c in row.chars {
+                previous_row.chars.push(c);
+            }
             self.update_row(self.cursor.y - 1, true);
             self.update_row(self.cursor.y, false);
             // The number of rows has changed. The left padding may need to be updated.
@@ -410,7 +551,7 @@ impl Editor {
 
     fn duplicate_current_row(&mut self) {
         if let Some(row) = self.current_row() {
-            let new_row = Row::new(row.chars.clone());
+            let new_row = Row::new_from_new_chars(row.chars.iter().map(|x| x.0).collect(), None);
             self.n_bytes += new_row.chars.len() as u64;
             self.rows.insert(self.cursor.y + 1, new_row);
             self.update_row(self.cursor.y + 1, false);
@@ -424,49 +565,114 @@ impl Editor {
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
     /// If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
-        let ft = std::fs::metadata(path)?.file_type();
-        if !(ft.is_file() || ft.is_symlink()) {
-            return Err(io::Error::new(InvalidInput, "Invalid input file type").into());
-        }
-
-        match File::open(path) {
-            Ok(file) => {
-                for line in BufReader::new(file).split(b'\n') {
-                    self.rows.push(Row::new(line?));
+        match Url::parse(path.to_str().unwrap()) {
+            Ok(u) => {
+                self.ready_for = Some(AdapterReadyFor::LOADING);
+                if self.ensure_adapter_is_ready(path) {
+                    self.initialize_local_replica();
+                    self.initialize_remote_replica(&u);
+                    let dc = self.remote_replica.as_ref().unwrap();
+                    self.local_replica.as_mut().unwrap().meld(dc).expect("meld_from_remote_failed");
+                    self.local_replica.as_mut().unwrap().reload().expect("failed_to_reload");
+                    let total = self.deserialize();
+                    set_status!(self, "{} characters read", total);
+                    Ok(())
+                } else {
+                    Ok(())
                 }
-                // If the file ends with an empty line or is empty, we need to append an empty row
-                // to `self.rows`. Unfortunately, BufReader::split doesn't yield an empty Vec in
-                // this case, so we need to check the last byte directly.
-                let mut file = File::open(path)?;
-                file.seek(io::SeekFrom::End(0))?;
-                if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
-                    self.rows.push(Row::new(Vec::new()));
-                }
-                self.update_all_rows();
-                // The number of rows has changed. The left padding may need to be updated.
-                self.update_screen_cols();
-                self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
             }
-            Err(e) if e.kind() == NotFound => self.rows.push(Row::new(Vec::new())),
-            Err(e) => return Err(e.into()),
+            Err(_) => {
+                let ft = std::fs::metadata(path)?.file_type();
+                if !(ft.is_file() || ft.is_symlink()) {
+                    return Err(io::Error::new(InvalidInput, "Invalid input file type").into());
+                }
+                match File::open(path) {
+                    Ok(file) => {
+                        for line in BufReader::new(file).split(b'\n') {
+                            self.rows.push(Row::new_from_new_chars(line?, None));
+                        }
+                        // If the file ends with an empty line or is empty, we need to append an empty row
+                        // to `self.rows`. Unfortunately, BufReader::split doesn't yield an empty Vec in
+                        // this case, so we need to check the last byte directly.
+                        let mut file = File::open(path)?;
+                        file.seek(io::SeekFrom::End(0))?;
+                        if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
+                            self.rows.push(Row::new(Vec::new(), None));
+                        }
+                        self.update_all_rows();
+                        // The number of rows has changed. The left padding may need to be updated.
+                        self.update_screen_cols();
+                        self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
+                    }
+                    Err(e) if e.kind() == NotFound => self.rows.push(Row::new(Vec::new(), None)),
+                    Err(e) => return Err(e.into()),
+                }
+                Ok(())
+            }
         }
-        Ok(())
     }
 
     /// Save the text to a file, given its name.
-    fn save(&self, file_name: &str) -> Result<usize, io::Error> {
-        let mut file = File::create(file_name)?;
-        let mut written = 0;
-        for (i, row) in self.rows.iter().enumerate() {
-            file.write_all(&row.chars)?;
-            written += row.chars.len();
-            if i != (self.rows.len() - 1) {
-                file.write_all(&[b'\n'])?;
-                written += 1;
+    fn save(&mut self, file_name: &str) -> Result<String, io::Error> {
+        match Url::parse(file_name) {
+            Ok(u) => {
+                self.ready_for = Some(AdapterReadyFor::SAVING);
+                if self.ensure_adapter_is_ready(Path::new(file_name)) {
+                    // Update local replica from new content
+                    if self.dirty {
+                        let serialized_state = self.serialize();
+                        self.local_replica
+                            .as_mut()
+                            .unwrap()
+                            .update(serialized_state)
+                            .expect("update_failed");
+                    }
+                    let commit_result =
+                        self.local_replica.as_mut().unwrap().commit(None).expect("commit_failed");
+                    self.initialize_remote_replica(&u);
+                    // Update local replica to integrate remote changes
+                    let melded = self
+                        .local_replica
+                        .as_mut()
+                        .unwrap()
+                        .meld(self.remote_replica.as_ref().unwrap())
+                        .expect("meld_from_remote_failed");
+                    if !melded.is_empty() {
+                        // Something was obtained from the remote replica, reload
+                        self.local_replica.as_mut().unwrap().reload().expect("reload_failed");
+                        self.deserialize();
+                    }
+                    match commit_result {
+                        Some(bid) => {
+                            // Update remote replica
+                            self.remote_replica
+                                .as_mut()
+                                .unwrap()
+                                .meld(&self.local_replica.as_ref().unwrap())
+                                .expect("meld_to_remote_failed");
+                            Ok(bid)
+                        }
+                        None => Ok("Nothing".to_string()),
+                    }
+                } else {
+                    Ok("".to_string())
+                }
+            }
+            Err(_) => {
+                let mut file = File::create(file_name)?;
+                let mut written = 0;
+                for (i, row) in self.rows.iter().enumerate() {
+                    file.write_all(&row.chars.iter().map(|x| x.0).collect::<Vec<u8>>())?;
+                    written += row.chars.len();
+                    if i != (self.rows.len() - 1) {
+                        file.write_all(&[b'\n'])?;
+                        written += 1
+                    }
+                }
+                file.sync_all()?;
+                Ok(format_size(written as u64))
             }
         }
-        file.sync_all()?;
-        Ok(written)
     }
 
     /// Save the text to a file and handle all errors. Errors and success messages will be printed
@@ -475,7 +681,7 @@ impl Editor {
         let saved = self.save(file_name);
         // Print error or success message to the status bar
         match saved.as_ref() {
-            Ok(w) => set_status!(self, "{} written to {}", format_size(*w as u64), file_name),
+            Ok(w) => set_status!(self, "{} written to {}", w, file_name),
             Err(err) => set_status!(self, "Can't save! I/O error: {}", err),
         }
         // If save was successful, set dirty to false.
@@ -507,7 +713,9 @@ impl Editor {
 
     /// Return whether the file being edited is empty or not. If there is more than one row, even if
     /// all the rows are empty, `is_empty` returns `false`, since the text contains new lines.
-    fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
+    fn is_empty(&self) -> bool {
+        self.rows.len() <= 1 && self.n_bytes == 0
+    }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
     fn draw_rows(&self, buffer: &mut String) {
@@ -605,6 +813,36 @@ impl Editor {
                 self.delete_char();
             }
             Key::Escape | Key::Char(REFRESH_SCREEN) => (),
+            Key::Char(REFRESH_REPLICA) => {
+                if self.remote_replica.is_some() {
+                    // Update local replica from new content
+                    let serialized_state = self.serialize();
+                    self.local_replica
+                        .as_mut()
+                        .unwrap()
+                        .update(serialized_state)
+                        .expect("update_failed");
+                    // Save the current stage
+                    let stage =
+                        self.local_replica.as_ref().unwrap().stage().expect("cannot_get_stage");
+                    // Update local replica to integrate remote changes
+                    self.local_replica
+                        .as_mut()
+                        .unwrap()
+                        .meld(self.remote_replica.as_ref().unwrap())
+                        .expect("meld_from_remote_failed");
+                    self.local_replica.as_mut().unwrap().refresh().expect("refresh_failed");
+                    // Replay stage
+                    self.local_replica
+                        .as_mut()
+                        .unwrap()
+                        .replay_stage(&stage)
+                        .expect("failed_to_replay_stage");
+                    self.deserialize();
+                    // Reload again to clear stage
+                    self.local_replica.as_mut().unwrap().reload().expect("reload_failed");
+                }
+            }
             Key::Char(EXIT) => {
                 quit_times = self.quit_times - 1;
                 if !self.dirty || quit_times == 0 {
@@ -621,11 +859,13 @@ impl Editor {
                 }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
-            Key::Char(FIND) =>
-                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
+            Key::Char(FIND) => {
+                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
+            }
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
+            Key::Char(SAVE_AS) => prompt_mode = Some(PromptMode::Save(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;
@@ -643,7 +883,9 @@ impl Editor {
         for _ in 0..num_rows {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
-            if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
+            if let Some(cx) =
+                slice_find(&row.chars.iter().map(|x| x.0).collect::<Vec<u8>>(), query.as_bytes())
+            {
                 self.cursor.y = current as usize;
                 self.cursor.x = cx;
                 // Try to reset the column offset; if the match is after the offset, this
@@ -657,6 +899,15 @@ impl Editor {
         None
     }
 
+    fn ensure_adapter_is_ready(&mut self, path: &Path) -> bool {
+        if path.starts_with("solid://") && self.username.is_none() {
+            self.prompt_mode = Some(PromptMode::Username(String::new()));
+            false
+        } else {
+            true
+        }
+    }
+
     /// If `file_name` is not None, load the file. Then run the text editor.
     ///
     /// # Errors
@@ -668,7 +919,7 @@ impl Editor {
             self.load(path.as_path())?;
             self.file_name = Some(path.to_string_lossy().to_string());
         } else {
-            self.rows.push(Row::new(Vec::new()));
+            self.rows.push(Row::new(Vec::new(), None));
             self.file_name = None;
         }
         loop {
@@ -713,6 +964,10 @@ enum PromptMode {
     GoTo(String),
     /// Execute(prompt buffer)
     Execute(String),
+    /// Solid username
+    Username(String),
+    /// Solid password
+    Password(String),
 }
 
 // TODO: Use trait with mode_status_msg and process_keypress, implement the trait for separate
@@ -721,6 +976,8 @@ impl PromptMode {
     /// Return the status message to print for the selected `PromptMode`.
     fn status_msg(&self) -> String {
         match self {
+            Self::Username(buffer) => format!("Username: {}", buffer),
+            Self::Password(buffer) => format!("Password: {}", "*".repeat(buffer.len())),
             Self::Save(buffer) => format!("Save as: {}", buffer),
             Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {}", buffer),
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {}", buffer),
@@ -737,6 +994,31 @@ impl PromptMode {
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
                 PromptState::Completed(file_name) => ed.save_as(file_name)?,
             },
+            Self::Username(b) => match process_prompt_keypress(b, key) {
+                PromptState::Active(b) => return Ok(Some(Self::Username(b))),
+                PromptState::Cancelled => set_status!(ed, "No username"),
+                PromptState::Completed(username) => {
+                    ed.username = Some(username);
+                    ed.prompt_mode = Some(PromptMode::Password(String::new()));
+                    return Ok(ed.prompt_mode.take());
+                }
+            },
+            Self::Password(b) => match process_prompt_keypress(b, key) {
+                PromptState::Active(b) => return Ok(Some(Self::Password(b))),
+                PromptState::Cancelled => set_status!(ed, "No password"),
+                PromptState::Completed(password) => {
+                    ed.password = Some(password);
+                    let file_name = ed.file_name.as_ref().unwrap().clone();
+                    match ed.ready_for.as_ref().unwrap() {
+                        AdapterReadyFor::LOADING => {
+                            ed.load(&Path::new(file_name.as_str()))?;
+                        }
+                        AdapterReadyFor::SAVING => {
+                            ed.save(file_name.as_str()).unwrap();
+                        }
+                    };
+                }
+            },
             Self::Find(b, saved_cursor, last_match) => {
                 if let Some(row_idx) = last_match {
                     ed.rows[row_idx].match_segment = None;
@@ -744,8 +1026,9 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true),
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => {
+                                (last_match, true)
+                            }
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
@@ -786,8 +1069,9 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() =>
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) if !out.status.success() => {
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                        }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
@@ -863,7 +1147,10 @@ mod tests {
         assert_eq!(editor.cursor.x, editor_cursor_x_before + 3);
         assert_eq!(editor.rows.len(), 1);
         assert_eq!(editor.n_bytes, 3);
-        assert_eq!(editor.rows[0].chars, [b'X', b'Y', b'Z']);
+        assert_eq!(
+            editor.rows[0].chars.iter().map(|uc| uc.0).collect::<Vec<u8>>(),
+            [b'X', b'Y', b'Z']
+        );
     }
 
     #[test]
@@ -880,7 +1167,7 @@ mod tests {
         assert_eq!(editor.n_bytes, 0);
 
         for row in &editor.rows {
-            assert_eq!(row.chars, []);
+            assert!(row.chars.is_empty());
         }
     }
     #[test]
@@ -890,10 +1177,16 @@ mod tests {
             editor.insert_byte(*b);
         }
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Hello".as_bytes());
+        assert_eq!(
+            editor.rows[0].chars.iter().map(|uc| uc.0).collect::<Vec<u8>>(),
+            "Hello".as_bytes()
+        );
         editor.move_cursor(&AKey::Left);
         editor.move_cursor(&AKey::Left);
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Helo".as_bytes());
+        assert_eq!(
+            editor.rows[0].chars.iter().map(|uc| uc.0).collect::<Vec<u8>>(),
+            "Helo".as_bytes()
+        );
     }
 }

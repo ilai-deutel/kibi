@@ -6,6 +6,7 @@
 use std::iter::repeat;
 
 use unicode_width::UnicodeWidthChar;
+use uuid::Uuid;
 
 use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
 use crate::syntax::{Conf as SyntaxConf, HlType};
@@ -24,14 +25,26 @@ pub enum HlState {
 }
 
 impl Default for HlState {
-    fn default() -> Self { Self::Normal }
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+pub struct UuidChar(pub u8, pub String);
+
+impl UuidChar {
+    pub fn new(c: u8, uuid: Option<String>) -> Self {
+        Self(c, uuid.unwrap_or_else(|| Uuid::new_v4().to_simple().to_string()))
+    }
 }
 
 /// Represents a row of characters and how it is rendered.
 #[derive(Default)]
 pub struct Row {
+    // Row unique identifier
+    pub uuid: String,
     /// The characters of the row.
-    pub chars: Vec<u8>,
+    pub chars: Vec<UuidChar>,
     /// How the characters are rendered. In particular, tabs are converted into several spaces, and
     /// bytes may be combined into single UTF-8 characters.
     render: String,
@@ -49,7 +62,25 @@ pub struct Row {
 
 impl Row {
     /// Create a new row, containing characters `chars`.
-    pub fn new(chars: Vec<u8>) -> Self { Self { chars, cx2rx: vec![0], ..Self::default() } }
+    pub fn new(chars: Vec<UuidChar>, uuid: Option<String>) -> Self {
+        Self {
+            uuid: uuid.unwrap_or_else(|| Uuid::new_v4().to_simple().to_string()),
+            chars,
+            cx2rx: vec![0],
+            ..Self::default()
+        }
+    }
+
+    /// Create a new row, containing characters `chars`.
+    pub fn new_from_new_chars(chars: Vec<u8>, uuid: Option<String>) -> Self {
+        let chars = chars.iter().map(|x| UuidChar::new(*x, None)).collect();
+        Self {
+            uuid: uuid.unwrap_or_else(|| Uuid::new_v4().to_simple().to_string()),
+            chars,
+            cx2rx: vec![0],
+            ..Self::default()
+        }
+    }
 
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
@@ -59,7 +90,8 @@ impl Row {
         self.cx2rx.clear();
         self.rx2cx.clear();
         let (mut cx, mut rx) = (0, 0);
-        for c in String::from_utf8_lossy(&self.chars).chars() {
+        let onlychars: Vec<u8> = self.chars.iter().map(|x| x.0).collect();
+        for c in String::from_utf8_lossy(&onlychars).chars() {
             // The number of bytes used to store the character
             let n_bytes = c.len_utf8();
             // The number of rendered characters
