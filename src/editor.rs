@@ -825,6 +825,7 @@ impl Editor {
                     // Save the current stage
                     let stage =
                         self.local_replica.as_ref().unwrap().stage().expect("cannot_get_stage");
+                    self.local_replica.as_mut().unwrap().unstage().expect("cannot_unstage");
                     // Update local replica to integrate remote changes
                     self.local_replica
                         .as_mut()
@@ -839,8 +840,6 @@ impl Editor {
                         .replay_stage(&stage)
                         .expect("failed_to_replay_stage");
                     self.deserialize();
-                    // Reload again to clear stage
-                    self.local_replica.as_mut().unwrap().reload().expect("reload_failed");
                 }
             }
             Key::Char(EXIT) => {
