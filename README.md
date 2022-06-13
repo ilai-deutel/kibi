@@ -4,6 +4,8 @@
 highlighting, line numbers and more, written in Rust with minimal dependencies. In this fork, simple collaboration features based on 
 [Melda](https://github.com/slashdotted/libmelda) have been implemented. The implemented paradigm is [save and refresh](https://support.microsoft.com/en-us/office/save-and-refresh-documents-e0baba43-d843-459b-95dd-d1973b65a2aa): when the user saves the local copy, changes from other users are merged. It is also possible to merge changes without saving the document (using the 'Refresh' keyboard shortcut).
 
+[![asciicast](assets/asciicast.gif)](https://github.com/slashdotted/kibi/assets/asciicast.gif)
+
 # What is Melda?
 
 Melda is a Delta-State JSON CRDT. CRDTs, which stand for Conflict-free Replicated Data Types, are data structures which can be replicated (copied) across multiple computers in a network. Each replica can be individually and concurrently updated without the need for central coordination or synchronization. Updates made on each replica can be merged at any time.
