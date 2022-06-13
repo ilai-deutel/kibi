@@ -17,10 +17,10 @@ For the majority of the functionalities, this version works as the main version 
 However, it is now possible to use one of the following CRDT storage bakcends when opening a document from the command line:
 | Storage type      | Example path                                              | Description |
 | ----------------- | ------------------------------------------------------------- | -------------------------- |
-| Folder            | file://$(pwd)/mycrdtdocument                   | The absolute path of a folder (can be on a network share) |
-| Folder w/compression           | file+flate://$(pwd)/mycrdtdocument     | The absolute path of a folder (can be on a network share) |
-| [Solid](https://solidproject.org/) Pod           | solid://anuser.solidcommunity.net/mycrdtdocument | The URL of a [Solid](https://solidproject.org/) Pod |
-| [Solid](https://solidproject.org/) Pod w/compression            | solid+flate://anuser.solidcommunity.net/mycrdtdocument  | The URL of a [Solid](https://solidproject.org/) Pod |                                                      |
+| Folder (file://)           | file://$(pwd)/mycrdtdocument                   | The absolute path of a folder (can be on a network share) |
+| Folder w/compression (file+flate://)           | file+flate://$(pwd)/mycrdtdocument     | The absolute path of a folder (can be on a network share) |
+| [Solid](https://solidproject.org/) Pod (solid://)           | solid://anuser.solidcommunity.net/mycrdtdocument | The URL of a [Solid](https://solidproject.org/) Pod |
+| [Solid](https://solidproject.org/) Pod w/compression (solid+flate://)            | solid+flate://anuser.solidcommunity.net/mycrdtdocument  | The URL of a [Solid](https://solidproject.org/) Pod |                                                      |
  
  For [Solid](https://solidproject.org/) Pod's access, a username and password will be asked. Compression uses a DEFLATE-based algorithm.
 
