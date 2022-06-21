@@ -1,13 +1,5 @@
 #![allow(clippy::wildcard_imports)]
 
-use crate::row::{HlState, Row, UuidChar};
-use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
-use melda::flate2adapter::Flate2Adapter;
-use melda::{
-    adapter::Adapter, filesystemadapter::FilesystemAdapter, melda::Melda,
-    memoryadapter::MemoryAdapter, solidadapter::SolidAdapter,
-};
-use serde_json::{json, Map, Value};
 use std::env;
 use std::io::{
     self, BufRead, BufReader, ErrorKind::InvalidInput, ErrorKind::NotFound, Read, Seek, Write,
@@ -15,11 +7,15 @@ use std::io::{
 use std::iter::{self, repeat, successors};
 use std::sync::{Arc, RwLock};
 use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
+
+use melda::{melda::Melda, memoryadapter::MemoryAdapter};
+use serde_json::{json, Map, Value};
 use url::Url;
 
-const fn ctrl_key(key: u8) -> u8 {
-    key & 0x1f
-}
+use crate::row::{HlState, Row, UuidChar};
+use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
+
+const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
 const DELETE_BIS: u8 = ctrl_key(b'H');
 const REFRESH_SCREEN: u8 = ctrl_key(b'L');
@@ -162,9 +158,7 @@ struct StatusMessage {
 
 impl StatusMessage {
     /// Create a new status message and set time to the current date/time.
-    fn new(msg: String) -> Self {
-        Self { msg, time: Instant::now() }
-    }
+    fn new(msg: String) -> Self { Self { msg, time: Instant::now() } }
 }
 
 /// Pretty-format a size in bytes.
@@ -220,35 +214,15 @@ impl Editor {
 
     fn initialize_remote_replica(&mut self, url: &Url) {
         if self.remote_url.is_none() || self.remote_url.as_ref().unwrap().ne(&url) {
-            let adapter: Box<dyn Adapter> = if url.scheme().eq("file") {
-                Box::new(FilesystemAdapter::new(url.path()).expect("cannot_initialize_adapter"))
-            } else if url.scheme().eq("file+flate") {
-                Box::new(Flate2Adapter::new(Arc::new(RwLock::new(Box::new(
-                    FilesystemAdapter::new(url.path()).expect("cannot_initialize_adapter"),
-                )))))
-            } else if url.scheme().eq("solid") {
-                Box::new(
-                    SolidAdapter::new(
-                        "https://".to_string() + &url.host().unwrap().to_string(),
-                        url.path().to_string() + "/",
-                        self.username.clone(),
-                        self.password.clone(),
-                    )
-                    .expect("cannot_initialize_adapter"),
-                )
-            } else if url.scheme().eq("solid+flate") {
-                Box::new(Flate2Adapter::new(Arc::new(RwLock::new(Box::new(
-                    SolidAdapter::new(
-                        "https://".to_string() + &url.host().unwrap().to_string(),
-                        url.path().to_string() + "/",
-                        self.username.clone(),
-                        self.password.clone(),
-                    )
-                    .expect("cannot_initialize_adapter"),
-                )))))
-            } else {
-                panic!("invalid_adapter");
-            };
+            let mut auth_url = url.clone();
+            if let Some(u) = &self.username {
+                auth_url.set_username(u).unwrap();
+            }
+            if let Some(p) = &self.password {
+                auth_url.set_password(Some(p)).unwrap();
+            }
+            let adapter = melda::adapter::get_adapter(auth_url.as_str())
+                .expect("cannot_initialize_remote_adapter");
             self.remote_replica = Some(Melda::new(Arc::new(RwLock::new(adapter))).unwrap());
             self.remote_url = Some(url.clone());
         } else if self.remote_replica.is_some() {
@@ -305,9 +279,7 @@ impl Editor {
     }
 
     /// Return the current row if the cursor points to an existing row, `None` otherwise.
-    fn current_row(&self) -> Option<&Row> {
-        self.rows.get(self.cursor.y)
-    }
+    fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
 
     /// Return the position of the cursor, in terms of rendered characters (as opposed to
     /// `self.cursor.x`, which is the position of the cursor in terms of bytes).
@@ -321,11 +293,10 @@ impl Editor {
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey) {
         match (key, self.current_row()) {
-            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
+            (AKey::Left, Some(row)) if self.cursor.x > 0 =>
                 self.cursor.x -= row.get_char_size(
                     row.cx2rx[std::cmp::max(row.cx2rx.len() - 1, self.cursor.x - 1)] - 1,
-                )
-            }
+                ),
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
@@ -333,9 +304,8 @@ impl Editor {
                 self.cursor.y -= 1;
                 self.cursor.x = usize::MAX;
             }
-            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
-                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x])
-            }
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
+                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
             //  characters, i.e. according to rx
@@ -713,9 +683,7 @@ impl Editor {
 
     /// Return whether the file being edited is empty or not. If there is more than one row, even if
     /// all the rows are empty, `is_empty` returns `false`, since the text contains new lines.
-    fn is_empty(&self) -> bool {
-        self.rows.len() <= 1 && self.n_bytes == 0
-    }
+    fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
     fn draw_rows(&self, buffer: &mut String) {
@@ -858,9 +826,8 @@ impl Editor {
                 }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
-            Key::Char(FIND) => {
-                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None))
-            }
+            Key::Char(FIND) =>
+                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
@@ -899,7 +866,11 @@ impl Editor {
     }
 
     fn ensure_adapter_is_ready(&mut self, path: &Path) -> bool {
-        if path.starts_with("solid://") && self.username.is_none() {
+        if (path.starts_with("solid://")
+            || path.starts_with("solid+flate://")
+            || path.starts_with("solid+brotli://"))
+            && self.username.is_none()
+        {
             self.prompt_mode = Some(PromptMode::Username(String::new()));
             false
         } else {
@@ -1025,9 +996,8 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => {
-                                (last_match, true)
-                            }
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
+                                (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
