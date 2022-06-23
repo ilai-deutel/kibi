@@ -1020,9 +1020,9 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "melda"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a9e0ffa15c4582d2b04866870a1b787dc2b4d93ae99ecaab4ac54c6ecfdbed"
+checksum = "155fff4e83fd026d423a51bb3649c4e94091e6f19c447cec47a8f438c2ecc20d"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
