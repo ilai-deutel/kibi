@@ -538,7 +538,7 @@ impl Editor {
         match Url::parse(path.to_str().unwrap()) {
             Ok(u) => {
                 self.ready_for = Some(AdapterReadyFor::LOADING);
-                if self.ensure_adapter_is_ready(path) {
+                if self.ensure_adapter_is_ready(&u) {
                     self.initialize_local_replica();
                     self.initialize_remote_replica(&u);
                     let dc = self.remote_replica.as_ref().unwrap();
@@ -587,7 +587,7 @@ impl Editor {
         match Url::parse(file_name) {
             Ok(u) => {
                 self.ready_for = Some(AdapterReadyFor::SAVING);
-                if self.ensure_adapter_is_ready(Path::new(file_name)) {
+                if self.ensure_adapter_is_ready(&u) {
                     // Update local replica from new content
                     if self.dirty {
                         let serialized_state = self.serialize();
@@ -865,12 +865,8 @@ impl Editor {
         None
     }
 
-    fn ensure_adapter_is_ready(&mut self, path: &Path) -> bool {
-        if (path.starts_with("solid://")
-            || path.starts_with("solid+flate://")
-            || path.starts_with("solid+brotli://"))
-            && self.username.is_none()
-        {
+    fn ensure_adapter_is_ready(&mut self, u: &Url) -> bool {
+        if u.scheme().starts_with("solid") && u.username().is_empty() && self.username.is_none() {
             self.prompt_mode = Some(PromptMode::Username(String::new()));
             false
         } else {
