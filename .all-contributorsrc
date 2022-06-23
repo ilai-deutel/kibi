@@ -168,6 +168,15 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "john-sharratt",
+      "name": "Johnathan Sharratt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17711537?v=4",
+      "profile": "https://github.com/john-sharratt",
+      "contributions": [
+        "code"
+      ]
     }
   ]
 }
