@@ -9,7 +9,7 @@ use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
 
 /// The global Kibi configuration.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
     pub tab_stop: usize,
