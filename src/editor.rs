@@ -1,10 +1,9 @@
 #![allow(clippy::wildcard_imports)]
 
-use std::io::{
-    self, BufRead, BufReader, ErrorKind::InvalidInput, ErrorKind::NotFound, Read, Seek, Write,
-};
+use std::fmt::{Display, Write as _};
+use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::{fmt::Display, fs::File, path::Path, process::Command, thread, time::Instant};
+use std::{fs::File, path::Path, process::Command, thread, time::Instant};
 
 use crate::row::{HlState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
@@ -426,7 +425,7 @@ impl Editor {
     fn load(&mut self, path: &Path) -> Result<(), Error> {
         let ft = std::fs::metadata(path)?.file_type();
         if !(ft.is_file() || ft.is_symlink()) {
-            return Err(io::Error::new(InvalidInput, "Invalid input file type").into());
+            return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type").into());
         }
 
         match File::open(path) {
@@ -447,7 +446,7 @@ impl Editor {
                 self.update_screen_cols();
                 self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
             }
-            Err(e) if e.kind() == NotFound => self.rows.push(Row::new(Vec::new())),
+            Err(e) if e.kind() == ErrorKind::NotFound => self.rows.push(Row::new(Vec::new())),
             Err(e) => return Err(e.into()),
         }
         Ok(())
@@ -497,12 +496,12 @@ impl Editor {
     }
 
     /// Draw the left part of the screen: line numbers and vertical bar.
-    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) {
+    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) -> Result<(), Error> {
         if self.ln_pad >= 2 {
             // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
-            buffer.push_str(&format!("\x1b[38;5;240m{:>1$} \u{2502}", val, self.ln_pad - 2));
-            buffer.push_str(RESET_FMT);
+            write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
         }
+        Ok(())
     }
 
     /// Return whether the file being edited is empty or not. If there is more than one row, even if
@@ -510,28 +509,29 @@ impl Editor {
     fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
-    fn draw_rows(&self, buffer: &mut String) {
+    fn draw_rows(&self, buffer: &mut String) -> Result<(), Error> {
         let row_it = self.rows.iter().map(Some).chain(repeat(None)).enumerate();
         for (i, row) in row_it.skip(self.cursor.roff).take(self.screen_rows) {
             buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
             if let Some(row) = row {
                 // Draw a row of text
-                self.draw_left_padding(buffer, i + 1);
-                row.draw(self.cursor.coff, self.screen_cols, buffer);
+                self.draw_left_padding(buffer, i + 1)?;
+                row.draw(self.cursor.coff, self.screen_cols, buffer)?;
             } else {
                 // Draw an empty row
-                self.draw_left_padding(buffer, '~');
+                self.draw_left_padding(buffer, '~')?;
                 if self.is_empty() && i == self.screen_rows / 3 {
                     let welcome_message = concat!("Kibi ", env!("KIBI_VERSION"));
-                    buffer.push_str(&format!("{:^1$.1$}", welcome_message, self.screen_cols));
+                    write!(buffer, "{:^1$.1$}", welcome_message, self.screen_cols)?;
                 }
             }
             buffer.push_str("\r\n");
         }
+        Ok(())
     }
 
     /// Draw the status bar on the terminal, by adding characters to the buffer.
-    fn draw_status_bar(&self, buffer: &mut String) {
+    fn draw_status_bar(&self, buffer: &mut String) -> Result<(), Error> {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
         let mut left =
@@ -545,7 +545,8 @@ impl Editor {
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
-        buffer.push_str(&format!("{}{}{:>4$.4$}{}\r\n", REVERSE_VIDEO, left, right, RESET_FMT, rw));
+        write!(buffer, "{}{}{:>4$.4$}{}\r\n", REVERSE_VIDEO, left, right, RESET_FMT, rw)?;
+        Ok(())
     }
 
     /// Draw the message bar on the terminal, by adding characters to the buffer.
@@ -562,8 +563,8 @@ impl Editor {
     fn refresh_screen(&mut self) -> Result<(), Error> {
         self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
         let mut buffer = format!("{}{}", HIDE_CURSOR, MOVE_CURSOR_TO_START);
-        self.draw_rows(&mut buffer);
-        self.draw_status_bar(&mut buffer);
+        self.draw_rows(&mut buffer)?;
+        self.draw_status_bar(&mut buffer)?;
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
             // If not in prompt mode, position the cursor according to the `cursor` attributes.
