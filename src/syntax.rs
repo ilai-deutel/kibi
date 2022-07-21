@@ -9,7 +9,7 @@ use crate::{sys, Error};
 /// Each `HLType` is associated with a color, via its discriminant. The ANSI color is equal
 /// to the discriminant, modulo 100. The colors are described here:
 /// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum HlType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
