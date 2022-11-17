@@ -183,7 +183,7 @@ impl Row {
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
-                write!(buffer, "{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT)?;
+                write!(buffer, "{REVERSE_VIDEO}{rendered_char}{RESET_FMT}")?;
                 // Restore previous color
                 if current_hl_type != HlType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
@@ -202,7 +202,7 @@ impl Row {
                     buffer.push_str(&hl_type.to_string());
                     current_hl_type = *hl_type;
                 }
-                buffer.push(c as char);
+                buffer.push(c);
             }
             rx += c.width().unwrap_or(1);
         }

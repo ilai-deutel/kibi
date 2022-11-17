@@ -11,7 +11,7 @@ use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_EN
 /// It is used as an alternative method if `sys::get_window_size()` returns an error.
 pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     let mut stdin = sys::stdin()?;
-    print!("{}{}", REPOSITION_CURSOR_END, DEVICE_STATUS_REPORT);
+    print!("{REPOSITION_CURSOR_END}{DEVICE_STATUS_REPORT}");
     io::stdout().flush()?;
     let mut prefix_buffer = [0_u8; 2];
     stdin.read_exact(&mut prefix_buffer)?;
