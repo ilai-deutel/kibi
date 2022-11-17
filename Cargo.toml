@@ -1,7 +1,7 @@
 [package]
 name = "kibi"
 version = "0.2.2"
-rust-version = "1.53"
+rust-version = "1.62"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"
 edition = "2018"

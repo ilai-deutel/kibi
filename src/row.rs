@@ -12,9 +12,10 @@ use crate::error::Error;
 use crate::syntax::{Conf as SyntaxConf, HlType};
 
 /// The "Highlight State" of the row
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum HlState {
     /// Normal state.
+    #[default]
     Normal,
     /// A multi-line comment has been open, but not yet closed.
     MultiLineComment,
@@ -22,10 +23,6 @@ pub enum HlState {
     String(u8),
     /// A multi-line string has been open, but not yet closed.
     MultiLineString,
-}
-
-impl Default for HlState {
-    fn default() -> Self { Self::Normal }
 }
 
 /// Represents a row of characters and how it is rendered.
