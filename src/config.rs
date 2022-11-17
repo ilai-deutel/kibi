@@ -58,7 +58,7 @@ impl Config {
                     "message_duration" =>
                         conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
-                    _ => return Err(format!("Invalid key: {}", key)),
+                    _ => return Err(format!("Invalid key: {key}")),
                 };
                 Ok(())
             })?;
@@ -90,7 +90,7 @@ where F: FnMut(&str, &str) -> Result<(), String> {
 
 /// Trim a value (right-hand side of a key=value INI line) and parses it.
 pub fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<T, String> {
-    value.trim().parse().map_err(|e| format!("Parser error: {}", e))
+    value.trim().parse().map_err(|e| format!("Parser error: {e}"))
 }
 
 /// Split a comma-separated list of values (right-hand side of a key=value1,value2,... INI line) and
@@ -227,7 +227,7 @@ mod tests {
             custom_config.tab_stop, custom_config.quit_times
         );
 
-        fs::create_dir_all(&kibi_config_home).unwrap();
+        fs::create_dir_all(kibi_config_home).unwrap();
 
         fs::write(kibi_config_home.join("config.ini"), ini_content)
             .expect("Could not write INI file");
