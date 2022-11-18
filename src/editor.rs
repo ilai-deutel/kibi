@@ -15,6 +15,9 @@ const REFRESH_SCREEN: u8 = ctrl_key(b'L');
 const SAVE: u8 = ctrl_key(b'S');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
+const CUT: u8 = ctrl_key(b'X');
+const COPY: u8 = ctrl_key(b'C');
+const PASTE: u8 = ctrl_key(b'V');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
@@ -120,6 +123,8 @@ pub struct Editor {
     n_bytes: u64,
     /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
+	/// The copied buffer of a row
+	copied_row: Vec<u8>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -408,16 +413,32 @@ impl Editor {
     }
 
     fn duplicate_current_row(&mut self) {
+        self.copy_current_row();
+		self.paste_current_row();
+		self.copied_row.clear();
+    }
+
+	fn copy_current_row(&mut self) {
         if let Some(row) = self.current_row() {
-            let new_row = Row::new(row.chars.clone());
-            self.n_bytes += new_row.chars.len() as u64;
-            self.rows.insert(self.cursor.y + 1, new_row);
-            self.update_row(self.cursor.y + 1, false);
-            self.cursor.y += 1;
-            self.dirty = true;
-            // The line number has changed
-            self.update_screen_cols();
+            self.copied_row = row.chars.clone();
         }
+    }
+
+	fn cut_current_row(&mut self) {
+        self.copy_current_row();
+		self.delete_current_row();
+    }
+
+	fn paste_current_row(&mut self) {
+		if self.copied_row.is_empty() { return; }
+		let new_row = Row::new(self.copied_row.clone());
+		self.n_bytes += new_row.chars.len() as u64;
+		self.rows.insert(self.cursor.y + 1, new_row);
+		self.update_row(self.cursor.y + 1, false);
+		self.cursor.y += 1;
+		self.dirty = true;
+		// The line number has changed
+		self.update_screen_cols();
     }
 
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
@@ -626,6 +647,9 @@ impl Editor {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
+            Key::Char(CUT) => self.cut_current_row(),
+            Key::Char(COPY) => self.copy_current_row(),
+            Key::Char(PASTE) => self.paste_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
