@@ -123,8 +123,8 @@ pub struct Editor {
     n_bytes: u64,
     /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
-	/// The copied buffer of a row
-	copied_row: Vec<u8>,
+    /// The copied buffer of a row
+    copied_row: Vec<u8>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -414,31 +414,28 @@ impl Editor {
 
     fn duplicate_current_row(&mut self) {
         self.copy_current_row();
-		self.paste_current_row();
-		self.copied_row.clear();
+        self.paste_current_row();
     }
 
-	fn copy_current_row(&mut self) {
-        if let Some(row) = self.current_row() {
-            self.copied_row = row.chars.clone();
-        }
+    fn copy_current_row(&mut self) { 
+        if let Some(row) = self.current_row() { self.copied_row = row.chars.clone(); }
     }
 
-	fn cut_current_row(&mut self) {
+    fn cut_current_row(&mut self) {
         self.copy_current_row();
-		self.delete_current_row();
+        self.delete_current_row();
     }
 
-	fn paste_current_row(&mut self) {
-		if self.copied_row.is_empty() { return; }
-		let new_row = Row::new(self.copied_row.clone());
-		self.n_bytes += new_row.chars.len() as u64;
-		self.rows.insert(self.cursor.y + 1, new_row);
-		self.update_row(self.cursor.y + 1, false);
-		self.cursor.y += 1;
-		self.dirty = true;
-		// The line number has changed
-		self.update_screen_cols();
+    fn paste_current_row(&mut self) {
+        if self.copied_row.is_empty() { return; }
+        let new_row = Row::new(self.copied_row.clone());
+        self.n_bytes += new_row.chars.len() as u64;
+        self.rows.insert(self.cursor.y + 1, new_row);
+        self.update_row(self.cursor.y + 1, false);
+        self.cursor.y += 1;
+        self.dirty = true;
+        // The line number has changed
+        self.update_screen_cols();
     }
 
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
