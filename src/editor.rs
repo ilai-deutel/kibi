@@ -396,11 +396,9 @@ impl Editor {
             self.update_screen_cols();
             self.dirty = true;
             self.cursor.y -= 1;
-        } else if self.cursor.y == self.rows.len() {
+        } else if self.cursor.y == self.rows.len() { self.move_cursor(&AKey::Left); }
             // If the cursor is located after the last row, pressing backspace is equivalent to
             // pressing the left arrow key.
-            self.move_cursor(&AKey::Left);
-        }
     }
 
     fn delete_current_row(&mut self) {
@@ -413,24 +411,21 @@ impl Editor {
     }
 
     fn duplicate_current_row(&mut self) {
-        self.copy_current_row();
+        self.copy_current_row(true);
         self.paste_current_row();
     }
 
-    fn copy_current_row(&mut self) { 
-        if let Some(row) = self.current_row() { self.copied_row = row.chars.clone(); }
-    }
-
-    fn cut_current_row(&mut self) {
-        self.copy_current_row();
-        self.delete_current_row();
+    fn copy_current_row(&mut self, is_preserving: bool) {
+        if let Some(row) = self.current_row() {
+            self.copied_row = row.chars.clone();
+            if !is_preserving { self.delete_current_row(); }
+        }
     }
 
     fn paste_current_row(&mut self) {
         if self.copied_row.is_empty() { return; }
-        let new_row = Row::new(self.copied_row.clone());
-        self.n_bytes += new_row.chars.len() as u64;
-        self.rows.insert(self.cursor.y + 1, new_row);
+        self.n_bytes += self.copied_row.len() as u64;
+        self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
         self.update_row(self.cursor.y + 1, false);
         self.cursor.y += 1;
         self.dirty = true;
@@ -644,8 +639,8 @@ impl Editor {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
-            Key::Char(CUT) => self.cut_current_row(),
-            Key::Char(COPY) => self.copy_current_row(),
+            Key::Char(CUT) => self.copy_current_row(false),
+            Key::Char(COPY) => self.copy_current_row(true),
             Key::Char(PASTE) => self.paste_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
