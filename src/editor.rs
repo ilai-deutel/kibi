@@ -24,7 +24,7 @@ const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str =
-    "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate | Ctrl-E = execute | Ctrl-C = copy | Ctrl-X = cut | Ctrl-V = paste";
+    "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
