@@ -160,7 +160,6 @@ fn slice_find<T: PartialEq>(s: &[T], needle: &[T]) -> Option<usize> {
     (0..(s.len() + 1).saturating_sub(needle.len())).find(|&i| s[i..].starts_with(needle))
 }
 
-#[rustfmt::skip]
 impl Editor {
     /// Initialize the text editor.
     ///
@@ -286,8 +285,7 @@ impl Editor {
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
         self.screen_rows = wsize.0.saturating_sub(2); // Make room for the status bar and status message
-        self.window_width = wsize.1;
-        self.update_screen_cols();
+        (self.window_width, _) = (wsize.1, self.update_screen_cols());
         Ok(())
     }
 
@@ -350,8 +348,7 @@ impl Editor {
             self.update_screen_cols();
         }
         self.update_row(self.cursor.y, false);
-        self.cursor.x += 1;
-        self.n_bytes += 1;
+        (self.cursor.x, self.n_bytes) = (self.cursor.x + 1, self.n_bytes + 1);
         self.dirty = true;
     }
 
@@ -395,41 +392,45 @@ impl Editor {
             self.update_row(self.cursor.y, false);
             // The number of rows has changed. The left padding may need to be updated.
             self.update_screen_cols();
-            self.dirty = true;
-            self.cursor.y -= 1;
-        } else if self.cursor.y == self.rows.len() { self.move_cursor(&AKey::Left); }
-            // If the cursor is located after the last row, pressing backspace is equivalent to
-            // pressing the left arrow key.
+            (self.dirty, self.cursor.y) = (self.dirty, self.cursor.y - 1);
+        } else if self.cursor.y == self.rows.len() {
+            self.move_cursor(&AKey::Left);
+        }
+        // If the cursor is located after the last row, pressing backspace is equivalent to
+        // pressing the left arrow key.
     }
 
     fn delete_current_row(&mut self) {
         if self.cursor.y < self.rows.len() {
             self.rows[self.cursor.y].chars.clear();
             self.update_row(self.cursor.y, false);
-            self.cursor.move_to_next_line();
-            self.delete_char();
+            (_, _) = (self.cursor.move_to_next_line(), self.delete_char());
         }
     }
 
     fn duplicate_current_row(&mut self) {
-        self.copy_current_row(true);
-        self.paste_current_row();
+        (_, _) = (self.copy_current_row(true), self.paste_current_row());
     }
 
     fn copy_current_row(&mut self, is_preserving: bool) {
-        if let Some(row) = self.current_row() { self.copied_row = row.chars.clone(); }
-        if !is_preserving { self.delete_current_row(); }
+        if let Some(row) = self.current_row() {
+            self.copied_row = row.chars.clone();
+        }
+
+        if !is_preserving {
+            self.delete_current_row();
+        }
     }
 
     fn paste_current_row(&mut self) {
-        if self.copied_row.is_empty() { return; }
+        if self.copied_row.is_empty() {
+            return;
+        }
         self.n_bytes += self.copied_row.len() as u64;
         self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
         self.update_row(self.cursor.y + 1, false);
-        self.cursor.y += 1;
-        self.dirty = true;
         // The line number has changed
-        self.update_screen_cols();
+        (self.cursor.y, self.dirty, _) = (self.cursor.y + 1, true, self.update_screen_cols());
     }
 
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
