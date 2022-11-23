@@ -160,6 +160,7 @@ fn slice_find<T: PartialEq>(s: &[T], needle: &[T]) -> Option<usize> {
     (0..(s.len() + 1).saturating_sub(needle.len())).find(|&i| s[i..].starts_with(needle))
 }
 
+#[rustfmt::skip]
 impl Editor {
     /// Initialize the text editor.
     ///
