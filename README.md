@@ -198,6 +198,9 @@ kibi --version    # Print version information and exit
 | Ctrl-D            | Duplicate the current row                                     |
 | Ctrl-E            | Execute an external command and paste its output              |
 | Ctrl-R            | Remove an entire line                                         |
+| Ctrl-C            | Copies the entire line                                        |
+| Ctrl-X            | Cuts the entire line                                          |
+| Ctrl-V            | Will paste the copied line                                    |
 
 ### Configuration
 
