@@ -284,7 +284,7 @@ impl Editor {
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
         // Make room for the status bar and status message
-        (self.screen_rows, self.window_width) = (wsize.0.saturating_sub(2), wsize.1); 
+        (self.screen_rows, self.window_width) = (wsize.0.saturating_sub(2), wsize.1);
         self.update_screen_cols();
         Ok(())
     }
