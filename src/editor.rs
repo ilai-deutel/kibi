@@ -171,8 +171,7 @@ impl Editor {
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
-        editor.quit_times = config.quit_times;
-        editor.config = config;
+        (editor.quit_times, editor.config) = (config.quit_times, config);
 
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
@@ -284,8 +283,9 @@ impl Editor {
     /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding` attributes.
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
-        self.screen_rows = wsize.0.saturating_sub(2); // Make room for the status bar and status message
-        (self.window_width, _) = (wsize.1, self.update_screen_cols());
+        // Make room for the status bar and status message
+        (self.screen_rows, self.window_width) = (wsize.0.saturating_sub(2), wsize.1); 
+        self.update_screen_cols();
         Ok(())
     }
 
@@ -394,22 +394,24 @@ impl Editor {
             self.update_screen_cols();
             (self.dirty, self.cursor.y) = (self.dirty, self.cursor.y - 1);
         } else if self.cursor.y == self.rows.len() {
+            // If the cursor is located after the last row, pressing backspace is equivalent to
+            // pressing the left arrow key.
             self.move_cursor(&AKey::Left);
         }
-        // If the cursor is located after the last row, pressing backspace is equivalent to
-        // pressing the left arrow key.
     }
 
     fn delete_current_row(&mut self) {
         if self.cursor.y < self.rows.len() {
             self.rows[self.cursor.y].chars.clear();
             self.update_row(self.cursor.y, false);
-            (_, _) = (self.cursor.move_to_next_line(), self.delete_char());
+            self.cursor.move_to_next_line();
+            self.delete_char();
         }
     }
 
     fn duplicate_current_row(&mut self) {
-        (_, _) = (self.copy_current_row(true), self.paste_current_row());
+        self.copy_current_row(true);
+        self.paste_current_row();
     }
 
     fn copy_current_row(&mut self, is_preserving: bool) {
@@ -429,8 +431,9 @@ impl Editor {
         self.n_bytes += self.copied_row.len() as u64;
         self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
         self.update_row(self.cursor.y + 1, false);
+        (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
         // The line number has changed
-        (self.cursor.y, self.dirty, _) = (self.cursor.y + 1, true, self.update_screen_cols());
+        self.update_screen_cols();
     }
 
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
@@ -661,8 +664,7 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
-                self.cursor.y = current as usize;
-                self.cursor.x = cx;
+                (self.cursor.x, self.cursor.y) = (cx, current as usize);
                 // Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.cursor.scroll() so that the result is visible
                 self.cursor.coff = 0;
