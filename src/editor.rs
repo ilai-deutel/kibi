@@ -664,7 +664,7 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
-                (self.cursor.x, self.cursor.y) = (cx, current as usize);
+                (self.cursor.x, self.cursor.y) = (cx, current);
                 // Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.cursor.scroll() so that the result is visible
                 self.cursor.coff = 0;

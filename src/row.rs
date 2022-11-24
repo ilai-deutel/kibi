@@ -205,7 +205,7 @@ impl Row {
                     buffer.push_str(&hl_type.to_string());
                     current_hl_type = *hl_type;
                 }
-                buffer.push(c as char);
+                buffer.push(c);
             }
             rx += c.width().unwrap_or(1);
         }
