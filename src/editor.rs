@@ -143,7 +143,7 @@ impl StatusMessage {
 /// Pretty-format a size in bytes.
 fn format_size(n: u64) -> String {
     if n < 1024 {
-        return format!("{}B", n);
+        return format!("{n}B");
     }
     // i is the largest value such that 1024 ^ i < n
     // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1 from it
@@ -551,17 +551,17 @@ impl Editor {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
         let mut left =
-            format!("{:.30}{}", self.file_name.as_deref().unwrap_or("[No Name]"), modified);
+            format!("{:.30}{modified}", self.file_name.as_deref().unwrap_or("[No Name]"));
         left.truncate(self.window_width);
 
         // Right part of the status bar
         let size = format_size(self.n_bytes + self.rows.len().saturating_sub(1) as u64);
         let right =
-            format!("{} | {} | {}:{}", self.syntax.name, size, self.cursor.y + 1, self.rx() + 1);
+            format!("{} | {size} | {}:{}", self.syntax.name, self.cursor.y + 1, self.rx() + 1);
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
-        write!(buffer, "{}{}{:>4$.4$}{}\r\n", REVERSE_VIDEO, left, right, RESET_FMT, rw)?;
+        write!(buffer, "{REVERSE_VIDEO}{left}{right:>rw$.rw$}{RESET_FMT}\r\n")?;
         Ok(())
     }
 
@@ -578,7 +578,7 @@ impl Editor {
     /// move the cursor to the correct position.
     fn refresh_screen(&mut self) -> Result<(), Error> {
         self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
-        let mut buffer = format!("{}{}", HIDE_CURSOR, MOVE_CURSOR_TO_START);
+        let mut buffer = format!("{HIDE_CURSOR}{MOVE_CURSOR_TO_START}");
         self.draw_rows(&mut buffer)?;
         self.draw_status_bar(&mut buffer)?;
         self.draw_message_bar(&mut buffer);
@@ -590,7 +590,7 @@ impl Editor {
             (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
         };
         // Finally, print `buffer` and move the cursor
-        print!("{}\x1b[{};{}H{}", buffer, cursor_y, cursor_x, SHOW_CURSOR);
+        print!("{buffer}\x1b[{cursor_y};{cursor_x}H{SHOW_CURSOR}");
         io::stdout().flush().map_err(Error::from)
     }
 
@@ -716,7 +716,7 @@ impl Drop for Editor {
             sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.");
         }
         if !thread::panicking() {
-            print!("{}{}", CLEAR_SCREEN, MOVE_CURSOR_TO_START);
+            print!("{CLEAR_SCREEN}{MOVE_CURSOR_TO_START}");
             io::stdout().flush().expect("Could not flush stdout");
         }
     }
@@ -740,10 +740,10 @@ impl PromptMode {
     /// Return the status message to print for the selected `PromptMode`.
     fn status_msg(&self) -> String {
         match self {
-            Self::Save(buffer) => format!("Save as: {}", buffer),
-            Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {}", buffer),
-            Self::GoTo(buffer) => format!("Enter line number[:column number]: {}", buffer),
-            Self::Execute(buffer) => format!("Command to execute: {}", buffer),
+            Self::Save(buffer) => format!("Save as: {buffer}"),
+            Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {buffer}"),
+            Self::GoTo(buffer) => format!("Enter line number[:column number]: {buffer}"),
+            Self::Execute(buffer) => format!("Command to execute: {buffer}"),
         }
     }
 

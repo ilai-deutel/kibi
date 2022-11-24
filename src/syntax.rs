@@ -84,7 +84,7 @@ impl Conf {
                 "multiline_string_delim" => sc.ml_string_delim = Some(pv(val)?),
                 "keywords_1" => sc.keywords.push((HlType::Keyword1, pvs(val)?)),
                 "keywords_2" => sc.keywords.push((HlType::Keyword2, pvs(val)?)),
-                _ => return Err(format!("Invalid key: {}", key)),
+                _ => return Err(format!("Invalid key: {key}")),
             }
             Ok(())
         })?;
