@@ -427,7 +427,7 @@ impl Editor {
         } else {
             self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
         }
-        self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()) as usize, false);
+        self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()), false);
         (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
         // The line number has changed
         self.update_screen_cols();
