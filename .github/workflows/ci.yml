@@ -39,15 +39,15 @@ jobs:
           # MSRV (Linux)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            toolchain: 1.59.0
+            toolchain: 1.62.1
           # MSRV (MacOS)
           - os: macos-latest
             target: x86_64-apple-darwin
-            toolchain: 1.59.0
+            toolchain: 1.62.1
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
-            toolchain: 1.59.0
+            toolchain: 1.62.1
 
           # Nightly (Linux)
           - os: ubuntu-latest
@@ -122,7 +122,7 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - 1.59.0  # MSRV
+          - 1.62.0  # MSRV
           - nightly
     env:
       CARGO_TERM_COLOR: always

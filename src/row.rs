@@ -12,9 +12,10 @@ use crate::error::Error;
 use crate::syntax::{Conf as SyntaxConf, HlType};
 
 /// The "Highlight State" of the row
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum HlState {
     /// Normal state.
+    #[default]
     Normal,
     /// A multi-line comment has been open, but not yet closed.
     MultiLineComment,
@@ -22,10 +23,6 @@ pub enum HlState {
     String(u8),
     /// A multi-line string has been open, but not yet closed.
     MultiLineString,
-}
-
-impl Default for HlState {
-    fn default() -> Self { Self::Normal }
 }
 
 /// Represents a row of characters and how it is rendered.
@@ -186,7 +183,7 @@ impl Row {
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
-                write!(buffer, "{}{}{}", REVERSE_VIDEO, rendered_char, RESET_FMT)?;
+                write!(buffer, "{REVERSE_VIDEO}{rendered_char}{RESET_FMT}")?;
                 // Restore previous color
                 if current_hl_type != HlType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
