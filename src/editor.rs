@@ -15,13 +15,16 @@ const REFRESH_SCREEN: u8 = ctrl_key(b'L');
 const SAVE: u8 = ctrl_key(b'S');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
+const CUT: u8 = ctrl_key(b'X');
+const COPY: u8 = ctrl_key(b'C');
+const PASTE: u8 = ctrl_key(b'V');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str =
-    "Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find | Ctrl-G = go to | Ctrl-D = duplicate | Ctrl-E = execute";
+    "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
@@ -69,10 +72,7 @@ struct CursorState {
 }
 
 impl CursorState {
-    fn move_to_next_line(&mut self) {
-        self.y += 1;
-        self.x = 0;
-    }
+    fn move_to_next_line(&mut self) { (self.x, self.y) = (0, self.y + 1); }
 
     /// Scroll the terminal window vertically and horizontally (i.e. adjusting the row offset and
     /// the column offset) so that the cursor can be shown.
@@ -120,6 +120,8 @@ pub struct Editor {
     n_bytes: u64,
     /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
+    /// The copied buffer of a row
+    copied_row: Vec<u8>,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -166,8 +168,7 @@ impl Editor {
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
-        editor.quit_times = config.quit_times;
-        editor.config = config;
+        (editor.quit_times, editor.config) = (config.quit_times, config);
 
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
@@ -279,8 +280,8 @@ impl Editor {
     /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding` attributes.
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
-        self.screen_rows = wsize.0.saturating_sub(2); // Make room for the status bar and status message
-        self.window_width = wsize.1;
+        // Make room for the status bar and status message
+        (self.screen_rows, self.window_width) = (wsize.0.saturating_sub(2), wsize.1);
         self.update_screen_cols();
         Ok(())
     }
@@ -344,8 +345,7 @@ impl Editor {
             self.update_screen_cols();
         }
         self.update_row(self.cursor.y, false);
-        self.cursor.x += 1;
-        self.n_bytes += 1;
+        (self.cursor.x, self.n_bytes) = (self.cursor.x + 1, self.n_bytes + 1);
         self.dirty = true;
     }
 
@@ -389,8 +389,7 @@ impl Editor {
             self.update_row(self.cursor.y, false);
             // The number of rows has changed. The left padding may need to be updated.
             self.update_screen_cols();
-            self.dirty = true;
-            self.cursor.y -= 1;
+            (self.dirty, self.cursor.y) = (self.dirty, self.cursor.y - 1);
         } else if self.cursor.y == self.rows.len() {
             // If the cursor is located after the last row, pressing backspace is equivalent to
             // pressing the left arrow key.
@@ -408,16 +407,30 @@ impl Editor {
     }
 
     fn duplicate_current_row(&mut self) {
+        self.copy_current_row();
+        self.paste_current_row();
+    }
+
+    fn copy_current_row(&mut self) {
         if let Some(row) = self.current_row() {
-            let new_row = Row::new(row.chars.clone());
-            self.n_bytes += new_row.chars.len() as u64;
-            self.rows.insert(self.cursor.y + 1, new_row);
-            self.update_row(self.cursor.y + 1, false);
-            self.cursor.y += 1;
-            self.dirty = true;
-            // The line number has changed
-            self.update_screen_cols();
+            self.copied_row = row.chars.clone();
         }
+    }
+
+    fn paste_current_row(&mut self) {
+        if self.copied_row.is_empty() {
+            return;
+        }
+        self.n_bytes += self.copied_row.len() as u64;
+        if self.cursor.y == self.rows.len() {
+            self.rows.push(Row::new(self.copied_row.clone()));
+        } else {
+            self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
+        }
+        self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()), false);
+        (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
+        // The line number has changed
+        self.update_screen_cols();
     }
 
     /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
@@ -626,6 +639,12 @@ impl Editor {
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
+            Key::Char(CUT) => {
+                self.copy_current_row();
+                self.delete_current_row();
+            }
+            Key::Char(COPY) => self.copy_current_row(),
+            Key::Char(PASTE) => self.paste_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
@@ -645,8 +664,7 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
-                self.cursor.y = current;
-                self.cursor.x = cx;
+                (self.cursor.x, self.cursor.y) = (cx, current);
                 // Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.cursor.scroll() so that the result is visible
                 self.cursor.coff = 0;
