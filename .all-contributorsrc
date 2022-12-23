@@ -195,6 +195,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sogreatandpowerfull",
+      "name": "SoGreatAndPowerful",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114095654?v=4",
+      "profile": "https://github.com/sogreatandpowerfull",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
   ]
 }
