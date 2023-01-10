@@ -213,8 +213,22 @@ impl Editor {
                 self.cursor.y -= 1;
                 self.cursor.x = usize::MAX;
             }
-            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() =>
-                self.cursor.x += row.get_char_size(row.cx2rx[self.cursor.x]),
+            (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
+                let mut cursor_x = self.cursor.x;
+                if ctrl == false {
+                    cursor_x += row.get_char_size(row.cx2rx[cursor_x])
+                } else {
+                    // Skips current word
+                    while cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 {
+                        cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
+                    }
+                    // Skips whitespaces
+                    while cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 {
+                        cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
+                    }
+                }
+                self.cursor.x = cursor_x;
+            }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
             //  characters, i.e. according to rx
