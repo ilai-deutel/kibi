@@ -191,11 +191,10 @@ impl Editor {
         let mut cursor_x = self.cursor.x;
         match (key, self.current_row()) {
             (AKey::Left, Some(row)) if self.cursor.x > 0 => {
-                if !ctrl { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
-                else {  // ← moving to previous word
-                    while cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
-                    while cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
-                }
+                cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
+                // ← moving to previous word
+                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
+                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
             }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
@@ -205,11 +204,10 @@ impl Editor {
                 cursor_x = usize::MAX;
             }
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
-                if !ctrl { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
-                else {  // → moving to next word
-                    while cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
-                    while cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
-                }
+                cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
+                // → moving to next word
+                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
+                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
