@@ -187,10 +187,25 @@ impl Editor {
     fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
-    fn move_cursor(&mut self, key: &AKey) {
+    /// ctrl bool marks if CTRL key is pressed or not
+    fn move_cursor(&mut self, key: &AKey, ctrl: bool) {
         match (key, self.current_row()) {
-            (AKey::Left, Some(row)) if self.cursor.x > 0 =>
-                self.cursor.x -= row.get_char_size(row.cx2rx[self.cursor.x] - 1),
+            (AKey::Left, Some(row)) if self.cursor.x > 0 => {
+                let mut cursor_x = self.cursor.x;
+                if ctrl == false {
+                    cursor_x -= row.get_char_size(row.cx2rx[cursor_x])
+                } else {
+                    // Skips whitespaces
+                    while cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 {
+                        cursor_x -= row.get_char_size(row.cx2rx[cursor_x]);
+                    }
+                    // Previous word
+                    while cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 {
+                        cursor_x -= row.get_char_size(row.cx2rx[cursor_x - 1]);
+                    }
+                }
+                self.cursor.x = cursor_x;
+            }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
@@ -393,7 +408,7 @@ impl Editor {
         } else if self.cursor.y == self.rows.len() {
             // If the cursor is located after the last row, pressing backspace is equivalent to
             // pressing the left arrow key.
-            self.move_cursor(&AKey::Left);
+            self.move_cursor(&AKey::Left, false);
         }
     }
 
@@ -600,7 +615,8 @@ impl Editor {
 
         match key {
             // TODO: CtrlArrow should move to next word
-            Key::Arrow(arrow) | Key::CtrlArrow(arrow) => self.move_cursor(arrow),
+            Key::Arrow(arrow) => self.move_cursor(arrow, false),
+            Key::CtrlArrow(arrow) => self.move_cursor(arrow, true),
             Key::Page(PageKey::Up) => {
                 self.cursor.y = self.cursor.roff.saturating_sub(self.screen_rows);
                 self.update_cursor_x_position();
@@ -615,7 +631,7 @@ impl Editor {
             Key::Char(BACKSPACE | DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
             Key::Char(REMOVE_LINE) => self.delete_current_row(),
             Key::Delete => {
-                self.move_cursor(&AKey::Right);
+                self.move_cursor(&AKey::Right, false);
                 self.delete_char();
             }
             Key::Escape | Key::Char(REFRESH_SCREEN) => (),
@@ -910,8 +926,8 @@ mod tests {
         }
         editor.delete_char();
         assert_eq!(editor.rows[0].chars, "Hello".as_bytes());
-        editor.move_cursor(&AKey::Left);
-        editor.move_cursor(&AKey::Left);
+        editor.move_cursor(&AKey::Left, false);
+        editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
         assert_eq!(editor.rows[0].chars, "Helo".as_bytes());
     }
