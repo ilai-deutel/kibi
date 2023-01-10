@@ -187,47 +187,29 @@ impl Editor {
     fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
-    /// ctrl bool marks if CTRL key is pressed or not
     fn move_cursor(&mut self, key: &AKey, ctrl: bool) {
+        let mut cursor_x = self.cursor.x;
         match (key, self.current_row()) {
             (AKey::Left, Some(row)) if self.cursor.x > 0 => {
-                let mut cursor_x = self.cursor.x;
-                if ctrl == false {
-                    cursor_x -= row.get_char_size(row.cx2rx[cursor_x])
-                } else {
-                    // Skips whitespaces
-                    while cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 {
-                        cursor_x -= row.get_char_size(row.cx2rx[cursor_x]);
-                    }
-                    // Previous word
-                    while cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 {
-                        cursor_x -= row.get_char_size(row.cx2rx[cursor_x - 1]);
-                    }
+                if !ctrl { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
+                else {  // ← moving to previous word
+                    while cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
+                    while cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
                 }
-                self.cursor.x = cursor_x;
             }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
                 // length, so we can just set here to the maximum possible value here.
                 self.cursor.y -= 1;
-                self.cursor.x = usize::MAX;
+                cursor_x = usize::MAX;
             }
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
-                let mut cursor_x = self.cursor.x;
-                if ctrl == false {
-                    cursor_x += row.get_char_size(row.cx2rx[cursor_x])
-                } else {
-                    // Skips current word
-                    while cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 {
-                        cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
-                    }
-                    // Skips whitespaces
-                    while cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 {
-                        cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
-                    }
+                if !ctrl { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
+                else {  // → moving to next word
+                    while cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
+                    while cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
                 }
-                self.cursor.x = cursor_x;
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
@@ -236,6 +218,7 @@ impl Editor {
             (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
         }
+        self.cursor.x = cursor_x;
         self.update_cursor_x_position();
     }
 
