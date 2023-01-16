@@ -70,10 +70,9 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     let orig_term = unsafe { maybe_term.assume_init() };
     let mut term = orig_term;
     unsafe { libc::cfmakeraw(&mut term) };
-    // Set the minimum number of characters for non-canonical reads
-    term.c_cc[VMIN] = 0;
-    // Set the timeout in deciseconds for non-canonical reads
-    term.c_cc[VTIME] = 1;
+    // First sets the minimum number of characters for non-canonical reads
+    // Second sets the timeout in deciseconds for non-canonical reads
+    (term.c_cc[VMIN], term.c_cc[VTIME]) = (0, 1);
     set_term_mode(&term)?;
     Ok(orig_term)
 }

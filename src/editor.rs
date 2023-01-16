@@ -193,21 +193,22 @@ impl Editor {
             (AKey::Left, Some(row)) if self.cursor.x > 0 => {
                 cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
                 // ← moving to previous word
-                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] == 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
-                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 { cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1); }
+                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 {
+                    cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
+                }
             }
             (AKey::Left, _) if self.cursor.y > 0 => {
                 // ← at the beginning of the line: move to the end of the previous line. The x
                 // position will be adjusted after this `match` to accommodate the current row
                 // length, so we can just set here to the maximum possible value here.
-                self.cursor.y -= 1;
-                cursor_x = usize::MAX;
+                (self.cursor.y, cursor_x) = (self.cursor.y - 1, usize::MAX);
             }
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
                 cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
                 // → moving to next word
-                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
-                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] == 0x20 { cursor_x += row.get_char_size(row.cx2rx[cursor_x]); }
+                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 {
+                    cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
+                }
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
@@ -355,8 +356,7 @@ impl Editor {
             self.update_screen_cols();
         }
         self.update_row(self.cursor.y, false);
-        (self.cursor.x, self.n_bytes) = (self.cursor.x + 1, self.n_bytes + 1);
-        self.dirty = true;
+        (self.cursor.x, self.n_bytes, self.dirty) = (self.cursor.x + 1, self.n_bytes + 1, true);
     }
 
     /// Insert a new line at the current cursor position and move the cursor to the start of the new
@@ -557,14 +557,12 @@ impl Editor {
     fn draw_status_bar(&self, buffer: &mut String) -> Result<(), Error> {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
-        let mut left =
-            format!("{:.30}{modified}", self.file_name.as_deref().unwrap_or("[No Name]"));
+        let mut left = format!("{:.30}{modified}", self.file_name.as_deref().unwrap_or("[No Name]"));
         left.truncate(self.window_width);
 
         // Right part of the status bar
         let size = format_size(self.n_bytes + self.rows.len().saturating_sub(1) as u64);
-        let right =
-            format!("{} | {size} | {}:{}", self.syntax.name, self.cursor.y + 1, self.rx() + 1);
+        let right = format!("{} | {size} | {}:{}", self.syntax.name, self.cursor.y + 1, self.rx() + 1);
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
@@ -675,10 +673,9 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
-                (self.cursor.x, self.cursor.y) = (cx, current);
-                // Try to reset the column offset; if the match is after the offset, this
+                // self.cursor.coff: Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.cursor.scroll() so that the result is visible
-                self.cursor.coff = 0;
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
                 let rx = row.cx2rx[cx];
                 row.match_segment = Some(rx..rx + query.len());
                 return Some(current);
@@ -774,8 +771,7 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true),
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
@@ -792,8 +788,7 @@ impl PromptMode {
                 PromptState::Active(b) => return Ok(Some(Self::GoTo(b))),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
-                    let mut split = b
-                        .splitn(2, ':')
+                    let mut split = b.splitn(2, ':')
                         // saturating_sub: Lines and cols are 1-indexed
                         .map(|u| u.trim().parse().map(|s: usize| s.saturating_sub(1)));
                     match (split.next().transpose(), split.next().transpose()) {
