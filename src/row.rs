@@ -91,7 +91,8 @@ impl Row {
 
         'syntax_loop: while self.hl.len() < line.len() {
             let i = self.hl.len();
-            let find_str = |s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
+            let find_str =
+                |s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
 
             if hl_state == HlState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
                 self.hl.extend(repeat(HlType::Comment).take(line.len() - i));
@@ -102,7 +103,8 @@ impl Row {
             // differences are: the start/end delimiters, the `HLState`, the `HLType`.
             for (delims, mstate, mtype) in &[
                 (ml_comment_delims, HlState::MultiLineComment, HlType::MlComment),
-                (ml_string_delims, HlState::MultiLineString, HlType::MlString),] {
+                (ml_string_delims, HlState::MultiLineString, HlType::MlString),
+            ] {
                 if let Some((start, end)) = delims {
                     if hl_state == *mstate {
                         if find_str(end) {
@@ -165,7 +167,8 @@ impl Row {
         }
 
         // String state doesn't propagate to the next row
-        self.hl_state = if matches!(hl_state, HlState::String(_)) { HlState::Normal } else { hl_state };
+        self.hl_state =
+            if matches!(hl_state, HlState::String(_)) { HlState::Normal } else { hl_state };
         self.hl_state
     }
 

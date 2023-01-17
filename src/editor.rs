@@ -197,12 +197,11 @@ impl Editor {
                     cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
                 }
             }
-            (AKey::Left, _) if self.cursor.y > 0 => {
-                // ← at the beginning of the line: move to the end of the previous line. The x
-                // position will be adjusted after this `match` to accommodate the current row
-                // length, so we can just set here to the maximum possible value here.
-                (self.cursor.y, cursor_x) = (self.cursor.y - 1, usize::MAX);
-            }
+            // ← at the beginning of the line: move to the end of the previous line. The x
+            // position will be adjusted after this `match` to accommodate the current row
+            // length, so we can just set here to the maximum possible value here.
+            (AKey::Left, _) if self.cursor.y > 0 =>
+                (self.cursor.y, cursor_x) = (self.cursor.y - 1, usize::MAX),
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
                 cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
                 // → moving to next word
@@ -557,12 +556,14 @@ impl Editor {
     fn draw_status_bar(&self, buffer: &mut String) -> Result<(), Error> {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
-        let mut left = format!("{:.30}{modified}", self.file_name.as_deref().unwrap_or("[No Name]"));
+        let mut left =
+            format!("{:.30}{modified}", self.file_name.as_deref().unwrap_or("[No Name]"));
         left.truncate(self.window_width);
 
         // Right part of the status bar
         let size = format_size(self.n_bytes + self.rows.len().saturating_sub(1) as u64);
-        let right = format!("{} | {size} | {}:{}", self.syntax.name, self.cursor.y + 1, self.rx() + 1);
+        let right =
+            format!("{} | {size} | {}:{}", self.syntax.name, self.cursor.y + 1, self.rx() + 1);
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
@@ -771,7 +772,8 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => (last_match, true),
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
+                                (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
