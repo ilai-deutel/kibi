@@ -920,6 +920,7 @@ mod tests {
         assert_eq!(editor.rows[0].chars, "Hello".as_bytes());
         editor.move_cursor(&AKey::Left, false);
         editor.move_cursor(&AKey::Left, false);
+        editor.move_cursor(&AKey::Left, true);
         editor.delete_char();
         assert_eq!(editor.rows[0].chars, "Helo".as_bytes());
     }
