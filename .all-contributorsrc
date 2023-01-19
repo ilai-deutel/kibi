@@ -204,6 +204,15 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "carol-mb",
+      "name": "Mihai-Carol Bazga",
+      "avatar_url": "https://avatars.githubusercontent.com/u/117681554?v=4",
+      "profile": "https://github.com/carol-mb",
+      "contributions": [
+        "code"
+      ]
     }
   ]
 }
