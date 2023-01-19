@@ -295,12 +295,12 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * Command to jump to a given row/column
 * Handle window resize (UNIX only)
 * Parsing configuration files: global editor configuration, language-specific
-  syntax highlighting configuration
+  syntax highlighting configuration (38 languages and counting)
 * Display line numbers on the left of the screen; display file size in the status
   bar
 * Syntax highlighting: multi-line strings
 * *Save as* prompt when no file name has been provided
-* Command to duplicate the current row
+* Command to duplicate the current row, to quickly move between words
 * Ability to execute an external command from the editor and paste its output
 * Memory safety, thanks to Rust!
 * Many bug fixes
