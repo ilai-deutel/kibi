@@ -65,8 +65,7 @@ impl Row {
             self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
             self.cx2rx.extend(std::iter::repeat(rx).take(n_bytes));
             self.rx2cx.extend(std::iter::repeat(cx).take(n_rend_chars));
-            rx += n_rend_chars;
-            cx += n_bytes;
+            (rx, cx) = (rx + n_rend_chars, cx + n_bytes);
         }
         self.cx2rx.push(rx);
         self.rx2cx.push(cx);

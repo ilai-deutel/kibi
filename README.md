@@ -201,6 +201,8 @@ kibi --version    # Print version information and exit
 | Ctrl-C            | Copies the entire line                                        |
 | Ctrl-X            | Cuts the entire line                                          |
 | Ctrl-V            | Will paste the copied line                                    |
+| Ctrl-LeftArrow    | Moves cursor to previous word                                 |
+| Ctrl-RightArrow   | Moves cursor to next word                                     |
 
 ### Configuration
 
