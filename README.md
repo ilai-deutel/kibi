@@ -10,7 +10,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-21-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-22-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -367,6 +367,9 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/No-one-important"><img src="https://avatars.githubusercontent.com/u/72458263?v=4" width="100px;" alt=""/><br /><sub><b>No-one-important</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=No-one-important" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/RobertGrancsa"><img src="https://avatars.githubusercontent.com/u/22158239?v=4" width="100px;" alt=""/><br /><sub><b>Robert Grancsa</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=RobertGrancsa" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/sogreatandpowerfull"><img src="https://avatars.githubusercontent.com/u/114095654?v=4" width="100px;" alt=""/><br /><sub><b>SoGreatAndPowerful</b></sub></a><br /><a href="#syntax-highlighting-sogreatandpowerfull" title="Contributing to syntax highlighting configuration files">💠</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/carol-mb"><img src="https://avatars.githubusercontent.com/u/117681554?v=4" width="100px;" alt=""/><br /><sub><b>Mihai-Carol Bazga</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=carol-mb" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
