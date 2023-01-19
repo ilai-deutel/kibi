@@ -917,11 +917,11 @@ mod tests {
             editor.insert_byte(*b);
         }
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Hello world!".as_bytes());
+        assert_eq!(editor.rows[0].chars, "Hello world".as_bytes());
         editor.move_cursor(&AKey::Left, true);
         editor.move_cursor(&AKey::Left, false);
         editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Helo world!".as_bytes());
+        assert_eq!(editor.rows[0].chars, "Helo world".as_bytes());
     }
 }
