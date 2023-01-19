@@ -193,7 +193,7 @@ impl Editor {
             (AKey::Left, Some(row)) if self.cursor.x > 0 => {
                 cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
                 // ← moving to previous word
-                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != 0x20 {
+                while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != b' ' {
                     cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
                 }
             }
@@ -205,7 +205,7 @@ impl Editor {
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
                 cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
                 // → moving to next word
-                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != 0x20 {
+                while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != b' ' {
                     cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
                 }
             }
