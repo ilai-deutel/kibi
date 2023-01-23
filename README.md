@@ -1,6 +1,7 @@
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
-[![Build Status](https://img.shields.io/github/workflow/status/ilai-deutel/kibi/CI/master?logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/ci.yml?branch=master&logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Lines of code](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/loc.yml?label=LOC%E2%89%A41024)](#)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.62+-blue.svg?logo=rust)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
