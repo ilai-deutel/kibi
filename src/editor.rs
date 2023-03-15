@@ -577,8 +577,7 @@ impl Editor {
             .status_msg
             .as_ref()
             .filter(|sm| sm.time.elapsed() < msg_duration)
-            .map(|sm| sm.msg.as_str())
-            .unwrap_or(HELP_MESSAGE);
+            .map_or(HELP_MESSAGE, |sm| sm.msg.as_str());
         buffer.push_str(msg);
     }
 
