@@ -24,7 +24,7 @@ const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str =
-    "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | ^C copy | ^X cut | ^V paste";
+    "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^R remove | ^E execute | ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
@@ -173,8 +173,6 @@ impl Editor {
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
         editor.update_window_size()?;
-
-        set_status!(editor, "{}", HELP_MESSAGE);
 
         Ok(editor)
     }
@@ -575,9 +573,11 @@ impl Editor {
     fn draw_message_bar(&self, buffer: &mut String) {
         buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
         let msg_duration = self.config.message_dur;
-        if let Some(sm) = self.status_msg.as_ref().filter(|sm| sm.time.elapsed() < msg_duration) {
-            buffer.push_str(&sm.msg[..sm.msg.len().min(self.window_width)]);
-        }
+        let msg = self.status_msg.as_ref()
+            .filter(|sm| sm.time.elapsed() < msg_duration)
+            .map(|sm| sm.msg.as_str())
+            .unwrap_or(HELP_MESSAGE);
+        buffer.push_str(msg);
     }
 
     /// Refresh the screen: update the offsets, draw the rows, the status bar, the message bar, and
