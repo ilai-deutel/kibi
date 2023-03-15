@@ -573,7 +573,9 @@ impl Editor {
     fn draw_message_bar(&self, buffer: &mut String) {
         buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
         let msg_duration = self.config.message_dur;
-        let msg = self.status_msg.as_ref()
+        let msg = self
+            .status_msg
+            .as_ref()
             .filter(|sm| sm.time.elapsed() < msg_duration)
             .map(|sm| sm.msg.as_str())
             .unwrap_or(HELP_MESSAGE);
