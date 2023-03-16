@@ -17,8 +17,8 @@ pub(crate) const HIDE_CURSOR: &str = "\x1b[?25l";
 /// DECTCTEM: Make the cursor visible
 pub(crate) const SHOW_CURSOR: &str = "\x1b[?25h";
 
-/// Clear line right of the current position of the cursor
-pub(crate) const CLEAR_LINE_RIGHT_OF_CURSOR: &str = "\x1b[K";
+/// Clear screen from cursor down
+pub(crate) const CLEAR_SCREEN_FROM_CURSOR_DOWN: &str = "\x1b[J";
 
 /// Report the cursor position to the application.
 pub(crate) const DEVICE_STATUS_REPORT: &str = "\x1b[6n";

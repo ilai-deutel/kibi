@@ -289,7 +289,8 @@ impl Editor {
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
         // Make room for the status bar and status message
-        (self.screen_rows, self.window_width) = (wsize.0.saturating_sub(2), wsize.1);
+        (self.screen_rows, self.window_width) =
+            (wsize.0.saturating_sub(1 + (self.status_msg().len() + wsize.1) / wsize.1), wsize.1);
         self.update_screen_cols();
         Ok(())
     }
@@ -532,7 +533,7 @@ impl Editor {
     fn draw_rows(&self, buffer: &mut String) -> Result<(), Error> {
         let row_it = self.rows.iter().map(Some).chain(repeat(None)).enumerate();
         for (i, row) in row_it.skip(self.cursor.roff).take(self.screen_rows) {
-            buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
+            buffer.push_str(CLEAR_SCREEN_FROM_CURSOR_DOWN);
             if let Some(row) = row {
                 // Draw a row of text
                 self.draw_left_padding(buffer, i + 1)?;
@@ -569,12 +570,16 @@ impl Editor {
         Ok(())
     }
 
+    /// Returns the message for the message bar, or the help message if none is applicable.
+    fn status_msg(&self) -> &str {
+        let msg = self.status_msg.as_ref().filter(|sm| sm.time.elapsed() < self.config.message_dur);
+        msg.map_or(HELP_MESSAGE, |sm| sm.msg.as_str())
+    }
+
     /// Draw the message bar on the terminal, by adding characters to the buffer.
     fn draw_message_bar(&self, buffer: &mut String) {
-        buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
-        let msg_duration = self.config.message_dur;
-        let msg = self.status_msg.as_ref().filter(|sm| sm.time.elapsed() < msg_duration);
-        buffer.push_str(msg.map_or(HELP_MESSAGE, |sm| sm.msg.as_str()));
+        buffer.push_str(CLEAR_SCREEN_FROM_CURSOR_DOWN);
+        buffer.push_str(self.status_msg());
     }
 
     /// Refresh the screen: update the offsets, draw the rows, the status bar, the message bar, and
