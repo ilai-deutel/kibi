@@ -573,12 +573,8 @@ impl Editor {
     fn draw_message_bar(&self, buffer: &mut String) {
         buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
         let msg_duration = self.config.message_dur;
-        let msg = self
-            .status_msg
-            .as_ref()
-            .filter(|sm| sm.time.elapsed() < msg_duration)
-            .map_or(HELP_MESSAGE, |sm| sm.msg.as_str());
-        buffer.push_str(msg);
+        let msg = self.status_msg.as_ref().filter(|sm| sm.time.elapsed() < msg_duration);
+        buffer.push_str(msg.map_or(HELP_MESSAGE, |sm| sm.msg.as_str()));
     }
 
     /// Refresh the screen: update the offsets, draw the rows, the status bar, the message bar, and
