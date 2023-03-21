@@ -11,7 +11,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-22-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-23-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -373,6 +373,7 @@ any kind welcome!
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/carol-mb"><img src="https://avatars.githubusercontent.com/u/117681554?v=4" width="100px;" alt=""/><br /><sub><b>Mihai-Carol Bazga</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=carol-mb" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Sorry"><img src="https://avatars.githubusercontent.com/u/43435134?v=4" width="100px;" alt=""/><br /><sub><b>Sorry</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/pulls?q=is%3Apr+reviewed-by%3ASorry" title="Reviewed Pull Requests">👀</a></td>
     </tr>
   </tbody>
 </table>
