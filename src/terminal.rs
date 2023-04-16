@@ -15,10 +15,10 @@ pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     io::stdout().flush()?;
     let mut prefix_buffer = [0_u8; 2];
     stdin.read_exact(&mut prefix_buffer)?;
-    if prefix_buffer != [b'\x1b', b'['] {
-        return Err(Error::CursorPosition);
+    match prefix_buffer != [b'\x1b', b'['] {
+        true => Err(Error::CursorPosition),
+        false => Ok((read_value_until(b';')?, read_value_until(b'R')?)),
     }
-    Ok((read_value_until(b';')?, read_value_until(b'R')?))
 }
 
 /// Read value until a certain stop byte is reached, and parse the result (pre-stop byte).
