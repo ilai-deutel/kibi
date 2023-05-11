@@ -290,7 +290,7 @@ impl Editor {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
         // Make room for the status bar and status message
         (self.screen_rows, self.window_width) =
-            (wsize.0.saturating_sub(1 + (self.status_msg().len() + wsize.1) / wsize.1), wsize.1);
+            (wsize.0.saturating_sub(1 + (self.status_msg().len() + wsize.1 - 1) / wsize.1), wsize.1);
         self.update_screen_cols();
         Ok(())
     }
