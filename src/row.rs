@@ -53,7 +53,7 @@ impl Row {
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
     pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: usize) -> HlState {
-        let (..) = (self.render.clear(), self.render.clear(), self.rx2cx.clear());
+        let (..) = (self.render.clear(), self.cx2rx.clear(), self.rx2cx.clear());
         let (mut cx, mut rx) = (0, 0);
         for c in String::from_utf8_lossy(&self.chars).chars() {
             // The number of rendered characters
