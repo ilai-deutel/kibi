@@ -23,7 +23,7 @@ winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
 winapi-util = "0.1.4"
 
 [dev-dependencies]
-tempfile = "3.5.0"
+tempfile = "3.6.0"
 serial_test = "2.0.0"
 
 [badges]
