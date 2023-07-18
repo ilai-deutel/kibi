@@ -14,7 +14,7 @@ pub(crate) fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) ->
     // If environment variable `home_key` (e.g. `$XDG_CONFIG_HOME`) is set, add its value to `dirs`.
     // Otherwise, if environment variable `$HOME` is set, add `$HOME{def_home_suffix}`
     // (e.g. `$HOME/.config`) to `dirs`.
-    dirs.extend(var(home_key).or_else(|_| var("HOME").map(|d| d + def_home_suffix)).into_iter());
+    dirs.extend(var(home_key).or_else(|_| var("HOME").map(|d| d + def_home_suffix)));
 
     // If environment variable `dirs_key` (e.g. `XDG_CONFIG_DIRS`) is set, split by `:` and add the
     // parts to `dirs`.
