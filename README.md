@@ -164,7 +164,7 @@ make install
 
 ### Flatpak
 
-Kibi is available on Flathub.
+Kibi is available [on Flathub](https://flathub.org/ca/apps/com.github.ilai_deutel.kibi).
 
 <details><summary>Command line instructions</summary>
  The flatpak can be installed using:
