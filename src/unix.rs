@@ -27,7 +27,7 @@ fn cerr(err: c_int) -> Result<(), Error> {
 pub fn get_window_size() -> Result<(usize, usize), Error> {
     let mut maybe_ws = std::mem::MaybeUninit::<winsize>::uninit();
     cerr(unsafe { libc::ioctl(STDOUT_FILENO, TIOCGWINSZ, maybe_ws.as_mut_ptr()) })
-        .map_or(None, |_| unsafe { Some(maybe_ws.assume_init()) })
+        .map_or(None, |()| unsafe { Some(maybe_ws.assume_init()) })
         .filter(|ws| ws.ws_col != 0 && ws.ws_row != 0)
         .map_or(Err(Error::InvalidWindowSize), |ws| Ok((ws.ws_row as usize, ws.ws_col as usize)))
 }

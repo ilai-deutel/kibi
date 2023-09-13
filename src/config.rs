@@ -157,7 +157,7 @@ mod tests {
         u = v = w ";
         let kv_fn = &mut |_: &str, _: &str| Ok(());
         match ini_processing_helper(ini_content, kv_fn) {
-            Ok(_) => panic!("process_ini_file should return an error"),
+            Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(_, 6, s)) if s == "No '='" => (),
             Err(e) => panic!("Unexpected error {:?}", e),
         }
@@ -175,7 +175,7 @@ mod tests {
         u = v = w ";
         let kv_fn = &mut |_: &str, _: &str| Err(String::from("test error"));
         match ini_processing_helper(ini_content, kv_fn) {
-            Ok(_) => panic!("process_ini_file should return an error"),
+            Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(_, 3, s)) if s == "test error" => (),
             Err(e) => panic!("Unexpected error {:?}", e),
         }
@@ -187,7 +187,7 @@ mod tests {
         let tmp_dir = TempDir::new().expect("Could not create temporary directory");
         let tmp_path = tmp_dir.path().join("path_does_not_exist.ini");
         match process_ini_file(&tmp_path, kv_fn) {
-            Ok(_) => panic!("process_ini_file should return an error"),
+            Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(path, 0, _)) if path == tmp_path => (),
             Err(e) => panic!("Unexpected error {:?}", e),
         }
