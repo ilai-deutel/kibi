@@ -8,7 +8,8 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Filai-deutel%2Fkibi.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Filai-deutel%2Fkibi?ref=badge_shield)
+
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-25-orange.svg)](#contributors)
@@ -393,6 +394,9 @@ This project is licensed under either of
 * [MIT License](LICENSE-MIT)
 
 at your option.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Filai-deutel%2Fkibi.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Filai-deutel%2Fkibi?ref=badge_large)
 
 ### Contribution
 
