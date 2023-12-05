@@ -70,34 +70,25 @@ jobs:
       RUSTFLAGS: -D warnings
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install gcc-multilib
         if: matrix.target == 'i686-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-multilib
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain || 'stable' }}
-          target: ${{ matrix.target }}
-          override: true
+        run: |
+          rustup toolchain install ${{ matrix.toolchain || 'stable' }}
+          rustup override set  ${{ matrix.toolchain || 'stable' }}
+          rustup target add --toolchain ${{ matrix.toolchain || 'stable' }} ${{ matrix.target }}
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+        run: cargo build
       - name: Run tests without coverage instrumentation
         if: ${{ ! matrix.coverage }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --all-features --no-fail-fast
+        run: cargo test --verbose --all-features --no-fail-fast
       - name: Run tests with coverage instrumentation
         if: matrix.coverage
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --all-features --no-fail-fast
+        run: cargo test --verbose --all-features --no-fail-fast
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
@@ -127,7 +118,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -162,22 +153,17 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install nightly with clippy and rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          components: rustfmt, clippy
-          target: ${{ matrix.target }}
-          override: true
+        run: |
+          rustup toolchain install nightly --component rustfmt --component clippy --allow-downgrade
+          rustup override set nightly
+          rustup target add --toolchain nightly ${{ matrix.target }}
       - name: Run rustfmt check
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
+        run: cargo fmt --check
       - name: Run Clippy
-        uses: actions-rs/clippy-check@v1
+        uses: giraffate/clippy-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
-          name: clippy-${{ matrix.target }}
+          clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
+          tool_name: clippy-${{ matrix.target }}
+          reporter: github-pr-review

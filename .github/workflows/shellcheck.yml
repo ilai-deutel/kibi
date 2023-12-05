@@ -2,6 +2,7 @@ on:
   pull_request:
     paths:
       - '**.sh'
+      - '.github/workflows/shellcheck.yml'
 
 name: 'ShellCheck'
 
@@ -10,7 +11,7 @@ jobs:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Run ShellCheck
       uses: ludeeus/action-shellcheck@master
       env:

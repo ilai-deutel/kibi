@@ -3,6 +3,7 @@ on:
     paths:
       - '**.rs'
       - 'count_loc.sh'
+      - '.github/workflows/loc.yml'
 
 name: 'LOC'
 
@@ -13,12 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install tokei
-        uses: actions-rs/install@v0.1
-        with:
-          crate: tokei
-          version: latest
-          use-tool-cache: true
+        run: cargo install tokei
       - name: Check LOC <= 1024
         run: ./count_loc.sh
