@@ -815,10 +815,27 @@ impl PromptMode {
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
                         Ok(out) if !out.status.success() =>
                             set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
-                        Ok(out) => out.stdout.into_iter().for_each(|c| match c {
-                            b'\n' => ed.insert_new_line(),
-                            c => ed.insert_byte(c),
-                        }),
+                        
+                        Ok(out) => {
+                            match ed.config.terminal_encoding {
+                                Some(encoding) => {
+                                    let mut buff = vec![];
+                                    out.stdout.into_iter().for_each(|c| buff.push(c));
+                                    encoding.decode(&buff).0.as_bytes().into_iter().for_each(|c| match c {
+                                        b'\n' => ed.insert_new_line(),
+                                        0b_0000_1101 => {},
+                                        c => ed.insert_byte(*c),
+                                    })
+                                },
+                                None => {
+                                    out.stdout.into_iter().for_each(|c| match c {
+                                        b'\n' => ed.insert_new_line(),
+                                        0b_0000_1101 => {},
+                                        c => ed.insert_byte(c),
+                                    })
+                                }
+                            }
+                        }
                         Err(e) => set_status!(ed, "{}", e),
                     }
                 }

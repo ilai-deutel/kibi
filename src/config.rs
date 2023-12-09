@@ -6,6 +6,8 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 
+use encoding_rs::Encoding;
+
 use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
 
 /// The global Kibi configuration.
@@ -20,12 +22,14 @@ pub struct Config {
     pub message_dur: Duration,
     /// Whether to display line numbers.
     pub show_line_num: bool,
+    /// encoding of the cmd of windows or shell of *nix
+    pub terminal_encoding: Option<&'static Encoding>
 }
 
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        Self { tab_stop: 4, quit_times: 2, message_dur: Duration::new(3, 0), show_line_num: true }
+        Self { tab_stop: 4, quit_times: 2, message_dur: Duration::new(3, 0), show_line_num: true, terminal_encoding: None }
     }
 }
 
@@ -58,6 +62,10 @@ impl Config {
                     "message_duration" =>
                         conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
+                    "terminal_encoding" => {
+                        let encoding_label:String = parse_value(value)?;
+                        conf.terminal_encoding = encoding_rs::Encoding::for_label(encoding_label.as_bytes());
+                    },
                     _ => return Err(format!("Invalid key: {key}")),
                 };
                 Ok(())
