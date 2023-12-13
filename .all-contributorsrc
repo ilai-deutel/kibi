@@ -240,6 +240,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "TanvirOnGH",
+      "name": "Tanvir",
+      "avatar_url": "https://avatars.githubusercontent.com/u/138336161?v=4",
+      "profile": "https://tanvirongh.github.io/",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
   ]
 }
