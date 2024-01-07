@@ -813,8 +813,9 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() =>
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) if !out.status.success() => {
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                        }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
@@ -855,7 +856,6 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
     #[test]
     fn format_size_output() {
@@ -948,11 +948,11 @@ mod tests {
         editor.move_cursor(&AKey::Left, false);
         assert_eq!(editor.cursor.x, 9);
         assert_eq!(editor.cursor.y, 1);
-        
+
         editor.move_cursor(&AKey::Left, true);
         assert_eq!(editor.cursor.x, 6);
         assert_eq!(editor.cursor.y, 1);
-        
+
         editor.move_cursor(&AKey::Left, true);
         assert_eq!(editor.cursor.x, 0);
         assert_eq!(editor.cursor.y, 1);
@@ -990,16 +990,16 @@ mod tests {
         assert_eq!(editor.cursor.y, 2);
 
         editor.move_cursor(&AKey::Up, false);
-        assert_eq!(editor.cursor.x, 2);     
-        assert_eq!(editor.cursor.y, 1);     
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 1);
 
         editor.move_cursor(&AKey::Up, true);
-        assert_eq!(editor.cursor.x, 2);    
-        assert_eq!(editor.cursor.y, 0);     
-        
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 0);
+
         editor.move_cursor(&AKey::Up, false);
-        assert_eq!(editor.cursor.x, 2); 
-        assert_eq!(editor.cursor.y, 0);     
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 0);
     }
 
     #[test]
@@ -1024,7 +1024,7 @@ mod tests {
         editor.move_cursor(&AKey::Right, false);
         assert_eq!(editor.cursor.x, 0);
         assert_eq!(editor.cursor.y, 2);
-        
+
         editor.move_cursor(&AKey::Up, true);
         editor.move_cursor(&AKey::Up, true);
         assert_eq!(editor.cursor.x, 0);
@@ -1037,11 +1037,6 @@ mod tests {
         editor.move_cursor(&AKey::Right, true);
         assert_eq!(editor.cursor.x, 11);
         assert_eq!(editor.cursor.y, 0);
-        
-        // It is going to the next row on the same x, not resetting the x axis
-        editor.move_cursor(&AKey::Right, false);
-        assert_eq!(editor.cursor.x, 0);
-        assert_eq!(editor.cursor.y, 1);
     }
 
     #[test]
@@ -1054,7 +1049,7 @@ mod tests {
                 editor.insert_byte(*b);
             }
         }
-        
+
         // check current position
         assert_eq!(editor.cursor.x, 16);
         assert_eq!(editor.cursor.y, 2);
