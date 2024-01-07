@@ -23,10 +23,14 @@ pub enum Error {
 
 impl From<std::io::Error> for Error {
     /// Convert an IO Error into a Kibi Error.
-    fn from(err: std::io::Error) -> Self { Self::Io(err) }
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
+    }
 }
 
 impl From<std::fmt::Error> for Error {
     /// Convert an Fmt Error into a Kibi Error.
-    fn from(err: std::fmt::Error) -> Self { Self::Fmt(err) }
+    fn from(err: std::fmt::Error) -> Self {
+        Self::Fmt(err)
+    }
 }
