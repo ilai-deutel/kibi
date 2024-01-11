@@ -36,6 +36,10 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-msvc
 
+          # WASI
+          - os: ubuntu-latest
+            target: wasm32-wasi
+
           # MSRV (Linux)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -47,6 +51,10 @@ jobs:
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
+            toolchain: 1.64.0
+          # MSRV (WASI)
+          - os: ubuntu-latest
+            target: wasm32-wasi
             toolchain: 1.64.0
 
           # Nightly (Linux)
@@ -62,6 +70,11 @@ jobs:
           # Nightly (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
+            toolchain: nightly
+            coverage: true
+          # Nightly (WASI)
+          - os: ubuntu-latest
+            target: wasm32-wasi
             toolchain: nightly
             coverage: true
 
@@ -106,30 +119,6 @@ jobs:
           flags: ${{ matrix.target }}
           fail_ci_if_error: false
           verbose: true
-
-  wasi:
-    name: wasi
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - stable
-          - 1.64.0  # MSRV
-          - nightly
-    env:
-      CARGO_TERM_COLOR: always
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          target: wasm32-wasi
-          override: true
-      - name: Install WASI
-        run: cargo install cargo-wasi
-      - name: Run build on wasm32-wasi
-        run: cargo wasi build
 
   static_checks:
     strategy:
