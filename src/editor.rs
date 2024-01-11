@@ -813,9 +813,8 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() => {
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end());
-                        }
+                        Ok(out) if !out.status.success() =>
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
@@ -914,7 +913,7 @@ mod tests {
     #[test]
     fn editor_delete_char() {
         let mut editor = Editor::default();
-        for b in "Hello world!".as_bytes() {
+        for b in b"Hello world!" {
             editor.insert_byte(*b);
         }
         editor.delete_char();
@@ -929,7 +928,7 @@ mod tests {
     #[test]
     fn editor_move_cursor_left() {
         let mut editor = Editor::default();
-        for b in "Hello world!\nHappy New Year!".as_bytes() {
+        for b in b"Hello world!\nHappy New Year!" {
             if *b == b'\n' {
                 editor.insert_new_line();
             } else {
@@ -1005,7 +1004,7 @@ mod tests {
     #[test]
     fn editor_move_cursor_right() {
         let mut editor = Editor::default();
-        for b in "Hello world\nHappy New Year".as_bytes() {
+        for b in b"Hello world\nHappy New Year" {
             if *b == b'\n' {
                 editor.insert_new_line();
             } else {
