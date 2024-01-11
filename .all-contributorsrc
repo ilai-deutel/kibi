@@ -249,6 +249,16 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "BogdanPaul15",
+      "name": "Prisacaru Bogdan-Paul",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62438221?v=4",
+      "profile": "http://www.bogdanpaul.com",
+      "contributions": [
+        "test"
+      ]
     }
-  ]
+  ],
+  "commitType": "docs"
 }
