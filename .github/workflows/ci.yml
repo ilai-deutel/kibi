@@ -63,6 +63,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-gnu
             toolchain: nightly
+            coverage: true
 
     runs-on: ${{ matrix.os }}
 
@@ -99,7 +100,7 @@ jobs:
         id: coverage
       - name: Upload code coverage results
         if: matrix.coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           files: ${{ steps.coverage.outputs.report }}
           flags: ${{ matrix.target }}
