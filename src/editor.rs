@@ -913,7 +913,7 @@ mod tests {
     #[test]
     fn editor_delete_char() {
         let mut editor = Editor::default();
-        for b in "Hello world!".as_bytes() {
+        for b in b"Hello world!" {
             editor.insert_byte(*b);
         }
         editor.delete_char();
@@ -923,5 +923,165 @@ mod tests {
         editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
         assert_eq!(editor.rows[0].chars, "Helo world".as_bytes());
+    }
+
+    #[test]
+    fn editor_move_cursor_left() {
+        let mut editor = Editor::default();
+        for b in b"Hello world!\nHappy New Year!" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 15);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Left, true);
+        assert_eq!(editor.cursor.x, 10);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Left, false);
+        assert_eq!(editor.cursor.x, 9);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Left, true);
+        assert_eq!(editor.cursor.x, 6);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Left, true);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Left, false);
+        assert_eq!(editor.cursor.x, 12);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Left, true);
+        assert_eq!(editor.cursor.x, 6);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Left, true);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Left, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_move_cursor_up() {
+        let mut editor = Editor::default();
+        for b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 16);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.move_cursor(&AKey::Up, false);
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Up, true);
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Up, false);
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_move_cursor_right() {
+        let mut editor = Editor::default();
+        for b in b"Hello world\nHappy New Year" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 14);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Right, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.move_cursor(&AKey::Right, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.move_cursor(&AKey::Up, true);
+        editor.move_cursor(&AKey::Up, true);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Right, true);
+        assert_eq!(editor.cursor.x, 5);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Right, true);
+        assert_eq!(editor.cursor.x, 11);
+        assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_move_cursor_down() {
+        let mut editor = Editor::default();
+        for b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 16);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.move_cursor(&AKey::Down, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Right, true);
+        assert_eq!(editor.cursor.x, 8);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Down, true);
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 1);
+
+        editor.move_cursor(&AKey::Down, true);
+        assert_eq!(editor.cursor.x, 2);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.move_cursor(&AKey::Down, true);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.move_cursor(&AKey::Down, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
     }
 }
