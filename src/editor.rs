@@ -666,20 +666,24 @@ impl Editor {
     /// `last_match` is the last row that was matched, `forward` indicates whether to search forward
     /// or backward. Returns the row of a new match, or `None` if the search was unsuccessful.
     #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
-    fn find(&mut self, query: &str, last_match: &Option<usize>, forward: bool) -> Option<usize> {
+    fn find(&mut self, query: &str, last_match: &Option<(i32, usize)>, forward: bool) -> Option<(i32, usize)> {
         let num_rows = self.rows.len();
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
-        // TODO: Handle multiple matches per line
-        for _ in 0..num_rows {
-            current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
-            let row = &mut self.rows[current];
-            if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
+        let mut current = last_match.unwrap_or_else(|| (-1, num_rows.saturating_sub(1)));
+        let mut it = 0;
+        while it < num_rows {
+            let row = &mut self.rows[current.1];
+            if let Some(cx) = slice_find(&row.chars[(current.0 + 1) as usize..], query.as_bytes()) {
                 // self.cursor.coff: Try to reset the column offset; if the match is after the offset, this
                 // will be updated in self.cursor.scroll() so that the result is visible
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
-                let rx = row.cx2rx[cx];
+                current.0 += cx as i32 + 1;
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (current.0 as usize, current.1, 0);
+                let rx = row.cx2rx[current.0 as usize];
                 row.match_segment = Some(rx..rx + query.len());
                 return Some(current);
+            } else {
+                current.1 = (current.1 + if forward { 1 } else { num_rows - 1 }) % num_rows;
+                current.0 = -1;
+                it += 1;
             }
         }
         None
@@ -736,7 +740,7 @@ enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
     /// Find(prompt buffer, saved cursor state, last match)
-    Find(String, CursorState, Option<usize>),
+    Find(String, CursorState, Option<(i32, usize)>),
     /// GoTo(prompt buffer)
     GoTo(String),
     /// Execute(prompt buffer)
@@ -766,7 +770,7 @@ impl PromptMode {
                 PromptState::Completed(file_name) => ed.save_as(file_name)?,
             },
             Self::Find(b, saved_cursor, last_match) => {
-                if let Some(row_idx) = last_match {
+                if let Some((_, row_idx)) = last_match {
                     ed.rows[row_idx].match_segment = None;
                 }
                 match process_prompt_keypress(b, key) {
