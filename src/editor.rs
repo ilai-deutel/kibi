@@ -666,25 +666,24 @@ impl Editor {
     /// `last_match` is the last row that was matched, `forward` indicates whether to search forward
     /// or backward. Returns the row of a new match, or `None` if the search was unsuccessful.
     #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
-    fn find(&mut self, query: &str, last_match: &Option<(i32, usize)>, forward: bool) -> Option<(i32, usize)> {
+    fn find(&mut self, query: &str, last_match: &Option<(usize, usize)>, forward: bool) -> Option<(usize, usize)> {
         let num_rows = self.rows.len();
-        let mut current = last_match.unwrap_or_else(|| (-1, num_rows.saturating_sub(1)));
-        let mut it = 0;
-        while it < num_rows {
+        let mut current = last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)));
+        loop {
             let row = &mut self.rows[current.1];
-            if let Some(cx) = slice_find(&row.chars[(current.0 + 1) as usize..], query.as_bytes()) {
-                // self.cursor.coff: Try to reset the column offset; if the match is after the offset, this
-                // will be updated in self.cursor.scroll() so that the result is visible
-                current.0 += cx as i32 + 1;
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (current.0 as usize, current.1, 0);
-                let rx = row.cx2rx[current.0 as usize];
+            let slice = if current.0 == usize::MAX { &row.chars[..] } else { &row.chars[current.0 + 1..] };
+            if let Some(cx) = slice_find(slice, query.as_bytes()) {
+                current.0 = if current.0 == usize::MAX { cx } else { current.0 + cx + 1 };
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (current.0, current.1, 0);
+                let rx = row.cx2rx[current.0];
                 row.match_segment = Some(rx..rx + query.len());
                 return Some(current);
             } else {
                 current.1 = (current.1 + if forward { 1 } else { num_rows - 1 }) % num_rows;
-                current.0 = -1;
-                it += 1;
+                current.0 = usize::MAX;
             }
+            // if it wrapped back to the starting point
+            if current == last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1))) { break; }
         }
         None
     }
@@ -740,7 +739,7 @@ enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
     /// Find(prompt buffer, saved cursor state, last match)
-    Find(String, CursorState, Option<(i32, usize)>),
+    Find(String, CursorState, Option<(usize, usize)>),
     /// GoTo(prompt buffer)
     GoTo(String),
     /// Execute(prompt buffer)
