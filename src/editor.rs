@@ -666,25 +666,24 @@ impl Editor {
     /// `last_match` is the last row that was matched, `forward` indicates whether to search forward
     /// or backward. Returns the row of a new match, or `None` if the search was unsuccessful.
     #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
-    fn find(&mut self, query: &str, last_match: &Option<(usize, usize)>, forward: bool) -> Option<(usize, usize)> {
+    fn find(&mut self, query: &str, last_match: &Option<(usize, usize)>, fwd: bool) -> Option<(usize, usize)> {
         let num_rows = self.rows.len();
-        let mut current = last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)));
-        loop {
-            let row = &mut self.rows[current.1];
-            let slice = if current.0 == usize::MAX { &row.chars[..] } else { &row.chars[current.0 + 1..] };
+        let mut cur = last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)));
+        while {
+            let row = &mut self.rows[cur.1];
+            let slice = if cur.0 == usize::MAX { &row.chars[..] } else { &row.chars[cur.0 + 1..] };
             if let Some(cx) = slice_find(slice, query.as_bytes()) {
-                current.0 = if current.0 == usize::MAX { cx } else { current.0 + cx + 1 };
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (current.0, current.1, 0);
-                let rx = row.cx2rx[current.0];
+                cur.0 = if cur.0 == usize::MAX { cx } else { cur.0 + cx + 1 };
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cur.0, cur.1, 0);
+                let rx = row.cx2rx[cur.0];
                 row.match_segment = Some(rx..rx + query.len());
-                return Some(current);
+                return Some(cur);
             } else {
-                current.1 = (current.1 + if forward { 1 } else { num_rows - 1 }) % num_rows;
-                current.0 = usize::MAX;
+                cur = (usize::MAX, (cur.1 + if fwd { 1 } else { num_rows - 1 }) % num_rows);
             }
             // if it wrapped back to the starting point
-            if current == last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1))) { break; }
-        }
+            cur == last_match.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)))
+        } {}
         None
     }
 
