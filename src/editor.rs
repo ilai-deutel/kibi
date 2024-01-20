@@ -671,6 +671,7 @@ impl Editor {
         let num_rows = self.rows.len();
         let mut cur = lst.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)));
         while {
+            // TODO: add find backwards on the same line
             let row = &mut self.rows[cur.1];
             let slice = if cur.0 == usize::MAX { &row.chars[..] } else { &row.chars[cur.0 + 1..] };
             if let Some(cx) = slice_find(slice, q.as_bytes()) {
@@ -679,11 +680,10 @@ impl Editor {
                 let rx = row.cx2rx[cur.0];
                 row.match_segment = Some(rx..rx + q.len());
                 return Some(cur);
-            } else {
-                cur = (usize::MAX, (cur.1 + if fw { 1 } else { num_rows - 1 }) % num_rows);
             }
-            // if it wrapped back to the starting point
-            cur == lst.unwrap_or_else(|| (usize::MAX, num_rows.saturating_sub(1)))
+            cur = (usize::MAX, (cur.1 + if fw { 1 } else { num_rows - 1 }) % num_rows);
+            // if it wrapped back to the starting line
+            cur.1 != lst.map_or(num_rows.saturating_sub(1), |lst| lst.1)
         } {}
         None
     }
