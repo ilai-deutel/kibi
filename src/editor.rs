@@ -5,6 +5,7 @@ use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
 use std::{cell::RefCell, fs::File, path::Path, process::Command, thread, time::Instant};
 
+use unicode_width::UnicodeWidthStr;
 use crate::row::{HlState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
 
@@ -593,7 +594,7 @@ impl Editor {
             (self.rx() - self.cursor.coff + 1 + self.ln_pad, self.cursor.y - self.cursor.roff + 1)
         } else {
             // If in prompt mode, position the cursor on the prompt line at the end of the line.
-            (self.status_msg.as_ref().map_or(0, |s| s.msg.chars().count() + 1), self.screen_rows + 2)
+            (self.status_msg.as_ref().map_or(0, |s| UnicodeWidthStr::width(s.msg.as_str()) + 1), self.screen_rows + 2)
         };
         // Finally, print `buffer` and move the cursor
         print!("{buffer}\x1b[{cursor_y};{cursor_x}H{SHOW_CURSOR}");
@@ -678,7 +679,7 @@ impl Editor {
                 // will be updated in self.cursor.scroll() so that the result is visible
                 (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
                 let rx = row.cx2rx[cx];
-                row.match_segment = Some(rx..rx + query.chars().count());
+                row.match_segment = Some(rx..rx + UnicodeWidthStr::width(query));
                 return Some(current);
             }
         }
@@ -843,7 +844,7 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
-        Key::Char(BACKSPACE | DELETE_BIS) => {buffer.pop();},
+        Key::Char(BACKSPACE | DELETE_BIS) => _ = buffer.pop(),
         Key::Char(c @ 0..=126) if !c.is_ascii_control() => buffer.push(*c as char),
         Key::Char(c @ 128..=255) => CHARACTER.with(|cache| {cache.borrow_mut().push(*c); if String::from_utf8(cache.borrow_mut().clone()).is_ok() {buffer.push_str(String::from_utf8(cache.borrow_mut().clone()).unwrap().as_str()); cache.borrow_mut().clear();}}),
         // No-op
