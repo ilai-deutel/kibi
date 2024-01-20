@@ -842,9 +842,7 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
-        Key::Char(BACKSPACE | DELETE_BIS) => {
-            buffer.pop();
-        }
+        Key::Char(BACKSPACE | DELETE_BIS) => _ = buffer.pop(),
         Key::Char(c @ 0..=126) if !c.is_ascii_control() => buffer.push(*c as char),
         // No-op
         _ => (),
