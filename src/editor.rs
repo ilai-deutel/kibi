@@ -852,8 +852,8 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
         _ => (),
     }
     let character = CHARACTER.with(|cache| String::from_utf8(cache.borrow_mut().clone()));
-    character.clone().map_or((), |c| buffer.push_str(c.as_str()));
-    character.map_or((), |_| CHARACTER.with(|cache| cache.borrow_mut().clear()));
+    let _ = character.clone().map_or((), |c| buffer.push_str(c.as_str()));
+    let _ = character.map_or((), |_| CHARACTER.with(|cache| cache.borrow_mut().clear()));
 
     PromptState::Active(buffer)
 }
