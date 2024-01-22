@@ -28,9 +28,7 @@ const HELP_MESSAGE: &str =
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
-macro_rules! set_status {
-    ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*))))
-}
+macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
 
 /// Enum of input keys
 enum Key {
@@ -842,9 +840,7 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
-        Key::Char(BACKSPACE | DELETE_BIS) => {
-            buffer.pop();
-        }
+        Key::Char(BACKSPACE | DELETE_BIS) => _ = buffer.pop(),
         Key::Char(c @ 0..=126) if !c.is_ascii_control() => buffer.push(*c as char),
         // No-op
         _ => (),
