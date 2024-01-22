@@ -258,6 +258,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "razvanrus2003",
+      "name": "Razvan Rus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69893593?v=4",
+      "profile": "https://github.com/razvanrus2003",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
