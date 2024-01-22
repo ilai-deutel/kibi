@@ -31,6 +31,7 @@ const HELP_MESSAGE: &str =
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
 macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
+
 // `width!` returns the display width of a string, plus one for the cursor
 fn dsp_width(msg: &String) -> usize { UnicodeWidthStr::width(msg.as_str()) + 1 }
 
