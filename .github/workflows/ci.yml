@@ -157,3 +157,4 @@ jobs:
           clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
           tool_name: clippy-${{ matrix.target }}
           reporter: github-pr-review
+          level: error
