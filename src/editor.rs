@@ -463,33 +463,31 @@ impl Editor {
     /// Try to load a file. If found, load the rows and update the render and
     /// syntax highlighting. If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
-        let ft = std::fs::metadata(path)?.file_type();
+        let mut file = match File::open(path) {
+            Err(e) if e.kind() == ErrorKind::NotFound => {
+                self.rows.push(Row::new(Vec::new()));
+                return Ok(());
+            }
+            r => r,
+        }?;
+        let ft = file.metadata()?.file_type();
         if !(ft.is_file() || ft.is_symlink()) {
             return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type").into());
         }
-
-        match File::open(path) {
-            Ok(file) => {
-                for line in BufReader::new(file).split(b'\n') {
-                    self.rows.push(Row::new(line?));
-                }
-                // If the file ends with an empty line or is empty, we need to append an empty
-                // row to `self.rows`. Unfortunately, BufReader::split doesn't
-                // yield an empty Vec in this case, so we need to check the last
-                // byte directly.
-                let mut file = File::open(path)?;
-                file.seek(io::SeekFrom::End(0))?;
-                if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
-                    self.rows.push(Row::new(Vec::new()));
-                }
-                self.update_all_rows();
-                // The number of rows has changed. The left padding may need to be updated.
-                self.update_screen_cols();
-                self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
-            }
-            Err(e) if e.kind() == ErrorKind::NotFound => self.rows.push(Row::new(Vec::new())),
-            Err(e) => return Err(e.into()),
+        for line in BufReader::new(&file).split(b'\n') {
+            self.rows.push(Row::new(line?));
         }
+        // If the file ends with an empty line or is empty, we need to append an empty
+        // row to `self.rows`. Unfortunately, BufReader::split doesn't yield an
+        // empty Vec in this case, so we need to check the last byte directly.
+        file.seek(io::SeekFrom::End(0))?;
+        if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
+            self.rows.push(Row::new(Vec::new()));
+        }
+        self.update_all_rows();
+        // The number of rows has changed. The left padding may need to be updated.
+        self.update_screen_cols();
+        self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
         Ok(())
     }
 
