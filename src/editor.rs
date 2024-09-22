@@ -3,7 +3,9 @@
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::{fs::File, path::Path, process::Command, thread, time::Instant};
+use std::{cell::RefCell, fs::File, path::Path, process::Command, thread, time::Instant};
+
+use unicode_width::UnicodeWidthStr;
 
 use crate::row::{HlState, Row};
 use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
@@ -29,6 +31,9 @@ const HELP_MESSAGE: &str =
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
 macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
+
+// `width!` returns the display width of a string, plus one for the cursor
+fn dsp_width(msg: &String) -> usize { UnicodeWidthStr::width(msg.as_str()) + 1 }
 
 /// Enum of input keys
 enum Key {
@@ -591,7 +596,7 @@ impl Editor {
             (self.rx() - self.cursor.coff + 1 + self.ln_pad, self.cursor.y - self.cursor.roff + 1)
         } else {
             // If in prompt mode, position the cursor on the prompt line at the end of the line.
-            (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
+            (self.status_msg.as_ref().map_or(0, |s| dsp_width(&s.msg)), self.screen_rows + 2)
         };
         // Finally, print `buffer` and move the cursor
         print!("{buffer}\x1b[{cursor_y};{cursor_x}H{SHOW_CURSOR}");
@@ -676,7 +681,7 @@ impl Editor {
                 // will be updated in self.cursor.scroll() so that the result is visible
                 (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
                 let rx = row.cx2rx[cx];
-                row.match_segment = Some(rx..rx + query.len());
+                row.match_segment = Some(rx..rx + UnicodeWidthStr::width(query));
                 return Some(current);
             }
         }
@@ -835,6 +840,7 @@ enum PromptState {
     Cancelled,
 }
 
+thread_local! (static CHARACTER: RefCell<Vec<u8>> = {let cache = Vec::new(); RefCell::new(cache)});
 /// Process a prompt keypress event and return the new state for the prompt.
 fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
     match key {
@@ -842,9 +848,14 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
         Key::Char(BACKSPACE | DELETE_BIS) => _ = buffer.pop(),
         Key::Char(c @ 0..=126) if !c.is_ascii_control() => buffer.push(*c as char),
+        Key::Char(c @ 128..=255) => CHARACTER.with(|cache| cache.borrow_mut().push(*c)),
         // No-op
         _ => (),
     }
+    let character = CHARACTER.with(|cache| String::from_utf8(cache.borrow_mut().clone()));
+    let _ = character.clone().map_or((), |c| buffer.push_str(c.as_str()));
+    let _ = character.map_or((), |_| CHARACTER.with(|cache| cache.borrow_mut().clear()));
+
     PromptState::Active(buffer)
 }
 
