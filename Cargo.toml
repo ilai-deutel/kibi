@@ -13,7 +13,7 @@ categories = ["text-editors", "development-tools"]
 include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
 
 [dependencies]
-unicode-width = "0.1.11"
+unicode-width = "0.1.12"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.153"
