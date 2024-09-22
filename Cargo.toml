@@ -20,7 +20,7 @@ libc = "0.2.153"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
-winapi-util = "0.1.6"
+winapi-util = "0.1.8"
 
 [dev-dependencies]
 tempfile = "3.10.1"
