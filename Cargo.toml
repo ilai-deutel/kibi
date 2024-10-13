@@ -24,7 +24,7 @@ winapi-util = "0.1.9"
 
 [dev-dependencies]
 tempfile = "3.10.1"
-serial_test = "3.0.0"
+serial_test = "3.1.1"
 
 [badges]
 maintenance = { status = "actively-developed" }
