@@ -170,8 +170,9 @@ impl Editor {
 
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
-        editor.update_window_size()?;
+        print!("{USE_ALTERNATE_SCREEN}");
 
+        editor.update_window_size()?;
         set_status!(editor, "{}", HELP_MESSAGE);
 
         Ok(editor)
@@ -723,7 +724,7 @@ impl Drop for Editor {
             sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.");
         }
         if !thread::panicking() {
-            print!("{CLEAR_SCREEN}{MOVE_CURSOR_TO_START}");
+            print!("{USE_MAIN_SCREEN}");
             io::stdout().flush().expect("Could not flush stdout");
         }
     }

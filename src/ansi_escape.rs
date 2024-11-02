@@ -1,7 +1,10 @@
 //! # ANSI Escape sequences
 
-/// Clear from cursor to beginning of the screen
-pub const CLEAR_SCREEN: &str = "\x1b[2J";
+/// Switches to the main buffer.
+pub(crate) const USE_MAIN_SCREEN: &str = "\x1b[?1049l";
+
+/// Switches to a new alternate screen buffer.
+pub(crate) const USE_ALTERNATE_SCREEN: &str = "\x1b[?1049h";
 
 /// Reset the formatting
 pub(crate) const RESET_FMT: &str = "\x1b[m";
@@ -10,7 +13,7 @@ pub(crate) const RESET_FMT: &str = "\x1b[m";
 pub(crate) const REVERSE_VIDEO: &str = "\x1b[7m";
 
 /// Move the cursor to 1:1
-pub const MOVE_CURSOR_TO_START: &str = "\x1b[H";
+pub(crate) const MOVE_CURSOR_TO_START: &str = "\x1b[H";
 
 /// DECTCTEM: Make the cursor invisible
 pub(crate) const HIDE_CURSOR: &str = "\x1b[?25l";
