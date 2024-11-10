@@ -1115,4 +1115,35 @@ mod tests {
         assert_eq!(editor.cursor.x, 0);
         assert_eq!(editor.cursor.y, 0);
     }
+
+    #[test]
+    fn editor_press_end_key() {
+        let mut editor = Editor::default();
+        for b in b"Hello\nWorld\nand\nFerris!" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+        
+        editor.process_keypress(&Key::End);
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+
+        assert_eq!(editor.cursor.x, 3);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.process_keypress(&Key::End);
+        assert_eq!(editor.cursor.x, 5);
+        assert_eq!(editor.cursor.y, 0);
+    }
 }
