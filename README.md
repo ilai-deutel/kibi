@@ -31,7 +31,7 @@ Contributions are welcome! Be careful to stay below the 1024-line limit...
 
 <!-- markdownlint-disable MD033 -->
 <sub><a name="counted-with">1.</a>: Counted per platform, excluding tests and
-Clippy directives, see [`count_loc.sh`](count_loc.sh)</sub> \
+Clippy directives, see [`count_loc`](./xtask/src/count_loc.rs)</sub> \
 <sub><a name="windows-version">2.</a>: Kibi requires the terminal to support
 ANSI escape sequences. Windows 10 version 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
 April 2017) and above are supported.</sub>
@@ -52,6 +52,7 @@ April 2017) and above are supported.</sub>
     * [Global configuration](#global-configuration)
     * [Syntax highlighting](#syntax-highlighting)
 * [Comparison with kilo](#comparison-with-kilo)
+* [Contributing](#contributing)
 * [Dependencies](#dependencies)
 * [Why Kibi?](#why-kibi)
 * [Contributors](#contributors)
@@ -305,6 +306,15 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * Ability to execute an external command from the editor and paste its output
 * Memory safety, thanks to Rust!
 * Many bug fixes
+
+## Contributing
+
+The most important limitation is that the line check the line count remains
+under 1024. To check this run:
+
+```shell
+cargo xtask count-loc
+```
 
 ## Dependencies
 

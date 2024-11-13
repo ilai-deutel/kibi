@@ -1,3 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["xtask"]
+
 [package]
 name = "kibi"
 version = "0.2.2"
