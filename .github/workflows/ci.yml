@@ -38,7 +38,7 @@ jobs:
 
           # WASI
           - os: ubuntu-latest
-            target: wasm32-wasi
+            target: wasm32-wasip1
 
           # MSRV (Linux)
           - os: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
             coverage: true
           # Nightly (WASI)
           - os: ubuntu-latest
-            target: wasm32-wasi
+            target: wasm32-wasip1
             toolchain: nightly
             coverage: true
 
@@ -138,7 +138,7 @@ jobs:
 
           # WASI
           - os: ubuntu-latest
-            target: wasm32-wasi
+            target: wasm32-wasip1
 
     runs-on: ${{ matrix.os }}
 
