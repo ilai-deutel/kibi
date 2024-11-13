@@ -267,6 +267,15 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "BanuAdrian",
+      "name": "Adrian Banu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/66678108?v=4",
+      "profile": "https://github.com/BanuAdrian",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "commitType": "docs"
