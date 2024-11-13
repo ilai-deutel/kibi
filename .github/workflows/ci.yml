@@ -111,22 +111,22 @@ jobs:
       - name: Build
         run: cargo build
       - name: Run tests with coverage instrumentation
-        if: matrix.coverage
         run: cargo test --verbose --all-features --no-fail-fast
         env:
           LLVM_PROFILE_FILE: 'kibi-%p-%m.profraw'
       - name: Collect code coverage results
         run: |
           cargo install grcov
-          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info
+          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
-        if: matrix.coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: lcov.info
           flags: ${{ matrix.target }}
           fail_ci_if_error: false
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   static_checks:
     strategy:
