@@ -276,6 +276,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "joshka",
+      "name": "Josh McKinney",
+      "avatar_url": "https://avatars.githubusercontent.com/u/381361?v=4",
+      "profile": "http://joshka.net",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "commitType": "docs"
