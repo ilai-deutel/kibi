@@ -57,31 +57,10 @@ jobs:
             target: wasm32-wasi
             toolchain: 1.66.0
 
-          # Nightly (Linux)
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            toolchain: nightly
-            coverage: true
-          # Nightly (MacOS)
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            toolchain: nightly
-            coverage: true
-          # Nightly (Windows)
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            toolchain: nightly
-            coverage: true
-          # Nightly (WASI)
-          - os: ubuntu-latest
-            target: wasm32-wasip1
-            toolchain: nightly
-            coverage: true
-
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: '-D warnings'
 
     steps:
       - uses: actions/checkout@v4
@@ -97,25 +76,54 @@ jobs:
           rustup target add --toolchain ${{ matrix.toolchain || 'stable' }} ${{ matrix.target }}
       - name: Build
         run: cargo build
-      - name: Run tests without coverage instrumentation
-        if: ${{ ! matrix.coverage }}
+      - name: Run tests
         run: cargo test --verbose --all-features --no-fail-fast
+
+  build_and_test_nightly_with_coverage:
+    strategy:
+      matrix:
+        include:
+          # Nightly (Linux)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          # Nightly (MacOS)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          # Nightly (Windows)
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+          # Nightly (WASI)
+          - os: ubuntu-latest
+            target: wasm32-wasip1
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      RUSTFLAGS: '-D warnings -C instrument-coverage'
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install nightly --component llvm-tools-preview --allow-downgrade
+          rustup override set nightly
+          rustup target add --toolchain nightly ${{ matrix.target }}
+      - name: Build
+        run: cargo build
       - name: Run tests with coverage instrumentation
         if: matrix.coverage
         run: cargo test --verbose --all-features --no-fail-fast
         env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          LLVM_PROFILE_FILE: 'kibi-%p-%m.profraw'
       - name: Collect code coverage results
-        if: matrix.coverage
-        uses: actions-rs/grcov@v0.1
-        id: coverage
+        run: |
+          cargo install grcov
+          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info
       - name: Upload code coverage results
         if: matrix.coverage
         uses: codecov/codecov-action@v3
         with:
-          files: ${{ steps.coverage.outputs.report }}
+          files: lcov.info
           flags: ${{ matrix.target }}
           fail_ci_if_error: false
           verbose: true
