@@ -213,6 +213,61 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "NickGeek",
+      "name": "Nick Webster",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3462055?v=4",
+      "profile": "http://nick.geek.nz",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "hezhizhen",
+      "name": "Zhizhen He",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7611700?v=4",
+      "profile": "https://t.me/littlepoint",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "CosminGGeorgescu",
+      "name": "CosminGGeorgescu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/95082750?v=4",
+      "profile": "https://github.com/CosminGGeorgescu",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "TanvirOnGH",
+      "name": "Tanvir",
+      "avatar_url": "https://avatars.githubusercontent.com/u/138336161?v=4",
+      "profile": "https://tanvirongh.github.io/",
+      "contributions": [
+        "syntax-highlighting"
+      ]
+    },
+    {
+      "login": "BogdanPaul15",
+      "name": "Prisacaru Bogdan-Paul",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62438221?v=4",
+      "profile": "http://www.bogdanpaul.com",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "auzkok",
+      "name": "auzkok",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35302680?v=4",
+      "profile": "https://github.com/auzkok",
+      "contributions": [
+        "syntax-highlighting"
+      ]
     }
-  ]
+  ],
+  "commitType": "docs"
 }

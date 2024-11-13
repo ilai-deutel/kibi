@@ -3,15 +3,15 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/ci.yml?branch=master&logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
 [![Lines of code](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/loc.yml?label=LOC%E2%89%A41024)](#)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.62+-blue.svg?logo=rust)](https://www.rust-lang.org/)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%2010-blue)](#)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.66+-blue.svg?logo=rust)](https://www.rust-lang.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20|%20macOS%20|%20Windows%2010%20|%20WASI-blue)](#)
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-22-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -20,8 +20,8 @@ A configurable text editor with UTF-8 support, incremental search, syntax
 highlighting, line numbers and more, written in less than 1024
 lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
 
-Kibi is compatible with Linux, macOS, and Windows
-10<sup>[2](#windows-version)</sup>.
+Kibi is compatible with Linux, macOS, Windows
+10<sup>[2](#windows-version)</sup>, and WASI.
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text
 editor written in C.
@@ -164,7 +164,7 @@ make install
 
 ### Flatpak
 
-Kibi is available on Flathub.
+Kibi is available [on Flathub](https://flathub.org/ca/apps/com.github.ilai_deutel.kibi).
 
 <details><summary>Command line instructions</summary>
  The flatpak can be installed using:
@@ -373,6 +373,12 @@ any kind welcome!
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/carol-mb"><img src="https://avatars.githubusercontent.com/u/117681554?v=4" width="100px;" alt=""/><br /><sub><b>Mihai-Carol Bazga</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=carol-mb" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NickGeek"><img src="https://avatars.githubusercontent.com/u/3462055?v=4" width="100px;" alt=""/><br /><sub><b>Nick Webster</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=NickGeek" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hezhizhen"><img src="https://avatars.githubusercontent.com/u/7611700?v=4" width="100px;" alt=""/><br /><sub><b>Zhizhen He</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=hezhizhen" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/CosminGGeorgescu"><img src="https://avatars.githubusercontent.com/u/95082750?v=4" width="100px;" alt=""/><br /><sub><b>CosminGGeorgescu</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=CosminGGeorgescu" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TanvirOnGH"><img src="https://avatars.githubusercontent.com/u/138336161?v=4" width="100px;" alt=""/><br /><sub><b>Tanvir</b></sub></a><br /><a href="#syntax-highlighting-TanvirOnGH" title="Contributing to syntax highlighting configuration files">💠</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/BogdanPaul15"><img src="https://avatars.githubusercontent.com/u/62438221?v=4" width="100px;" alt=""/><br /><sub><b>Prisacaru Bogdan-Paul</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=BogdanPaul15" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/auzkok"><img src="https://avatars.githubusercontent.com/u/35302680?v=4" width="100px;" alt=""/><br /><sub><b>auzkok</b></sub></a><br /><a href="#syntax-highlighting-auzkok" title="Contributing to syntax highlighting configuration files">💠</a></td>
     </tr>
   </tbody>
 </table>

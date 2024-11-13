@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'kibi.metainfo.xml'
+      - '.github/workflows/appstream.yml'
   schedule:
     - cron: '0 0 1 * *'
 
@@ -12,7 +13,7 @@ jobs:
   appstream_validation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Appstream validator
         run: |
           sudo apt-get install flatpak

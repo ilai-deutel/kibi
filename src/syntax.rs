@@ -93,6 +93,7 @@ impl Conf {
 }
 
 #[cfg(test)]
+#[cfg(not(target_family = "wasm"))] // No filesystem on wasm
 mod tests {
     use std::collections::HashSet;
     use std::fs;

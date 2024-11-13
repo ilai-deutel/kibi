@@ -53,22 +53,17 @@ impl Row {
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
     pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: usize) -> HlState {
-        self.render.clear();
-        self.cx2rx.clear();
-        self.rx2cx.clear();
+        let (..) = (self.render.clear(), self.cx2rx.clear(), self.rx2cx.clear());
         let (mut cx, mut rx) = (0, 0);
         for c in String::from_utf8_lossy(&self.chars).chars() {
-            // The number of bytes used to store the character
-            let n_bytes = c.len_utf8();
             // The number of rendered characters
             let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
             self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
-            self.cx2rx.extend(std::iter::repeat(rx).take(n_bytes));
+            self.cx2rx.extend(std::iter::repeat(rx).take(c.len_utf8()));
             self.rx2cx.extend(std::iter::repeat(cx).take(n_rend_chars));
-            (rx, cx) = (rx + n_rend_chars, cx + n_bytes);
+            (rx, cx) = (rx + n_rend_chars, cx + c.len_utf8());
         }
-        self.cx2rx.push(rx);
-        self.rx2cx.push(cx);
+        let (..) = (self.cx2rx.push(rx), self.rx2cx.push(cx));
         self.update_syntax(syntax, hl_state)
     }
 

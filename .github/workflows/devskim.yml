@@ -2,9 +2,11 @@ name: DevSkim
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
   schedule:
     - cron: '25 16 * * 1'
 
@@ -18,11 +20,11 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run DevSkim scanner
         uses: microsoft/DevSkim-Action@v1
-        
+
       - name: Upload DevSkim scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v1
         with:
