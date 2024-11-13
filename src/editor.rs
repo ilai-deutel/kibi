@@ -35,7 +35,8 @@ macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg 
 enum Key {
     Arrow(AKey),
     CtrlArrow(AKey),
-    Page(PageKey),
+    PageUp,
+    PageDown,
     Home,
     End,
     Delete,
@@ -47,12 +48,6 @@ enum Key {
 enum AKey {
     Left,
     Right,
-    Up,
-    Down,
-}
-
-/// Enum of page keys
-enum PageKey {
     Up,
     Down,
 }
@@ -273,8 +268,8 @@ impl Editor {
                                     (Some(c), Some(b'~')) if c == b'1' || c == b'7' => Key::Home,
                                     (Some(c), Some(b'~')) if c == b'4' || c == b'8' => Key::End,
                                     (Some(b'3'), Some(b'~')) => Key::Delete,
-                                    (Some(b'5'), Some(b'~')) => Key::Page(PageKey::Up),
-                                    (Some(b'6'), Some(b'~')) => Key::Page(PageKey::Down),
+                                    (Some(b'5'), Some(b'~')) => Key::PageUp,
+                                    (Some(b'6'), Some(b'~')) => Key::PageDown,
                                     (Some(b'5'), Some(b'A')) => Key::CtrlArrow(AKey::Up),
                                     (Some(b'5'), Some(b'B')) => Key::CtrlArrow(AKey::Down),
                                     (Some(b'5'), Some(b'C')) => Key::CtrlArrow(AKey::Right),
@@ -638,11 +633,11 @@ impl Editor {
             // TODO: CtrlArrow should move to next word
             Key::Arrow(arrow) => self.move_cursor(arrow, false),
             Key::CtrlArrow(arrow) => self.move_cursor(arrow, true),
-            Key::Page(PageKey::Up) => {
+            Key::PageUp => {
                 self.cursor.y = self.cursor.roff.saturating_sub(self.screen_rows);
                 self.update_cursor_x_position();
             }
-            Key::Page(PageKey::Down) => {
+            Key::PageDown => {
                 self.cursor.y = (self.cursor.roff + 2 * self.screen_rows - 1).min(self.rows.len());
                 self.update_cursor_x_position();
             }
@@ -729,7 +724,7 @@ impl Editor {
             self.file_name = None;
         }
         loop {
-            if let Some(mode) = self.prompt_mode.as_ref() {
+            if let Some(ref mode) = self.prompt_mode {
                 set_status!(self, "{}", mode.status_msg());
             }
             self.refresh_screen()?;
