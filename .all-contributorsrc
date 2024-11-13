@@ -267,6 +267,15 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "Jan9103",
+      "name": "Jan9103",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55753387?v=4",
+      "profile": "https://github.com/Jan9103",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
