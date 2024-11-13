@@ -1,23 +1,25 @@
 //! # sys (WASI)
 //!
-//! WASI-specific structs and functions. Will be imported as `sys` on WASI systems.
+//! WASI-specific structs and functions. Will be imported as `sys` on WASI
+//! systems.
 
-pub use crate::xdg::*;
 use crate::Error;
+pub use crate::xdg::*;
 
 pub struct TermMode {}
 
 /// Return the current window size as (rows, columns).
-/// By returning an error we cause kibi to fall back to another method of getting the window size
+/// By returning an error we cause kibi to fall back to another method of
+/// getting the window size
 pub fn get_window_size() -> Result<(usize, usize), Error> { Err(Error::InvalidWindowSize) }
 
-/// Register a signal handler that sets a global variable when the window size changes. On WASI
-/// platforms, this does nothing.
+/// Register a signal handler that sets a global variable when the window size
+/// changes. On WASI platforms, this does nothing.
 #[allow(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
-/// Check if the windows size has changed since the last call to this function. On WASI platforms,
-/// this always return false.
+/// Check if the windows size has changed since the last call to this function.
+/// On WASI platforms, this always return false.
 pub fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode. On WASI platforms, this does nothing.

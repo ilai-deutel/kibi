@@ -1,7 +1,7 @@
 //! # Row
 //!
-//! Utilities for rows. A `Row` owns the underlying characters, the rendered string and the syntax
-//! highlighting information.
+//! Utilities for rows. A `Row` owns the underlying characters, the rendered
+//! string and the syntax highlighting information.
 
 use std::{fmt::Write, iter::repeat};
 
@@ -19,7 +19,8 @@ pub enum HlState {
     Normal,
     /// A multi-line comment has been open, but not yet closed.
     MultiLineComment,
-    /// A string has been open with the given quote character (for instance b'\'' or b'"'), but not yet closed.
+    /// A string has been open with the given quote character (for instance
+    /// b'\'' or b'"'), but not yet closed.
     String(u8),
     /// A multi-line string has been open, but not yet closed.
     MultiLineString,
@@ -30,18 +31,22 @@ pub enum HlState {
 pub struct Row {
     /// The characters of the row.
     pub chars: Vec<u8>,
-    /// How the characters are rendered. In particular, tabs are converted into several spaces, and
-    /// bytes may be combined into single UTF-8 characters.
+    /// How the characters are rendered. In particular, tabs are converted into
+    /// several spaces, and bytes may be combined into single UTF-8
+    /// characters.
     render: String,
-    /// Mapping from indices in `self.chars` to the corresponding indices in `self.render`.
+    /// Mapping from indices in `self.chars` to the corresponding indices in
+    /// `self.render`.
     pub cx2rx: Vec<usize>,
-    /// Mapping from indices in `self.render` to the corresponding indices in `self.chars`.
+    /// Mapping from indices in `self.render` to the corresponding indices in
+    /// `self.chars`.
     pub rx2cx: Vec<usize>,
     /// The vector of `HLType` for each rendered character.
     hl: Vec<HlType>,
     /// The final state of the row.
     pub hl_state: HlState,
-    /// If not `None`, the range that is currently matched during a FIND operation.
+    /// If not `None`, the range that is currently matched during a FIND
+    /// operation.
     pub match_segment: Option<std::ops::Range<usize>>,
 }
 
@@ -67,9 +72,9 @@ impl Row {
         self.update_syntax(syntax, hl_state)
     }
 
-    /// Obtain the character size, in bytes, given its position in `self.render`. This is done in
-    /// constant time by using the difference between `self.rx2cx[rx]` and the cx for the next
-    /// character.
+    /// Obtain the character size, in bytes, given its position in
+    /// `self.render`. This is done in constant time by using the difference
+    /// between `self.rx2cx[rx]` and the cx for the next character.
     pub fn get_char_size(&self, rx: usize) -> usize {
         let cx0 = self.rx2cx[rx];
         self.rx2cx.iter().skip(rx + 1).map(|cx| cx - cx0).find(|d| *d > 0).unwrap_or(1)
@@ -80,7 +85,8 @@ impl Row {
         self.hl.clear();
         let line = self.render.as_bytes();
 
-        // Delimiters for multi-line comments and multi-line strings, as Option<&String, &String>
+        // Delimiters for multi-line comments and multi-line strings, as Option<&String,
+        // &String>
         let ml_comment_delims = syntax.ml_comment_delims.as_ref().map(|(start, end)| (start, end));
         let ml_string_delims = syntax.ml_string_delim.as_ref().map(|x| (x, x));
 
@@ -167,9 +173,10 @@ impl Row {
         self.hl_state
     }
 
-    /// Draw the row and write the result to a buffer. An `offset` can be given, as well as a limit
-    /// on the length of the row (`max_len`). After writing the characters, clear the rest of the
-    /// line and move the cursor to the start of the next line.
+    /// Draw the row and write the result to a buffer. An `offset` can be given,
+    /// as well as a limit on the length of the row (`max_len`). After
+    /// writing the characters, clear the rest of the line and move the
+    /// cursor to the start of the next line.
     pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) -> Result<(), Error> {
         let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);

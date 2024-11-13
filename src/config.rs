@@ -6,15 +6,15 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 
-use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
+use crate::{Error, Error::Config as ConfErr, sys::conf_dirs as cdirs};
 
 /// The global Kibi configuration.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
     pub tab_stop: usize,
-    /// The number of confirmations needed before quitting, when changes have been made since the
-    /// file was last changed.
+    /// The number of confirmations needed before quitting, when changes have
+    /// been made since the file was last changed.
     pub quit_times: usize,
     /// The duration for which messages are shown in the status bar.
     pub message_dur: Duration,
@@ -30,18 +30,20 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Load the configuration, potentially overridden using `config.ini` files that can be located
-    /// in the following directories:
+    /// Load the configuration, potentially overridden using `config.ini` files
+    /// that can be located in the following directories:
     ///   - On Linux, macOS, and other *nix systems:
     ///     - `/etc/kibi` (system-wide configuration).
-    ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
-    ///       `$HOME/.config/kibi` otherwise (user-level configuration).
+    ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME`
+    ///       is defined, `$HOME/.config/kibi` otherwise (user-level
+    ///       configuration).
     ///   - On Windows:
     ///     - `%APPDATA%\Kibi`
     ///
     /// # Errors
     ///
-    /// Will return `Err` if one of the configuration file cannot be parsed properly.
+    /// Will return `Err` if one of the configuration file cannot be parsed
+    /// properly.
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
@@ -70,8 +72,8 @@ impl Config {
 
 /// Process an INI file.
 ///
-/// The `kv_fn` function will be called for each key-value pair in the file. Typically, this
-/// function will update a configuration instance.
+/// The `kv_fn` function will be called for each key-value pair in the file.
+/// Typically, this function will update a configuration instance.
 pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
     let file = File::open(path).map_err(|e| ConfErr(path.into(), 0, e.to_string()))?;
@@ -89,13 +91,13 @@ where F: FnMut(&str, &str) -> Result<(), String> {
 }
 
 /// Trim a value (right-hand side of a key=value INI line) and parses it.
-pub fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<T, String> {
+pub fn parse_value<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<T, String> {
     value.trim().parse().map_err(|e| format!("Parser error: {e}"))
 }
 
-/// Split a comma-separated list of values (right-hand side of a key=value1,value2,... INI line) and
-/// parse it as a Vec.
-pub fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
+/// Split a comma-separated list of values (right-hand side of a
+/// key=value1,value2,... INI line) and parse it as a Vec.
+pub fn parse_values<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
     value.split(',').map(parse_value).collect()
 }
 
