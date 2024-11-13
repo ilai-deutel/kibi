@@ -1,14 +1,16 @@
 use std::io::{self, BufRead, Read, Write};
 
-use crate::{ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, sys, Error};
+use crate::{Error, ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, sys};
 
 /// Obtain the window size using the cursor position.
 ///
-/// This function moves the cursor to the bottom-right using ANSI escape sequence
-/// `\x1b[999C\x1b[999B`, then requests the cursor position using ANSI escape sequence `\x1b[6n`.
-/// After this sequence is sent, the next characters on stdin should be `\x1b[{row};{column}R`.
+/// This function moves the cursor to the bottom-right using ANSI escape
+/// sequence `\x1b[999C\x1b[999B`, then requests the cursor position using ANSI
+/// escape sequence `\x1b[6n`. After this sequence is sent, the next characters
+/// on stdin should be `\x1b[{row};{column}R`.
 ///
-/// It is used as an alternative method if `sys::get_window_size()` returns an error.
+/// It is used as an alternative method if `sys::get_window_size()` returns an
+/// error.
 pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     let mut stdin = sys::stdin()?;
     print!("{REPOSITION_CURSOR_END}{DEVICE_STATUS_REPORT}");
@@ -21,7 +23,8 @@ pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     Ok((read_value_until(b';')?, read_value_until(b'R')?))
 }
 
-/// Read value until a certain stop byte is reached, and parse the result (pre-stop byte).
+/// Read value until a certain stop byte is reached, and parse the result
+/// (pre-stop byte).
 fn read_value_until<T: std::str::FromStr>(stop_byte: u8) -> Result<T, Error> {
     let mut buf = Vec::new();
     io::stdin().lock().read_until(stop_byte, &mut buf)?;
