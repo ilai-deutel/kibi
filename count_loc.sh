@@ -23,9 +23,9 @@ per_platform_total_locs['windows']=0
 for path in "${paths[@]}"; do
   if (( ${#path} > left_col_width )); then left_col_width=${#path}; fi;
 
-  tempfile=$(mktemp --suffix .rs)
+  tempfile="$(mktemp).rs"
   # Ignore Clippy directives
-  code=$(grep -v -P '^\s*#!?\[(?:allow|warn|deny)\(clippy::' "${path}")
+  code=$(grep -v -E '^[[:space:]]*#!?\[(?:allow|warn|deny)\(clippy::' "${path}")
   # Ignore everything after #[cfg(test)]
   echo "${code%'#[cfg(test)]'*}" > "${tempfile}"
   file_loc=$(tokei "${tempfile}" -t=Rust -o json | jq .Rust.code)
