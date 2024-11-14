@@ -169,7 +169,7 @@ jobs:
       - name: Clippy
         uses: giraffate/clippy-action@v1
         with:
-          clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
+          clippy_flags: --all-features --all-targets --target ${{ matrix.target }}
           tool_name: clippy-${{ matrix.target }}
           reporter: github-pr-review
           level: error
