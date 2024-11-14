@@ -150,6 +150,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      pull-requests: write
+
     steps:
       - uses: actions/checkout@v4
       - name: Install nightly with clippy and rustfmt
@@ -157,9 +160,13 @@ jobs:
           rustup toolchain install nightly --component rustfmt --component clippy --allow-downgrade
           rustup override set nightly
           rustup target add --toolchain nightly ${{ matrix.target }}
-      - name: Run rustfmt check
-        run: cargo fmt --check
-      - name: Run Clippy
+      - name: Format
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        uses: mbrobbel/rustfmt-check@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          mode: review
+      - name: Clippy
         uses: giraffate/clippy-action@v1
         with:
           clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
@@ -167,3 +174,4 @@ jobs:
           reporter: github-pr-review
           level: error
           fail_on_error: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
