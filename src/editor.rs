@@ -263,7 +263,7 @@ impl Editor {
                             (b'[' | b'O', Some(b'F')) => Key::End,
                             (b'[', mut c @ Some(b'0'..=b'8')) => {
                                 let mut d = bytes.next().transpose()?;
-                                if let (Some(b'1'), Some(b';')) = (c, d) {
+                                if (c, d) == (Some(b'1'), Some(b';')) {
                                     // 1 is the default modifier value. Therefore, <ESC>[1;5C is
                                     // equivalent to <ESC>[5C, etc.
                                     c = bytes.next().transpose()?;
@@ -942,12 +942,12 @@ mod tests {
             editor.insert_byte(*b);
         }
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Hello world".as_bytes());
+        assert_eq!(editor.rows[0].chars, b"Hello world");
         editor.move_cursor(&AKey::Left, true);
         editor.move_cursor(&AKey::Left, false);
         editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Helo world".as_bytes());
+        assert_eq!(editor.rows[0].chars, b"Helo world");
     }
 
     #[test]
