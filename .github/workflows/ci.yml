@@ -162,18 +162,21 @@ jobs:
           rustup override set nightly
           rustup target add --toolchain nightly ${{ matrix.target }}
       - name: Format
-        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
         uses: mbrobbel/rustfmt-check@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           mode: review
+      - name: Format
+        if: ${{ github.event_name != 'pull_request' || matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo fmt --check
       - name: Set up cargo-action-fmt
-        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
         uses: olix0r/cargo-action-fmt/setup@v2
       - name: Clippy
-        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
         run: cargo clippy --all-features --all-targets --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Clippy
-        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
         run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
 
