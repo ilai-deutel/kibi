@@ -152,6 +152,7 @@ jobs:
 
     permissions:
       pull-requests: write
+      checks: write
 
     steps:
       - uses: actions/checkout@v4
@@ -166,12 +167,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           mode: review
+      - name: Set up cargo-action-fmt
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        uses: olix0r/cargo-action-fmt/setup@v2
       - name: Clippy
-        uses: giraffate/clippy-action@v1
-        with:
-          clippy_flags: --all-features --all-targets --target ${{ matrix.target }}
-          tool_name: clippy-${{ matrix.target }}
-          reporter: github-pr-review
-          level: error
-          fail_on_error: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Clippy
+        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
+

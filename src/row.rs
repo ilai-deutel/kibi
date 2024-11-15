@@ -213,6 +213,6 @@ impl Row {
 }
 
 /// Return whether `c` is an ASCII separator.
-fn is_sep(c: u8) -> bool {
+const fn is_sep(c: u8) -> bool {
     c.is_ascii_whitespace() || c == b'\0' || (c.is_ascii_punctuation() && c != b'_')
 }

@@ -6,7 +6,7 @@ use std::env::var;
 ///
 /// The XDG Base Directory Specification is defined here:
 /// <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>
-pub(crate) fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String> {
+pub fn xdg_dirs(xdg_type: &str, def_home_suffix: &str, def_dirs: &str) -> Vec<String> {
     let (home_key, dirs_key) = (format!("XDG_{xdg_type}_HOME"), format!("XDG_{xdg_type}_DIRS"));
 
     let mut dirs = Vec::new();

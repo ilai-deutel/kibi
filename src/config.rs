@@ -202,13 +202,13 @@ mod tests {
     }
 
     impl TempEnvVar {
-        fn new(key: &OsStr, value: Option<&OsStr>) -> TempEnvVar {
+        fn new(key: &OsStr, value: Option<&OsStr>) -> Self {
             let orig_value = env::var_os(key);
             match value {
                 Some(value) => env::set_var(key, value),
                 None => env::remove_var(key),
             }
-            TempEnvVar { key: key.into(), orig_value }
+            Self { key: key.into(), orig_value }
         }
     }
 
