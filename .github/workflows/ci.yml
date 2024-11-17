@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '**.rs'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches:
       - master
+    paths:
+      - '**.rs'
+      - '.github/workflows/ci.yml'
 
 env:
   CARGO_TERM_COLOR: always
