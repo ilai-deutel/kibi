@@ -1,0 +1,57 @@
+name: Sanitizers
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/sanitizers.yml'
+  schedule:
+    - cron: '12 07 * * 2' # weekly on Tuesday
+
+jobs:
+  sanitizers:
+    strategy:
+      matrix:
+        sanitizer:
+          - address
+          - leak
+          - memory
+          - safestack
+          - thread
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-apple-darwin
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - sanitizer: memory
+            extra_flags: -Zsanitizer-memory-track-origins
+        exclude:
+          # LeakSanitizer is not supported on MacOS
+          - sanitizer: leak
+            target: x86_64-apple-darwin
+          # MemorySanitizer is not supported on MacOS
+          - sanitizer: memory
+            target: x86_64-apple-darwin
+          # Safestack is not supported on MacOS
+          - sanitizer: safestack
+            target: x86_64-apple-darwin
+        
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: ${{ matrix.target }}
+          components: rust-src
+      - name: Run tests with sanitizer
+        run: cargo test -Zbuild-std --verbose --all-features --no-fail-fast --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: -D warnings -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
+          RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
