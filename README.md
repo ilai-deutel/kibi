@@ -8,12 +8,11 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-30-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
-<a href="https://hellogithub.com/repository/dd951a62380048529cbe4af079e716f5" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=dd951a62380048529cbe4af079e716f5&claim_uid=duFW3MRGSiomvrC&theme=small" alt="Featured｜HelloGitHub" /></a>
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
@@ -145,7 +144,6 @@ sudo dnf install kibi
 
 Kibi is available from [the official repos](https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc/editors/kibi/README.html).
 
-
 <details><summary>Installation instructions</summary>
 
 Install using:
@@ -169,16 +167,17 @@ Kibi is available [on Flathub](https://flathub.org/ca/apps/com.github.ilai_deute
 
 <details><summary>Command line instructions</summary>
  The flatpak can be installed using:
- 
+
 ```bash
 flatpak install flathub com.github.ilai_deutel.kibi
 ```
 
 You can then run Kibi with:
- 
- ```bash
- flatpak run com.github.ilai_deutel.kibi
- ```
+
+```bash
+flatpak run com.github.ilai_deutel.kibi
+```
+
 </details>
 
 ## Usage
