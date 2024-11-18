@@ -104,9 +104,9 @@ pub fn parse_values<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<Vec<T>
 #[cfg(not(target_family = "wasm"))] // No filesystem on wasm
 mod tests {
     use std::ffi::{OsStr, OsString};
+    #[cfg(unix)] use std::sync::{LazyLock, Mutex};
     use std::{env, fs};
 
-    use serial_test::serial;
     use tempfile::TempDir;
 
     use super::*;
@@ -247,9 +247,12 @@ mod tests {
     }
 
     #[cfg(unix)]
+    static XDG_CONFIG_FLAG_LOCK: LazyLock<Mutex<()>> = LazyLock::new(Mutex::default);
+
+    #[cfg(unix)]
     #[test]
-    #[serial]
     fn xdg_config_home() {
+        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
         let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
             "XDG_CONFIG_HOME".as_ref(),
@@ -260,8 +263,8 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    #[serial]
     fn config_home() {
+        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
         let _temp_env_var = TempEnvVar::new(OsStr::new("XDG_CONFIG_HOME"), None);
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
@@ -273,7 +276,6 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
-    #[serial]
     fn app_data() {
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
