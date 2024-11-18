@@ -92,8 +92,7 @@ impl Row {
 
         'syntax_loop: while self.hl.len() < line.len() {
             let i = self.hl.len();
-            let find_str =
-                |s: &str| line.get(i..(i + s.len())).map_or(false, |r| r.eq(s.as_bytes()));
+            let find_str = |s: &str| line.get(i..(i + s.len())).is_some_and(|r| r.eq(s.as_bytes()));
 
             if hl_state == HlState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
                 self.hl.extend(repeat(HlType::Comment).take(line.len() - i));
