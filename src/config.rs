@@ -52,13 +52,12 @@ impl Config {
         for path in paths.iter().filter(|p| p.is_file()).rev() {
             process_ini_file(path, &mut |key, value| {
                 match key {
-                    "tab_stop" => match parse_value(value)? {
-                        0 => return Err("tab_stop must be > 0".into()),
-                        tab_stop => conf.tab_stop = tab_stop,
-                    },
+                    "tab_stop" =>
+                        conf.tab_stop = parse_value(value).map_err(|_| "tab_stop must be > 0")?,
                     "quit_times" => conf.quit_times = parse_value(value)?,
                     "message_duration" =>
-                        conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
+                        conf.message_dur = Duration::try_from_secs_f32(parse_value(value)?)
+                            .map_err(|x| x.to_string())?,
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {key}")),
                 };
