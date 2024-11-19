@@ -168,13 +168,7 @@ jobs:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
       - name: Format
-        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
-        uses: mbrobbel/rustfmt-check@master
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
-      - name: Format
-        if: ${{ github.event_name != 'pull_request' || matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
         run: cargo fmt --check
       - name: Set up cargo-action-fmt
         if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
