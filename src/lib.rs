@@ -12,13 +12,9 @@ mod row;
 mod syntax;
 mod terminal;
 
-#[cfg(windows)] mod windows;
-#[cfg(windows)] use windows as sys;
-
-#[cfg(unix)] mod unix;
-#[cfg(unix)] use unix as sys;
-
-#[cfg(target_os = "wasi")] mod wasi;
-#[cfg(target_os = "wasi")] use wasi as sys;
+#[cfg_attr(windows, path = "windows.rs")]
+#[cfg_attr(unix, path = "unix.rs")]
+#[cfg_attr(target_os = "wasi", path = "wasi.rs")]
+mod sys;
 
 #[cfg(any(unix, target_os = "wasi"))] mod xdg;
