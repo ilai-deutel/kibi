@@ -5,14 +5,14 @@ on:
     branches:
       - master
     paths:
-      - '**.rs'
-      - '.github/workflows/ci.yml'
+      - "**.rs"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches:
       - master
     paths:
-      - '**.rs'
-      - '.github/workflows/ci.yml'
+      - "**.rs"
+      - ".github/workflows/ci.yml"
 
 env:
   CARGO_TERM_COLOR: always
@@ -66,7 +66,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: '-D warnings'
+      RUSTFLAGS: "-D warnings"
 
     steps:
       - uses: actions/checkout@v4
@@ -105,7 +105,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: '-D warnings -C instrument-coverage'
+      RUSTFLAGS: "-D warnings -C instrument-coverage"
 
     steps:
       - uses: actions/checkout@v4
@@ -119,7 +119,7 @@ jobs:
       - name: Run tests with coverage instrumentation
         run: cargo test --verbose --all-features --no-fail-fast
         env:
-          LLVM_PROFILE_FILE: 'kibi-%p-%m.profraw'
+          LLVM_PROFILE_FILE: "kibi-%p-%m.profraw"
       - name: Collect code coverage results
         run: |
           cargo install grcov
@@ -179,4 +179,3 @@ jobs:
       - name: Clippy
         if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
         run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
-
