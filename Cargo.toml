@@ -32,6 +32,9 @@ tempfile = "3.13.0"
 [badges]
 maintenance = { status = "actively-developed" }
 
+[lints]
+workspace = true
+
 [workspace.lints.clippy]
 correctness = "deny"
 style = "deny"
