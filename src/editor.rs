@@ -628,7 +628,6 @@ impl Editor {
         let mut prompt_mode = None;
 
         match key {
-            // TODO: CtrlArrow should move to next word
             Key::Arrow(arrow) => self.move_cursor(arrow, false),
             Key::CtrlArrow(arrow) => self.move_cursor(arrow, true),
             Key::PageUp => {
