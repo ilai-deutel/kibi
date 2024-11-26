@@ -213,8 +213,8 @@ mod tests {
 
     impl Drop for TempEnvVar {
         fn drop(&mut self) {
-            match self.orig_value {
-                Some(ref orig_value) => env::set_var(&self.key, orig_value),
+            match &self.orig_value {
+                Some(orig_value) => env::set_var(&self.key, orig_value),
                 None => env::remove_var(&self.key),
             }
         }

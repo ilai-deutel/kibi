@@ -1,4 +1,5 @@
-use std::io::Write;
+#![allow(clippy::multiple_crate_versions)]
+use std::process::ExitCode;
 
 use anstyle::{AnsiColor, Reset, Style};
 use clap::{Parser, Subcommand};
@@ -11,12 +12,14 @@ const RESET: Reset = Reset;
 const RED: Style = AnsiColor::Red.on_default();
 const GREEN: Style = AnsiColor::Green.on_default();
 
-fn main() {
+fn main() -> ExitCode {
     let args = Args::parse();
-    if let Err(err) = args.command.execute() {
-        let _ = std::io::stdout().flush();
-        eprintln!("{RED}{err}{RESET}");
-        std::process::exit(1);
+    match args.command.execute() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("{RED}{err}{RESET}");
+            ExitCode::FAILURE
+        }
     }
 }
 
@@ -34,7 +37,7 @@ enum Command {
 impl Command {
     fn execute(&self) -> Result<()> {
         match self {
-            Command::CountLoc => count_loc::count_loc(),
+            Self::CountLoc => count_loc::count_loc(),
         }
     }
 }

@@ -169,13 +169,19 @@ jobs:
           components: rustfmt, clippy
       - name: Format
         if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
-        run: cargo fmt --check
+        run: cargo fmt --check --all
       - name: Set up cargo-action-fmt
         if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
         uses: olix0r/cargo-action-fmt/setup@v2
+      - name: Check
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Check
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
       - name: Clippy
         if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
-        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Clippy
         if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
-        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}

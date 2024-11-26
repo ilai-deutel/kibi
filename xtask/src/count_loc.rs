@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anstream::println;
 use glob::glob;
@@ -23,10 +23,10 @@ pub fn count_loc() -> Result<()> {
     print_summary(&results, longest_path, &["unix", "wasi", "windows"])
 }
 
-/// Filter out lines that contain `clippy` lints and anything after
+/// Filter out lines that contain lints and anything after
 /// `#[cfg(test)]` attributes.
-pub fn filter_lines(path: &std::path::PathBuf) -> Result<String> {
-    let regex = Regex::new(r"^\s*#!?\[(?:allow|warn|deny)\(clippy::")?;
+pub fn filter_lines(path: &Path) -> Result<String> {
+    let regex = Regex::new(r"^\s*#!?\[(?:allow|warn|deny)\(")?;
     let content = std::fs::read_to_string(path)?;
     let lines = content
         .lines()
@@ -60,7 +60,7 @@ pub fn print_summary(results: &[(PathBuf, usize)], width: usize, platforms: &[&s
     Ok(())
 }
 
-pub fn filter_count(results: &[(std::path::PathBuf, usize)], pattern: &str) -> usize {
+pub fn filter_count(results: &[(PathBuf, usize)], pattern: &str) -> usize {
     results
         .iter()
         .filter(|(path, _)| path.display().to_string().contains(pattern))
