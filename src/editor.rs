@@ -722,7 +722,7 @@ impl Editor {
             self.file_name = None;
         }
         loop {
-            if let Some(ref mode) = self.prompt_mode {
+            if let Some(mode) = &self.prompt_mode {
                 set_status!(self, "{}", mode.status_msg());
             }
             self.refresh_screen()?;
@@ -741,6 +741,7 @@ impl Editor {
 }
 
 impl Drop for Editor {
+    #[allow(clippy::expect_used)]
     /// When the editor is dropped, restore the original terminal mode.
     fn drop(&mut self) {
         if let Some(orig_term_mode) = self.orig_term_mode.take() {
@@ -793,6 +794,7 @@ impl PromptMode {
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
+                        #[allow(clippy::wildcard_enum_match_arm)]
                         let (last_match, forward) = match key {
                             Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
                                 (last_match, true),
@@ -861,6 +863,7 @@ enum PromptState {
 
 /// Process a prompt keypress event and return the new state for the prompt.
 fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
+    #[allow(clippy::wildcard_enum_match_arm)]
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,

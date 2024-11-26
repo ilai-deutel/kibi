@@ -2,6 +2,7 @@
 //!
 //! UNIX-specific structs and functions. Will be imported as `sys` on UNIX
 //! systems.
+#![allow(unsafe_code)]
 
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
@@ -40,6 +41,7 @@ static WSC: AtomicBool = AtomicBool::new(false);
 /// Handle a change in window size.
 extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.store(true, Relaxed) }
 
+#[allow(clippy::fn_to_numeric_cast_any)]
 /// Register a signal handler that sets a global variable when the window size
 /// changes. After calling this function, use `has_window_size_changed` to query
 /// the global variable.
@@ -51,7 +53,7 @@ pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
         // have sa_handler field, so we use sa_sigaction instead.
         (*maybe_sa.as_mut_ptr()).sa_flags = SA_SIGINFO;
         (*maybe_sa.as_mut_ptr()).sa_sigaction = handle_wsize as sighandler_t;
-        cerr(libc::sigaction(libc::SIGWINCH, maybe_sa.as_ptr(), std::ptr::null_mut()))
+        cerr(sigaction(libc::SIGWINCH, maybe_sa.as_ptr(), std::ptr::null_mut()))
     }
 }
 

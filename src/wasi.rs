@@ -6,7 +6,7 @@
 use crate::Error;
 pub use crate::xdg::*;
 
-pub struct TermMode {}
+pub struct TermMode;
 
 /// Return the current window size as (rows, columns).
 /// By returning an error we cause kibi to fall back to another method of

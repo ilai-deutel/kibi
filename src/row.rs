@@ -64,8 +64,8 @@ impl Row {
             // The number of rendered characters
             let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
             self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
-            self.cx2rx.extend(std::iter::repeat(rx).take(c.len_utf8()));
-            self.rx2cx.extend(std::iter::repeat(cx).take(n_rend_chars));
+            self.cx2rx.extend(repeat(rx).take(c.len_utf8()));
+            self.rx2cx.extend(repeat(cx).take(n_rend_chars));
             (rx, cx) = (rx + n_rend_chars, cx + c.len_utf8());
         }
         let (..) = (self.cx2rx.push(rx), self.rx2cx.push(cx));

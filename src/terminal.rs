@@ -15,7 +15,7 @@ pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     let mut stdin = sys::stdin()?;
     print!("{REPOSITION_CURSOR_END}{DEVICE_STATUS_REPORT}");
     io::stdout().flush()?;
-    let mut prefix_buffer = [0_u8; 2];
+    let mut prefix_buffer = [0u8; 2];
     stdin.read_exact(&mut prefix_buffer)?;
     if prefix_buffer != [b'\x1b', b'['] {
         return Err(Error::CursorPosition);
