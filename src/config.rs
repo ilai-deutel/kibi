@@ -6,15 +6,15 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
 
-use crate::{sys::conf_dirs as cdirs, Error, Error::Config as ConfErr};
+use crate::{Error, Error::Config as ConfErr, sys::conf_dirs as cdirs};
 
 /// The global Kibi configuration.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
     pub tab_stop: usize,
-    /// The number of confirmations needed before quitting, when changes have been made since the
-    /// file was last changed.
+    /// The number of confirmations needed before quitting, when changes have
+    /// been made since the file was last changed.
     pub quit_times: usize,
     /// The duration for which messages are shown in the status bar.
     pub message_dur: Duration,
@@ -30,18 +30,20 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Load the configuration, potentially overridden using `config.ini` files that can be located
-    /// in the following directories:
+    /// Load the configuration, potentially overridden using `config.ini` files
+    /// that can be located in the following directories:
     ///   - On Linux, macOS, and other *nix systems:
     ///     - `/etc/kibi` (system-wide configuration).
-    ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME` is defined,
-    ///       `$HOME/.config/kibi` otherwise (user-level configuration).
+    ///     - `$XDG_CONFIG_HOME/kibi` if environment variable `$XDG_CONFIG_HOME`
+    ///       is defined, `$HOME/.config/kibi` otherwise (user-level
+    ///       configuration).
     ///   - On Windows:
     ///     - `%APPDATA%\Kibi`
     ///
     /// # Errors
     ///
-    /// Will return `Err` if one of the configuration file cannot be parsed properly.
+    /// Will return `Err` if one of the configuration file cannot be parsed
+    /// properly.
     pub fn load() -> Result<Self, Error> {
         let mut conf = Self::default();
 
@@ -50,13 +52,12 @@ impl Config {
         for path in paths.iter().filter(|p| p.is_file()).rev() {
             process_ini_file(path, &mut |key, value| {
                 match key {
-                    "tab_stop" => match parse_value(value)? {
-                        0 => return Err("tab_stop must be > 0".into()),
-                        tab_stop => conf.tab_stop = tab_stop,
-                    },
+                    "tab_stop" =>
+                        conf.tab_stop = parse_value(value).map_err(|_| "tab_stop must be > 0")?,
                     "quit_times" => conf.quit_times = parse_value(value)?,
                     "message_duration" =>
-                        conf.message_dur = Duration::from_secs_f32(parse_value(value)?),
+                        conf.message_dur = Duration::try_from_secs_f32(parse_value(value)?)
+                            .map_err(|x| x.to_string())?,
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {key}")),
                 };
@@ -70,8 +71,8 @@ impl Config {
 
 /// Process an INI file.
 ///
-/// The `kv_fn` function will be called for each key-value pair in the file. Typically, this
-/// function will update a configuration instance.
+/// The `kv_fn` function will be called for each key-value pair in the file.
+/// Typically, this function will update a configuration instance.
 pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
 where F: FnMut(&str, &str) -> Result<(), String> {
     let file = File::open(path).map_err(|e| ConfErr(path.into(), 0, e.to_string()))?;
@@ -89,13 +90,13 @@ where F: FnMut(&str, &str) -> Result<(), String> {
 }
 
 /// Trim a value (right-hand side of a key=value INI line) and parses it.
-pub fn parse_value<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<T, String> {
+pub fn parse_value<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<T, String> {
     value.trim().parse().map_err(|e| format!("Parser error: {e}"))
 }
 
-/// Split a comma-separated list of values (right-hand side of a key=value1,value2,... INI line) and
-/// parse it as a Vec.
-pub fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
+/// Split a comma-separated list of values (right-hand side of a
+/// key=value1,value2,... INI line) and parse it as a Vec.
+pub fn parse_values<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
     value.split(',').map(parse_value).collect()
 }
 
@@ -103,9 +104,9 @@ pub fn parse_values<T: FromStr<Err = E>, E: Display>(value: &str) -> Result<Vec<
 #[cfg(not(target_family = "wasm"))] // No filesystem on wasm
 mod tests {
     use std::ffi::{OsStr, OsString};
+    #[cfg(unix)] use std::sync::{LazyLock, Mutex};
     use std::{env, fs};
 
-    use serial_test::serial;
     use tempfile::TempDir;
 
     use super::*;
@@ -200,20 +201,20 @@ mod tests {
     }
 
     impl TempEnvVar {
-        fn new(key: &OsStr, value: Option<&OsStr>) -> TempEnvVar {
+        fn new(key: &OsStr, value: Option<&OsStr>) -> Self {
             let orig_value = env::var_os(key);
             match value {
                 Some(value) => env::set_var(key, value),
                 None => env::remove_var(key),
             }
-            TempEnvVar { key: key.into(), orig_value }
+            Self { key: key.into(), orig_value }
         }
     }
 
     impl Drop for TempEnvVar {
         fn drop(&mut self) {
-            match self.orig_value {
-                Some(ref orig_value) => env::set_var(&self.key, orig_value),
+            match &self.orig_value {
+                Some(orig_value) => env::set_var(&self.key, orig_value),
                 None => env::remove_var(&self.key),
             }
         }
@@ -246,9 +247,12 @@ mod tests {
     }
 
     #[cfg(unix)]
+    static XDG_CONFIG_FLAG_LOCK: LazyLock<Mutex<()>> = LazyLock::new(Mutex::default);
+
+    #[cfg(unix)]
     #[test]
-    #[serial]
     fn xdg_config_home() {
+        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
         let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
             "XDG_CONFIG_HOME".as_ref(),
@@ -259,8 +263,8 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    #[serial]
     fn config_home() {
+        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
         let _temp_env_var = TempEnvVar::new(OsStr::new("XDG_CONFIG_HOME"), None);
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
@@ -272,7 +276,6 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
-    #[serial]
     fn app_data() {
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(

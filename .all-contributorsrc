@@ -269,6 +269,34 @@
       ]
     },
     {
+      "login": "Jan9103",
+      "name": "Jan9103",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55753387?v=4",
+      "profile": "https://github.com/Jan9103",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "joshka",
+      "name": "Josh McKinney",
+      "avatar_url": "https://avatars.githubusercontent.com/u/381361?v=4",
+      "profile": "http://joshka.net",
+      "contributions": [
+        "infra",
+        "code"
+      ]
+    },
+    {
+      "login": "zamazan4ik",
+      "name": "Alexander Zaitsev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7355383?v=4",
+      "profile": "https://zamazan4ik.github.io",
+      "contributions": [
+        "infra"
+      ]
+    },
+    {
       "login": "BanuAdrian",
       "name": "Adrian Banu",
       "avatar_url": "https://avatars.githubusercontent.com/u/66678108?v=4",

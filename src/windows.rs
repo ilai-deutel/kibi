@@ -1,18 +1,19 @@
 //! # sys (Windows)
 //!
-//! Windows-specific structs and functions. Will be imported as `sys` on Windows systems.
+//! Windows-specific structs and functions. Will be imported as `sys` on Windows
+//! systems.
 
 #![allow(clippy::wildcard_imports)]
 
 use std::{convert::TryInto, env::var, io};
 
 use winapi::um::wincon::*;
-use winapi_util::{console as cons, HandleRef};
+use winapi_util::{HandleRef, console as cons};
 
 use crate::Error;
 
-// On Windows systems, the terminal mode is represented as 2 unsigned integers (one for stdin, one
-// for stdout).
+// On Windows systems, the terminal mode is represented as 2 unsigned integers
+// (one for stdin, one for stdout).
 pub type TermMode = (u32, u32);
 
 /// Return configuration directories for Windows systems
@@ -61,6 +62,6 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
 }
 
 #[allow(clippy::unnecessary_wraps)] // Result required on other platforms
-pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
+pub fn stdin() -> io::Result<io::Stdin> { Ok(io::stdin()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }
