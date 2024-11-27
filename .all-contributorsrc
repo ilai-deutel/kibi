@@ -286,6 +286,15 @@
         "infra",
         "code"
       ]
+    },
+    {
+      "login": "zamazan4ik",
+      "name": "Alexander Zaitsev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7355383?v=4",
+      "profile": "https://zamazan4ik.github.io",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "commitType": "docs"
