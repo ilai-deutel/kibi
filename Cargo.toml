@@ -110,3 +110,6 @@ unwrap_used = "deny"
 use_debug = "deny"
 verbose_file_reads = "deny"
 wildcard_enum_match_arm = "deny"
+
+[profile.release]
+lto = true
