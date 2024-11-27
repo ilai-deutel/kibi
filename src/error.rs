@@ -7,15 +7,16 @@ pub enum Error {
     Io(std::io::Error),
     /// Wrapper around `std::fmt::Error`
     Fmt(std::fmt::Error),
-    /// Error returned when the window size obtained through a system call is invalid.
+    /// Error returned when the window size obtained through a system call is
+    /// invalid.
     InvalidWindowSize,
     /// Error setting or retrieving the cursor position.
     CursorPosition,
-    /// Configuration error. The three attributes correspond the file path, the line number and the
-    /// error message.
+    /// Configuration error. The three attributes correspond the file path, the
+    /// line number and the error message.
     Config(std::path::PathBuf, usize, String),
-    /// Too many arguments given to kibi. The attribute corresponds to the total number of command
-    /// line arguments.
+    /// Too many arguments given to kibi. The attribute corresponds to the total
+    /// number of command line arguments.
     TooManyArguments(usize),
     /// Unrecognized option given as a command line argument.
     UnrecognizedOption(String),
