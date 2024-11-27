@@ -1130,7 +1130,7 @@ mod tests {
         // check current position
         assert_eq!(editor.cursor.x, 7);
         assert_eq!(editor.cursor.y, 3);
-        
+
         editor.process_keypress(&Key::End);
         assert_eq!(editor.cursor.x, 7);
         assert_eq!(editor.cursor.y, 3);
