@@ -2,13 +2,13 @@ use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
 
 use crate::config::{self, parse_value as pv, parse_values as pvs};
-use crate::{sys, Error};
+use crate::{Error, sys};
 
 /// Type of syntax highlighting for a single rendered character.
 ///
-/// Each `HLType` is associated with a color, via its discriminant. The ANSI color is equal
-/// to the discriminant, modulo 100. The colors are described here:
-/// <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
+/// Each `HLType` is associated with a color, via its discriminant. The ANSI
+/// color is equal to the discriminant, modulo 100. The colors are described
+/// here: <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum HlType {
     Normal = 39,     // Default foreground color
@@ -23,7 +23,8 @@ pub enum HlType {
 }
 
 impl Display for HlType {
-    /// Write the ANSI color escape sequence for the `HLType` using the given formatter.
+    /// Write the ANSI color escape sequence for the `HLType` using the given
+    /// formatter.
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "\x1b[{}m", (*self as u32) % 100) }
 }
 
@@ -40,16 +41,17 @@ pub struct Conf {
     pub sl_comment_start: Vec<String>,
     /// The tokens that start and end a multi-line comment, e.g. ("/*", "*/").
     pub ml_comment_delims: Option<(String, String)>,
-    /// The token that start and end a multi-line strings, e.g. "\"\"\"" for Python.
+    /// The token that start and end a multi-line strings, e.g. "\"\"\"" for
+    /// Python.
     pub ml_string_delim: Option<String>,
-    /// Keywords to highlight and there corresponding HLType (typically
-    /// HLType::Keyword1 or HLType::Keyword2)
+    /// Keywords to highlight and there corresponding `HLType` (typically
+    /// `HLType::Keyword1` or `HLType::Keyword2`)
     pub keywords: Vec<(HlType, Vec<String>)>,
 }
 
 impl Conf {
-    /// Return the syntax configuration corresponding to the given file extension, if a matching
-    /// INI file is found in a config directory.
+    /// Return the syntax configuration corresponding to the given file
+    /// extension, if a matching INI file is found in a config directory.
     pub fn get(ext: &str) -> Result<Option<Self>, Error> {
         for conf_dir in sys::data_dirs() {
             match PathBuf::from(conf_dir).join("syntax.d").read_dir() {
@@ -66,6 +68,7 @@ impl Conf {
         }
         Ok(None)
     }
+
     /// Load a `SyntaxConf` from file.
     pub fn from_file(path: &Path) -> Result<(Self, Vec<String>), Error> {
         let (mut sc, mut extensions) = (Self::default(), Vec::new());

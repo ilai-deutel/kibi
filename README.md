@@ -3,15 +3,15 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/ci.yml?branch=master&logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
 [![Lines of code](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/loc.yml?label=LOC%E2%89%A41024)](#)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.66+-blue.svg?logo=rust)](https://www.rust-lang.org/)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.80+-blue.svg?logo=rust)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20|%20macOS%20|%20Windows%2010%20|%20WASI-blue)](#)
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-31-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -31,7 +31,7 @@ Contributions are welcome! Be careful to stay below the 1024-line limit...
 
 <!-- markdownlint-disable MD033 -->
 <sub><a name="counted-with">1.</a>: Counted per platform, excluding tests and
-Clippy directives, see [`count_loc.sh`](count_loc.sh)</sub> \
+Clippy directives, see [`count_loc`](./xtask/src/count_loc.rs)</sub> \
 <sub><a name="windows-version">2.</a>: Kibi requires the terminal to support
 ANSI escape sequences. Windows 10 version 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
 April 2017) and above are supported.</sub>
@@ -52,6 +52,7 @@ April 2017) and above are supported.</sub>
     * [Global configuration](#global-configuration)
     * [Syntax highlighting](#syntax-highlighting)
 * [Comparison with kilo](#comparison-with-kilo)
+* [Contributing](#contributing)
 * [Dependencies](#dependencies)
 * [Why Kibi?](#why-kibi)
 * [Contributors](#contributors)
@@ -144,7 +145,6 @@ sudo dnf install kibi
 
 Kibi is available from [the official repos](https://cdn.netbsd.org/pub/pkgsrc/current/pkgsrc/editors/kibi/README.html).
 
-
 <details><summary>Installation instructions</summary>
 
 Install using:
@@ -168,16 +168,17 @@ Kibi is available [on Flathub](https://flathub.org/ca/apps/com.github.ilai_deute
 
 <details><summary>Command line instructions</summary>
  The flatpak can be installed using:
- 
+
 ```bash
 flatpak install flathub com.github.ilai_deutel.kibi
 ```
 
 You can then run Kibi with:
- 
- ```bash
- flatpak run com.github.ilai_deutel.kibi
- ```
+
+```bash
+flatpak run com.github.ilai_deutel.kibi
+```
+
 </details>
 
 ## Usage
@@ -306,6 +307,15 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * Memory safety, thanks to Rust!
 * Many bug fixes
 
+## Contributing
+
+The most important limitation is that the line check the line count remains
+under 1024. To check this run:
+
+```shell
+cargo xtask count-loc
+```
+
 ## Dependencies
 
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
@@ -379,6 +389,11 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/TanvirOnGH"><img src="https://avatars.githubusercontent.com/u/138336161?v=4" width="100px;" alt=""/><br /><sub><b>Tanvir</b></sub></a><br /><a href="#syntax-highlighting-TanvirOnGH" title="Contributing to syntax highlighting configuration files">💠</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/BogdanPaul15"><img src="https://avatars.githubusercontent.com/u/62438221?v=4" width="100px;" alt=""/><br /><sub><b>Prisacaru Bogdan-Paul</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=BogdanPaul15" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/auzkok"><img src="https://avatars.githubusercontent.com/u/35302680?v=4" width="100px;" alt=""/><br /><sub><b>auzkok</b></sub></a><br /><a href="#syntax-highlighting-auzkok" title="Contributing to syntax highlighting configuration files">💠</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jan9103"><img src="https://avatars.githubusercontent.com/u/55753387?v=4" width="100px;" alt=""/><br /><sub><b>Jan9103</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=Jan9103" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/joshka"><img src="https://avatars.githubusercontent.com/u/381361?v=4" width="100px;" alt=""/><br /><sub><b>Josh McKinney</b></sub></a><br /><a href="#infra-joshka" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/ilai-deutel/kibi/commits?author=joshka" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zamazan4ik"><img src="https://avatars.githubusercontent.com/u/7355383?v=4" width="100px;" alt=""/><br /><sub><b>Alexander Zaitsev</b></sub></a><br /><a href="#infra-zamazan4ik" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>

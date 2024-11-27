@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "**.rs"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches:
       - master
+    paths:
+      - "**.rs"
+      - ".github/workflows/ci.yml"
 
 env:
   CARGO_TERM_COLOR: always
@@ -43,24 +49,24 @@ jobs:
           # MSRV (Linux)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            toolchain: 1.66.0
+            toolchain: "1.80"
           # MSRV (MacOS)
           - os: macos-latest
             target: x86_64-apple-darwin
-            toolchain: 1.66.0
+            toolchain: "1.80"
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
-            toolchain: 1.66.0
+            toolchain: "1.80"
           # MSRV (WASI)
           - os: ubuntu-latest
             target: wasm32-wasi
-            toolchain: 1.66.0
+            toolchain: "1.80"
 
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: '-D warnings'
+      RUSTFLAGS: "-D warnings"
 
     steps:
       - uses: actions/checkout@v4
@@ -70,10 +76,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install gcc-multilib
       - name: Install Rust toolchain
-        run: |
-          rustup toolchain install ${{ matrix.toolchain || 'stable' }}
-          rustup override set  ${{ matrix.toolchain || 'stable' }}
-          rustup target add --toolchain ${{ matrix.toolchain || 'stable' }} ${{ matrix.target }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain || 'stable' }}
+          targets: ${{ matrix.target }}
       - name: Build
         run: cargo build
       - name: Run tests
@@ -99,7 +105,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: '-D warnings -C instrument-coverage'
+      RUSTFLAGS: "-D warnings -C instrument-coverage"
 
     steps:
       - uses: actions/checkout@v4
@@ -111,22 +117,22 @@ jobs:
       - name: Build
         run: cargo build
       - name: Run tests with coverage instrumentation
-        if: matrix.coverage
         run: cargo test --verbose --all-features --no-fail-fast
         env:
-          LLVM_PROFILE_FILE: 'kibi-%p-%m.profraw'
+          LLVM_PROFILE_FILE: "kibi-%p-%m.profraw"
       - name: Collect code coverage results
         run: |
           cargo install grcov
-          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info
+          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
-        if: matrix.coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: lcov.info
           flags: ${{ matrix.target }}
           fail_ci_if_error: false
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   static_checks:
     strategy:
@@ -150,20 +156,32 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      pull-requests: write
+      checks: write
+
     steps:
       - uses: actions/checkout@v4
       - name: Install nightly with clippy and rustfmt
-        run: |
-          rustup toolchain install nightly --component rustfmt --component clippy --allow-downgrade
-          rustup override set nightly
-          rustup target add --toolchain nightly ${{ matrix.target }}
-      - name: Run rustfmt check
-        run: cargo fmt --check
-      - name: Run Clippy
-        uses: giraffate/clippy-action@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
-          tool_name: clippy-${{ matrix.target }}
-          reporter: github-pr-review
-          level: error
-          fail_on_error: true
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      - name: Format
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo fmt --check --all
+      - name: Set up cargo-action-fmt
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        uses: olix0r/cargo-action-fmt/setup@v2
+      - name: Check
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Check
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
+      - name: Clippy
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Clippy
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
