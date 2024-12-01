@@ -1,4 +1,4 @@
-name: DevSkim
+name: Security
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
     branches:
       - master
   schedule:
-    - cron: '25 16 * * 1'
+    - cron: '22 17 * * 5'
 
 jobs:
-  lint:
+  dev-skim:
     name: DevSkim
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
@@ -26,6 +26,15 @@ jobs:
         uses: microsoft/DevSkim-Action@v1
 
       - name: Upload DevSkim scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: devskim-results.sarif
+  cargo-deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        command-arguments: -D warnings
+    

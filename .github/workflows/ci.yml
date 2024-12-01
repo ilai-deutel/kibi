@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - "**.rs"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches:
       - master
+    paths:
+      - "**.rs"
+      - ".github/workflows/ci.yml"
 
 env:
   CARGO_TERM_COLOR: always
@@ -38,50 +44,29 @@ jobs:
 
           # WASI
           - os: ubuntu-latest
-            target: wasm32-wasi
+            target: wasm32-wasip1
 
           # MSRV (Linux)
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            toolchain: 1.64.0
+            toolchain: "1.80"
           # MSRV (MacOS)
           - os: macos-latest
             target: x86_64-apple-darwin
-            toolchain: 1.64.0
+            toolchain: "1.80"
           # MSRV (Windows)
           - os: windows-latest
             target: x86_64-pc-windows-gnu
-            toolchain: 1.64.0
+            toolchain: "1.80"
           # MSRV (WASI)
           - os: ubuntu-latest
             target: wasm32-wasi
-            toolchain: 1.64.0
-
-          # Nightly (Linux)
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            toolchain: nightly
-            coverage: true
-          # Nightly (MacOS)
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            toolchain: nightly
-            coverage: true
-          # Nightly (Windows)
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            toolchain: nightly
-            coverage: true
-          # Nightly (WASI)
-          - os: ubuntu-latest
-            target: wasm32-wasi
-            toolchain: nightly
-            coverage: true
+            toolchain: "1.80"
 
     runs-on: ${{ matrix.os }}
 
     env:
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: "-D warnings"
 
     steps:
       - uses: actions/checkout@v4
@@ -91,34 +76,63 @@ jobs:
           sudo apt-get update
           sudo apt-get install gcc-multilib
       - name: Install Rust toolchain
-        run: |
-          rustup toolchain install ${{ matrix.toolchain || 'stable' }}
-          rustup override set  ${{ matrix.toolchain || 'stable' }}
-          rustup target add --toolchain ${{ matrix.toolchain || 'stable' }} ${{ matrix.target }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain || 'stable' }}
+          targets: ${{ matrix.target }}
       - name: Build
         run: cargo build
-      - name: Run tests without coverage instrumentation
-        if: ${{ ! matrix.coverage }}
+      - name: Run tests
         run: cargo test --verbose --all-features --no-fail-fast
+
+  build_and_test_nightly_with_coverage:
+    strategy:
+      matrix:
+        include:
+          # Nightly (Linux)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          # Nightly (MacOS)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          # Nightly (Windows)
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+          # Nightly (WASI)
+          - os: ubuntu-latest
+            target: wasm32-wasip1
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      RUSTFLAGS: "-D warnings -C instrument-coverage"
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install nightly --component llvm-tools-preview --allow-downgrade
+          rustup override set nightly
+          rustup target add --toolchain nightly ${{ matrix.target }}
+      - name: Build
+        run: cargo build
       - name: Run tests with coverage instrumentation
-        if: matrix.coverage
         run: cargo test --verbose --all-features --no-fail-fast
         env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          LLVM_PROFILE_FILE: "kibi-%p-%m.profraw"
       - name: Collect code coverage results
-        if: matrix.coverage
-        uses: actions-rs/grcov@v0.1
-        id: coverage
+        run: |
+          cargo install grcov
+          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
-        if: matrix.coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          files: ${{ steps.coverage.outputs.report }}
+          files: lcov.info
           flags: ${{ matrix.target }}
           fail_ci_if_error: false
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   static_checks:
     strategy:
@@ -138,23 +152,36 @@ jobs:
 
           # WASI
           - os: ubuntu-latest
-            target: wasm32-wasi
+            target: wasm32-wasip1
 
     runs-on: ${{ matrix.os }}
+
+    permissions:
+      pull-requests: write
+      checks: write
 
     steps:
       - uses: actions/checkout@v4
       - name: Install nightly with clippy and rustfmt
-        run: |
-          rustup toolchain install nightly --component rustfmt --component clippy --allow-downgrade
-          rustup override set nightly
-          rustup target add --toolchain nightly ${{ matrix.target }}
-      - name: Run rustfmt check
-        run: cargo fmt --check
-      - name: Run Clippy
-        uses: giraffate/clippy-action@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          clippy_flags: --all-features --target ${{ matrix.target }} -- -D warnings -D clippy::pedantic
-          tool_name: clippy-${{ matrix.target }}
-          reporter: github-pr-review
-          level: error
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      - name: Format
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo fmt --check --all
+      - name: Set up cargo-action-fmt
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        uses: olix0r/cargo-action-fmt/setup@v2
+      - name: Check
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Check
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
+      - name: Clippy
+        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Clippy
+        if: ${{ github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu' }}
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}

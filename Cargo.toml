@@ -1,7 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["xtask"]
+
 [package]
 name = "kibi"
 version = "0.2.2"
-rust-version = "1.64"
+rust-version = "1.80"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
@@ -13,18 +17,99 @@ categories = ["text-editors", "development-tools"]
 include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
 
 [dependencies]
-unicode-width = "0.1.11"
+unicode-width = "0.2.0"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.152"
+libc = "0.2.162"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
-winapi-util = "0.1.6"
+winapi-util = "0.1.9"
 
 [dev-dependencies]
-tempfile = "3.9.0"
-serial_test = "3.0.0"
+tempfile = "3.13.0"
 
 [badges]
 maintenance = { status = "actively-developed" }
+
+[lints]
+workspace = true
+
+[workspace.lints.rust]
+explicit_outlives_requirements = "deny"
+let-underscore-drop = "deny"
+meta-variable-misuse = "deny"
+non_ascii_idents = "deny"
+non-local-definitions = "deny"
+redundant-imports = "deny"
+redundant-lifetimes = "deny"
+single-use-lifetimes = "deny"
+trivial-casts = "deny"
+trivial_numeric_casts = "deny"
+unit-bindings = "deny"
+unnameable-types = "deny"
+unsafe-code = "deny"  # Will only be allowed in platform-specific modules
+unused-import-braces = "deny"
+unused-lifetimes = "deny"
+unused-macro-rules = "deny"
+unused_qualifications = "deny"
+variant_size_differences = "deny"
+
+[workspace.lints.clippy]
+correctness = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+complexity = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+suspicious = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+
+restriction = { level = "allow", priority = -1 }
+allow_attributes = "deny"
+as_underscore = "deny"
+assertions_on_result_states = "deny"
+cfg_not_test = "deny"
+clone_on_ref_ptr = "deny"
+create_dir = "deny"
+dbg_macro = "deny"
+empty_drop = "deny"
+empty_enum_variants_with_brackets = "deny"
+empty_structs_with_brackets = "deny"
+exit = "deny"
+expect_used = "deny"
+float_cmp_const = "deny"
+fn_to_numeric_cast_any = "deny"
+format_push_string = "deny"
+get_unwrap = "deny"
+if_then_some_else_none = "deny"
+impl_trait_in_params = "deny"
+infinite_loop = "deny"
+map_with_unused_argument_over_ranges = "deny"
+mem_forget = "deny"
+missing_assert_message = "deny"
+mixed_read_write_in_expression = "deny"
+mod_module_files = "deny"
+module_name_repetitions = "deny"
+multiple_inherent_impl = "deny"
+mutex_atomic = "deny"
+needless_raw_strings = "deny"
+panic = "deny"
+rc_buffer = "deny"
+rc_mutex = "deny"
+redundant_type_annotations = "deny"
+ref_patterns = "deny"
+renamed_function_params = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+same_name_method = "deny"
+semicolon_outside_block = "deny"
+separated_literal_suffix = "deny"
+str_to_string = "deny"
+unused_result_ok = "deny"
+unwrap_used = "deny"
+use_debug = "deny"
+verbose_file_reads = "deny"
+wildcard_enum_match_arm = "deny"
+
+[profile.release]
+lto = true
