@@ -11,7 +11,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-32-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-33-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -391,6 +391,7 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/auzkok"><img src="https://avatars.githubusercontent.com/u/35302680?v=4" width="100px;" alt=""/><br /><sub><b>auzkok</b></sub></a><br /><a href="#syntax-highlighting-auzkok" title="Contributing to syntax highlighting configuration files">💠</a></td>
     </tr>
     <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/razvanrus2003"><img src="https://avatars.githubusercontent.com/u/69893593?v=4" width="100px;" alt=""/><br /><sub><b>Razvan Rus</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=razvanrus2003" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jan9103"><img src="https://avatars.githubusercontent.com/u/55753387?v=4" width="100px;" alt=""/><br /><sub><b>Jan9103</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=Jan9103" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/joshka"><img src="https://avatars.githubusercontent.com/u/381361?v=4" width="100px;" alt=""/><br /><sub><b>Josh McKinney</b></sub></a><br /><a href="#infra-joshka" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/ilai-deutel/kibi/commits?author=joshka" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/zamazan4ik"><img src="https://avatars.githubusercontent.com/u/7355383?v=4" width="100px;" alt=""/><br /><sub><b>Alexander Zaitsev</b></sub></a><br /><a href="#infra-zamazan4ik" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
