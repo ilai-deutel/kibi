@@ -1,0 +1,21 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2021"
+description = "Scripts to help with kibi's development."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ilai-deutel/kibi"
+readme = "README.md"
+keywords = ["scripts"]
+categories = ["development-tools"]
+
+[dependencies]
+anstream = "0.6.18"
+anstyle = "1.0.10"
+clap = { version = "4.5.26", features = ["derive"] }
+glob = "0.3.2"
+regex = { version = "1.11.1" }
+tokei = "12.1.2"
+
+[lints]
+workspace = true

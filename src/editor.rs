@@ -6,7 +6,7 @@ use std::iter::{self, repeat, successors};
 use std::{fs::File, path::Path, process::Command, thread, time::Instant};
 
 use crate::row::{HlState, Row};
-use crate::{ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal, Config, Error};
+use crate::{Config, Error, ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal};
 
 const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
 const EXIT: u8 = ctrl_key(b'Q');
@@ -23,18 +23,20 @@ const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
-const HELP_MESSAGE: &str =
-    "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | ^C copy | ^X cut | ^V paste";
+const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
+                            ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
-/// Example usage: `set_status!(editor, "{} written to {}", file_size, file_name)`
+/// Example usage: `set_status!(editor, "{} written to {}", file_size,
+/// file_name)`
 macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
 
 /// Enum of input keys
 enum Key {
     Arrow(AKey),
     CtrlArrow(AKey),
-    Page(PageKey),
+    PageUp,
+    PageDown,
     Home,
     End,
     Delete,
@@ -46,12 +48,6 @@ enum Key {
 enum AKey {
     Left,
     Right,
-    Up,
-    Down,
-}
-
-/// Enum of page keys
-enum PageKey {
     Up,
     Down,
 }
@@ -72,42 +68,47 @@ struct CursorState {
 impl CursorState {
     fn move_to_next_line(&mut self) { (self.x, self.y) = (0, self.y + 1); }
 
-    /// Scroll the terminal window vertically and horizontally (i.e. adjusting the row offset and
-    /// the column offset) so that the cursor can be shown.
+    /// Scroll the terminal window vertically and horizontally (i.e. adjusting
+    /// the row offset and the column offset) so that the cursor can be
+    /// shown.
     fn scroll(&mut self, rx: usize, screen_rows: usize, screen_cols: usize) {
         self.roff = self.roff.clamp(self.y.saturating_sub(screen_rows.saturating_sub(1)), self.y);
         self.coff = self.coff.clamp(rx.saturating_sub(screen_cols.saturating_sub(1)), rx);
     }
 }
 
-/// The `Editor` struct, contains the state and configuration of the text editor.
+/// The `Editor` struct, contains the state and configuration of the text
+/// editor.
 #[derive(Default)]
 pub struct Editor {
-    /// If not `None`, the current prompt mode (Save, Find, GoTo). If `None`, we are in regular
-    /// edition mode.
+    /// If not `None`, the current prompt mode (`Save`, `Find`, `GoTo`, or
+    /// `Execute`). If `None`, we are in regular edition mode.
     prompt_mode: Option<PromptMode>,
     /// The current state of the cursor.
     cursor: CursorState,
     /// The padding size used on the left for line numbering.
     ln_pad: usize,
-    /// The width of the current window. Will be updated when the window is resized.
+    /// The width of the current window. Will be updated when the window is
+    /// resized.
     window_width: usize,
-    /// The number of rows that can be used for the editor, excluding the status bar and the message
-    /// bar
+    /// The number of rows that can be used for the editor, excluding the status
+    /// bar and the message bar
     screen_rows: usize,
-    /// The number of columns that can be used for the editor, excluding the part used for line numbers
+    /// The number of columns that can be used for the editor, excluding the
+    /// part used for line numbers
     screen_cols: usize,
-    /// The collection of rows, including the content and the syntax highlighting information.
+    /// The collection of rows, including the content and the syntax
+    /// highlighting information.
     rows: Vec<Row>,
     /// Whether the document has been modified since it was open.
     dirty: bool,
     /// The configuration for the editor.
     config: Config,
-    /// The number of warnings remaining before we can quit without saving. Defaults to
-    /// `config.quit_times`, then decreases to 0.
+    /// The number of warnings remaining before we can quit without saving.
+    /// Defaults to `config.quit_times`, then decreases to 0.
     quit_times: usize,
-    /// The file name. If None, the user will be prompted for a file name the first time they try to
-    /// save.
+    /// The file name. If None, the user will be prompted for a file name the
+    /// first time they try to save.
     // TODO: It may be better to store a PathBuf instead
     file_name: Option<String>,
     /// The current status message being shown.
@@ -116,7 +117,8 @@ pub struct Editor {
     syntax: SyntaxConf,
     /// The number of bytes contained in `rows`. This excludes new lines.
     n_bytes: u64,
-    /// The original terminal mode. It will be restored when the `Editor` instance is dropped.
+    /// The original terminal mode. It will be restored when the `Editor`
+    /// instance is dropped.
     orig_term_mode: Option<sys::TermMode>,
     /// The copied buffer of a row
     copied_row: Vec<u8>,
@@ -141,16 +143,17 @@ fn format_size(n: u64) -> String {
         return format!("{n}B");
     }
     // i is the largest value such that 1024 ^ i < n
-    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1 from it
+    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1
+    // from it
     let i = (64 - n.leading_zeros() + 9) / 10 - 1;
-    // Compute the size with two decimal places (rounded down) as the last two digits of q
-    // This avoid float formatting reducing the binary size
+    // Compute the size with two decimal places (rounded down) as the last two
+    // digits of q This avoid float formatting reducing the binary size
     let q = 100 * n / (1024 << ((i - 1) * 10));
     format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i as usize] as char)
 }
 
-/// `slice_find` returns the index of `needle` in slice `s` if `needle` is a subslice of `s`,
-/// otherwise returns `None`.
+/// `slice_find` returns the index of `needle` in slice `s` if `needle` is a
+/// subslice of `s`, otherwise returns `None`.
 fn slice_find<T: PartialEq>(s: &[T], needle: &[T]) -> Option<usize> {
     (0..(s.len() + 1).saturating_sub(needle.len())).find(|&i| s[i..].starts_with(needle))
 }
@@ -160,8 +163,8 @@ impl Editor {
     ///
     /// # Errors
     ///
-    /// Will return `Err` if an error occurs when enabling termios raw mode, creating the signal hook
-    /// or when obtaining the terminal window size.
+    /// Will return `Err` if an error occurs when enabling termios raw mode,
+    /// creating the signal hook or when obtaining the terminal window size.
     #[allow(clippy::field_reassign_with_default)] // False positive : https://github.com/rust-lang/rust-clippy/issues/6312
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
@@ -170,18 +173,21 @@ impl Editor {
 
         // Enable raw mode and store the original (non-raw) terminal mode.
         editor.orig_term_mode = Some(sys::enable_raw_mode()?);
-        editor.update_window_size()?;
+        print!("{USE_ALTERNATE_SCREEN}");
 
+        editor.update_window_size()?;
         set_status!(editor, "{}", HELP_MESSAGE);
 
         Ok(editor)
     }
 
-    /// Return the current row if the cursor points to an existing row, `None` otherwise.
+    /// Return the current row if the cursor points to an existing row, `None`
+    /// otherwise.
     fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
 
-    /// Return the position of the cursor, in terms of rendered characters (as opposed to
-    /// `self.cursor.x`, which is the position of the cursor in terms of bytes).
+    /// Return the position of the cursor, in terms of rendered characters (as
+    /// opposed to `self.cursor.x`, which is the position of the cursor in
+    /// terms of bytes).
     fn rx(&self) -> usize { self.current_row().map_or(0, |r| r.cx2rx[self.cursor.x]) }
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
@@ -218,16 +224,17 @@ impl Editor {
         self.update_cursor_x_position();
     }
 
-    /// Update the cursor x position. If the cursor y position has changed, the current position
-    /// might be illegal (x is further right than the last character of the row). If that is the
-    /// case, clamp `self.cursor.x`.
+    /// Update the cursor x position. If the cursor y position has changed, the
+    /// current position might be illegal (x is further right than the last
+    /// character of the row). If that is the case, clamp `self.cursor.x`.
     fn update_cursor_x_position(&mut self) {
         self.cursor.x = self.cursor.x.min(self.current_row().map_or(0, |row| row.chars.len()));
     }
 
-    /// Run a loop to obtain the key that was pressed. At each iteration of the loop (until a key is
-    /// pressed), we listen to the `ws_changed` channel to check if a window size change signal has
-    /// been received. When bytes are received, we match to a corresponding `Key`. In particular,
+    /// Run a loop to obtain the key that was pressed. At each iteration of the
+    /// loop (until a key is pressed), we listen to the `ws_changed` channel
+    /// to check if a window size change signal has been received. When
+    /// bytes are received, we match to a corresponding `Key`. In particular,
     /// we handle ANSI escape codes to return `Key::Delete`, `Key::Home` etc.
     fn loop_until_keypress(&mut self) -> Result<Key, Error> {
         loop {
@@ -237,8 +244,8 @@ impl Editor {
                 self.refresh_screen()?;
             }
             let mut bytes = sys::stdin()?.bytes();
-            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on the next
-            // few bytes.
+            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
+            // the next few bytes.
             match bytes.next().transpose()? {
                 Some(b'\x1b') => {
                     return Ok(match bytes.next().transpose()? {
@@ -251,7 +258,7 @@ impl Editor {
                             (b'[' | b'O', Some(b'F')) => Key::End,
                             (b'[', mut c @ Some(b'0'..=b'8')) => {
                                 let mut d = bytes.next().transpose()?;
-                                if let (Some(b'1'), Some(b';')) = (c, d) {
+                                if (c, d) == (Some(b'1'), Some(b';')) {
                                     // 1 is the default modifier value. Therefore, <ESC>[1;5C is
                                     // equivalent to <ESC>[5C, etc.
                                     c = bytes.next().transpose()?;
@@ -261,8 +268,8 @@ impl Editor {
                                     (Some(c), Some(b'~')) if c == b'1' || c == b'7' => Key::Home,
                                     (Some(c), Some(b'~')) if c == b'4' || c == b'8' => Key::End,
                                     (Some(b'3'), Some(b'~')) => Key::Delete,
-                                    (Some(b'5'), Some(b'~')) => Key::Page(PageKey::Up),
-                                    (Some(b'6'), Some(b'~')) => Key::Page(PageKey::Down),
+                                    (Some(b'5'), Some(b'~')) => Key::PageUp,
+                                    (Some(b'6'), Some(b'~')) => Key::PageDown,
                                     (Some(b'5'), Some(b'A')) => Key::CtrlArrow(AKey::Up),
                                     (Some(b'5'), Some(b'B')) => Key::CtrlArrow(AKey::Down),
                                     (Some(b'5'), Some(b'C')) => Key::CtrlArrow(AKey::Right),
@@ -285,7 +292,8 @@ impl Editor {
         }
     }
 
-    /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding` attributes.
+    /// Update the `screen_rows`, `window_width`, `screen_cols` and `ln_padding`
+    /// attributes.
     fn update_window_size(&mut self) -> Result<(), Error> {
         let wsize = sys::get_window_size().or_else(|_| terminal::get_window_size_using_cursor())?;
         // Make room for the status bar and status message
@@ -294,12 +302,13 @@ impl Editor {
         Ok(())
     }
 
-    /// Update the `screen_cols` and `ln_padding` attributes based on the maximum number of digits
-    /// for line numbers (since the left padding depends on this number of digits).
+    /// Update the `screen_cols` and `ln_padding` attributes based on the
+    /// maximum number of digits for line numbers (since the left padding
+    /// depends on this number of digits).
     fn update_screen_cols(&mut self) {
-        // The maximum number of digits to use for the line number is the number of digits of the
-        // last line number. This is equal to the number of times we can divide this number by ten,
-        // computed below using `successors`.
+        // The maximum number of digits to use for the line number is the number of
+        // digits of the last line number. This is equal to the number of times
+        // we can divide this number by ten, computed below using `successors`.
         let n_digits =
             successors(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
         let show_line_num = self.config.show_line_num && n_digits + 2 < self.window_width / 4;
@@ -307,9 +316,10 @@ impl Editor {
         self.screen_cols = self.window_width.saturating_sub(self.ln_pad);
     }
 
-    /// Given a file path, try to find a syntax highlighting configuration that matches the path
-    /// extension in one of the config directories (`/etc/kibi/syntax.d`, etc.). If such a
-    /// configuration is found, set the `syntax` attribute of the editor.
+    /// Given a file path, try to find a syntax highlighting configuration that
+    /// matches the path extension in one of the config directories
+    /// (`/etc/kibi/syntax.d`, etc.). If such a configuration is found, set
+    /// the `syntax` attribute of the editor.
     fn select_syntax_highlight(&mut self, path: &Path) -> Result<(), Error> {
         let extension = path.extension().and_then(std::ffi::OsStr::to_str);
         if let Some(s) = extension.and_then(|e| SyntaxConf::get(e).transpose()) {
@@ -318,9 +328,9 @@ impl Editor {
         Ok(())
     }
 
-    /// Update a row, given its index. If `ignore_following_rows` is `false` and the highlight state
-    /// has changed during the update (for instance, it is now in "multi-line comment" state, keep
-    /// updating the next rows
+    /// Update a row, given its index. If `ignore_following_rows` is `false` and
+    /// the highlight state has changed during the update (for instance, it
+    /// is now in "multi-line comment" state, keep updating the next rows
     fn update_row(&mut self, y: usize, ignore_following_rows: bool) {
         let mut hl_state = if y > 0 { self.rows[y - 1].hl_state } else { HlState::Normal };
         for row in self.rows.iter_mut().skip(y) {
@@ -329,8 +339,9 @@ impl Editor {
             if ignore_following_rows || hl_state == previous_hl_state {
                 return;
             }
-            // If the state has changed (for instance, a multi-line comment started in this row),
-            // continue updating the following rows
+            // If the state has changed (for instance, a multi-line comment
+            // started in this row), continue updating the following
+            // rows
         }
     }
 
@@ -342,8 +353,8 @@ impl Editor {
         }
     }
 
-    /// Insert a byte at the current cursor position. If there is no row at the current cursor
-    /// position, add a new row and insert the byte.
+    /// Insert a byte at the current cursor position. If there is no row at the
+    /// current cursor position, add a new row and insert the byte.
     fn insert_byte(&mut self, c: u8) {
         if let Some(row) = self.rows.get_mut(self.cursor.y) {
             row.chars.insert(self.cursor.x, c);
@@ -356,13 +367,15 @@ impl Editor {
         (self.cursor.x, self.n_bytes, self.dirty) = (self.cursor.x + 1, self.n_bytes + 1, true);
     }
 
-    /// Insert a new line at the current cursor position and move the cursor to the start of the new
-    /// line. If the cursor is in the middle of a row, split off that row.
+    /// Insert a new line at the current cursor position and move the cursor to
+    /// the start of the new line. If the cursor is in the middle of a row,
+    /// split off that row.
     fn insert_new_line(&mut self) {
         let (position, new_row_chars) = if self.cursor.x == 0 {
             (self.cursor.y, Vec::new())
         } else {
-            // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any cursor.y ≥ row.len()
+            // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any cursor.y ≥
+            // row.len()
             let new_chars = self.rows[self.cursor.y].chars.split_off(self.cursor.x);
             self.update_row(self.cursor.y, false);
             (self.cursor.y + 1, new_chars)
@@ -374,13 +387,15 @@ impl Editor {
         self.dirty = true;
     }
 
-    /// Delete a character at the current cursor position. If the cursor is located at the beginning
-    /// of a row that is not the first or last row, merge the current row and the previous row. If
-    /// the cursor is located after the last row, move up to the last character of the previous row.
+    /// Delete a character at the current cursor position. If the cursor is
+    /// located at the beginning of a row that is not the first or last row,
+    /// merge the current row and the previous row. If the cursor is located
+    /// after the last row, move up to the last character of the previous row.
     fn delete_char(&mut self) {
         if self.cursor.x > 0 {
             let row = &mut self.rows[self.cursor.y];
-            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8 character size).
+            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8 character
+            // size).
             let n_bytes_to_remove = row.get_char_size(row.cx2rx[self.cursor.x] - 1);
             row.chars.splice(self.cursor.x - n_bytes_to_remove..self.cursor.x, iter::empty());
             self.update_row(self.cursor.y, false);
@@ -398,8 +413,8 @@ impl Editor {
             self.update_screen_cols();
             (self.dirty, self.cursor.y) = (self.dirty, self.cursor.y - 1);
         } else if self.cursor.y == self.rows.len() {
-            // If the cursor is located after the last row, pressing backspace is equivalent to
-            // pressing the left arrow key.
+            // If the cursor is located after the last row, pressing backspace is equivalent
+            // to pressing the left arrow key.
             self.move_cursor(&AKey::Left, false);
         }
     }
@@ -440,35 +455,34 @@ impl Editor {
         self.update_screen_cols();
     }
 
-    /// Try to load a file. If found, load the rows and update the render and syntax highlighting.
-    /// If not found, do not return an error.
+    /// Try to load a file. If found, load the rows and update the render and
+    /// syntax highlighting. If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
-        let ft = std::fs::metadata(path)?.file_type();
+        let mut file = match File::open(path) {
+            Err(e) if e.kind() == ErrorKind::NotFound => {
+                self.rows.push(Row::new(Vec::new()));
+                return Ok(());
+            }
+            r => r,
+        }?;
+        let ft = file.metadata()?.file_type();
         if !(ft.is_file() || ft.is_symlink()) {
             return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type").into());
         }
-
-        match File::open(path) {
-            Ok(file) => {
-                for line in BufReader::new(file).split(b'\n') {
-                    self.rows.push(Row::new(line?));
-                }
-                // If the file ends with an empty line or is empty, we need to append an empty row
-                // to `self.rows`. Unfortunately, BufReader::split doesn't yield an empty Vec in
-                // this case, so we need to check the last byte directly.
-                let mut file = File::open(path)?;
-                file.seek(io::SeekFrom::End(0))?;
-                if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
-                    self.rows.push(Row::new(Vec::new()));
-                }
-                self.update_all_rows();
-                // The number of rows has changed. The left padding may need to be updated.
-                self.update_screen_cols();
-                self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
-            }
-            Err(e) if e.kind() == ErrorKind::NotFound => self.rows.push(Row::new(Vec::new())),
-            Err(e) => return Err(e.into()),
+        for line in BufReader::new(&file).split(b'\n') {
+            self.rows.push(Row::new(line?));
         }
+        // If the file ends with an empty line or is empty, we need to append an empty
+        // row to `self.rows`. Unfortunately, BufReader::split doesn't yield an
+        // empty Vec in this case, so we need to check the last byte directly.
+        file.seek(io::SeekFrom::End(0))?;
+        if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
+            self.rows.push(Row::new(Vec::new()));
+        }
+        self.update_all_rows();
+        // The number of rows has changed. The left padding may need to be updated.
+        self.update_screen_cols();
+        self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
         Ok(())
     }
 
@@ -480,7 +494,7 @@ impl Editor {
             file.write_all(&row.chars)?;
             written += row.chars.len();
             if i != (self.rows.len() - 1) {
-                file.write_all(&[b'\n'])?;
+                file.write_all(b"\n")?;
                 written += 1;
             }
         }
@@ -488,8 +502,9 @@ impl Editor {
         Ok(written)
     }
 
-    /// Save the text to a file and handle all errors. Errors and success messages will be printed
-    /// to the status bar. Return whether the file was successfully saved.
+    /// Save the text to a file and handle all errors. Errors and success
+    /// messages will be printed to the status bar. Return whether the file
+    /// was successfully saved.
     fn save_and_handle_io_errors(&mut self, file_name: &str) -> bool {
         let saved = self.save(file_name);
         // Print error or success message to the status bar
@@ -502,8 +517,9 @@ impl Editor {
         saved.is_ok()
     }
 
-    /// Save to a file after obtaining the file path from the prompt. If successful, the `file_name`
-    /// attribute of the editor will be set and syntax highlighting will be updated.
+    /// Save to a file after obtaining the file path from the prompt. If
+    /// successful, the `file_name` attribute of the editor will be set and
+    /// syntax highlighting will be updated.
     fn save_as(&mut self, file_name: String) -> Result<(), Error> {
         // TODO: What if file_name already exists?
         if self.save_and_handle_io_errors(&file_name) {
@@ -524,11 +540,13 @@ impl Editor {
         Ok(())
     }
 
-    /// Return whether the file being edited is empty or not. If there is more than one row, even if
-    /// all the rows are empty, `is_empty` returns `false`, since the text contains new lines.
+    /// Return whether the file being edited is empty or not. If there is more
+    /// than one row, even if all the rows are empty, `is_empty` returns
+    /// `false`, since the text contains new lines.
     fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
 
-    /// Draw rows of text and empty rows on the terminal, by adding characters to the buffer.
+    /// Draw rows of text and empty rows on the terminal, by adding characters
+    /// to the buffer.
     fn draw_rows(&self, buffer: &mut String) -> Result<(), Error> {
         let row_it = self.rows.iter().map(Some).chain(repeat(None)).enumerate();
         for (i, row) in row_it.skip(self.cursor.roff).take(self.screen_rows) {
@@ -569,7 +587,8 @@ impl Editor {
         Ok(())
     }
 
-    /// Draw the message bar on the terminal, by adding characters to the buffer.
+    /// Draw the message bar on the terminal, by adding characters to the
+    /// buffer.
     fn draw_message_bar(&self, buffer: &mut String) {
         buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
         let msg_duration = self.config.message_dur;
@@ -578,8 +597,8 @@ impl Editor {
         }
     }
 
-    /// Refresh the screen: update the offsets, draw the rows, the status bar, the message bar, and
-    /// move the cursor to the correct position.
+    /// Refresh the screen: update the offsets, draw the rows, the status bar,
+    /// the message bar, and move the cursor to the correct position.
     fn refresh_screen(&mut self) -> Result<(), Error> {
         self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
         let mut buffer = format!("{HIDE_CURSOR}{MOVE_CURSOR_TO_START}");
@@ -587,10 +606,12 @@ impl Editor {
         self.draw_status_bar(&mut buffer)?;
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
-            // If not in prompt mode, position the cursor according to the `cursor` attributes.
+            // If not in prompt mode, position the cursor according to the `cursor`
+            // attributes.
             (self.rx() - self.cursor.coff + 1 + self.ln_pad, self.cursor.y - self.cursor.roff + 1)
         } else {
-            // If in prompt mode, position the cursor on the prompt line at the end of the line.
+            // If in prompt mode, position the cursor on the prompt line at the end of the
+            // line.
             (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
         };
         // Finally, print `buffer` and move the cursor
@@ -598,22 +619,22 @@ impl Editor {
         io::stdout().flush().map_err(Error::from)
     }
 
-    /// Process a key that has been pressed, when not in prompt mode. Returns whether the program
-    /// should exit, and optionally the prompt mode to switch to.
+    /// Process a key that has been pressed, when not in prompt mode. Returns
+    /// whether the program should exit, and optionally the prompt mode to
+    /// switch to.
     fn process_keypress(&mut self, key: &Key) -> (bool, Option<PromptMode>) {
         // This won't be mutated, unless key is Key::Character(EXIT)
         let mut quit_times = self.config.quit_times;
         let mut prompt_mode = None;
 
         match key {
-            // TODO: CtrlArrow should move to next word
             Key::Arrow(arrow) => self.move_cursor(arrow, false),
             Key::CtrlArrow(arrow) => self.move_cursor(arrow, true),
-            Key::Page(PageKey::Up) => {
+            Key::PageUp => {
                 self.cursor.y = self.cursor.roff.saturating_sub(self.screen_rows);
                 self.update_cursor_x_position();
             }
-            Key::Page(PageKey::Down) => {
+            Key::PageDown => {
                 self.cursor.y = (self.cursor.roff + 2 * self.screen_rows - 1).min(self.rows.len());
                 self.update_cursor_x_position();
             }
@@ -660,11 +681,12 @@ impl Editor {
         (false, prompt_mode)
     }
 
-    /// Try to find a query, this is called after pressing Ctrl-F and for each key that is pressed.
-    /// `last_match` is the last row that was matched, `forward` indicates whether to search forward
-    /// or backward. Returns the row of a new match, or `None` if the search was unsuccessful.
+    /// Try to find a query, this is called after pressing Ctrl-F and for each
+    /// key that is pressed. `last_match` is the last row that was matched,
+    /// `forward` indicates whether to search forward or backward. Returns
+    /// the row of a new match, or `None` if the search was unsuccessful.
     #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
-    fn find(&mut self, query: &str, last_match: &Option<usize>, forward: bool) -> Option<usize> {
+    fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
         let num_rows = self.rows.len();
         let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
         // TODO: Handle multiple matches per line
@@ -672,8 +694,9 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
-                // self.cursor.coff: Try to reset the column offset; if the match is after the offset, this
-                // will be updated in self.cursor.scroll() so that the result is visible
+                // self.cursor.coff: Try to reset the column offset; if the match is after the
+                // offset, this will be updated in self.cursor.scroll() so that
+                // the result is visible
                 (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
                 let rx = row.cx2rx[cx];
                 row.match_segment = Some(rx..rx + query.len());
@@ -698,7 +721,7 @@ impl Editor {
             self.file_name = None;
         }
         loop {
-            if let Some(mode) = self.prompt_mode.as_ref() {
+            if let Some(mode) = &self.prompt_mode {
                 set_status!(self, "{}", mode.status_msg());
             }
             self.refresh_screen()?;
@@ -717,13 +740,14 @@ impl Editor {
 }
 
 impl Drop for Editor {
+    #[allow(clippy::expect_used)]
     /// When the editor is dropped, restore the original terminal mode.
     fn drop(&mut self) {
         if let Some(orig_term_mode) = self.orig_term_mode.take() {
             sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.");
         }
         if !thread::panicking() {
-            print!("{CLEAR_SCREEN}{MOVE_CURSOR_TO_START}");
+            print!("{USE_MAIN_SCREEN}");
             io::stdout().flush().expect("Could not flush stdout");
         }
     }
@@ -741,8 +765,8 @@ enum PromptMode {
     Execute(String),
 }
 
-// TODO: Use trait with mode_status_msg and process_keypress, implement the trait for separate
-//  structs for Save and Find?
+// TODO: Use trait with mode_status_msg and process_keypress, implement the
+// trait for separate  structs for Save and Find?
 impl PromptMode {
     /// Return the status message to print for the selected `PromptMode`.
     fn status_msg(&self) -> String {
@@ -769,13 +793,14 @@ impl PromptMode {
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
+                        #[allow(clippy::wildcard_enum_match_arm)]
                         let (last_match, forward) = match key {
                             Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
                                 (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
-                        let curr_match = ed.find(&query, &last_match, forward);
+                        let curr_match = ed.find(&query, last_match, forward);
                         return Ok(Some(Self::Find(query, saved_cursor, curr_match)));
                     }
                     // The prompt was cancelled. Restore the previous position.
@@ -837,6 +862,7 @@ enum PromptState {
 
 /// Process a prompt keypress event and return the new state for the prompt.
 fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
+    #[allow(clippy::wildcard_enum_match_arm)]
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,
@@ -913,12 +939,12 @@ mod tests {
             editor.insert_byte(*b);
         }
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Hello world".as_bytes());
+        assert_eq!(editor.rows[0].chars, b"Hello world");
         editor.move_cursor(&AKey::Left, true);
         editor.move_cursor(&AKey::Left, false);
         editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, "Helo world".as_bytes());
+        assert_eq!(editor.rows[0].chars, b"Helo world");
     }
 
     #[test]
@@ -1079,5 +1105,71 @@ mod tests {
         editor.move_cursor(&AKey::Down, false);
         assert_eq!(editor.cursor.x, 0);
         assert_eq!(editor.cursor.y, 3);
+    }
+
+    #[test]
+    fn editor_press_home_key() {
+        let mut editor = Editor::default();
+        for b in b"Hello\nWorld\nand\nFerris!" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.process_keypress(&Key::Home);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Right, true);
+        assert_eq!(editor.cursor.x, 5);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.process_keypress(&Key::Home);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_press_end_key() {
+        let mut editor = Editor::default();
+        for b in b"Hello\nWorld\nand\nFerris!" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.process_keypress(&Key::End);
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+        editor.move_cursor(&AKey::Up, false);
+
+        assert_eq!(editor.cursor.x, 3);
+        assert_eq!(editor.cursor.y, 0);
+
+        editor.process_keypress(&Key::End);
+        assert_eq!(editor.cursor.x, 5);
+        assert_eq!(editor.cursor.y, 0);
     }
 }

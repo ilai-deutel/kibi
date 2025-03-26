@@ -1,21 +1,17 @@
 on:
   pull_request:
     paths:
-      - '**.rs'
-      - 'count_loc.sh'
-      - '.github/workflows/loc.yml'
+      - "**.rs"
+      - ".github/workflows/loc.yml"
 
-name: 'LOC'
+name: LOC
 
 jobs:
-
   check_lines_of_code:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Install tokei
-        run: cargo install tokei
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Check LOC <= 1024
-        run: ./count_loc.sh
+        run: cargo xtask count-loc
