@@ -193,7 +193,7 @@ kibi --version    # Print version information and exit
 
 | Keyboard shortcut | Description                                                   |
 | ----------------- | ------------------------------------------------------------- |
-| Ctrl-F            | Incremental search; use arrows to navigate                    |
+| Ctrl-F            | Incremental search; use arrows to navigate; Ctrl-R to replace |
 | Ctrl-S            | Save the buffer to the current file, or specify the file path |
 | Ctrl-G            | Go to `<line number>[:<column number>]` position              |
 | Ctrl-Q            | Quit                                                          |
@@ -203,6 +203,7 @@ kibi --version    # Print version information and exit
 | Ctrl-C            | Copies the entire line                                        |
 | Ctrl-X            | Cuts the entire line                                          |
 | Ctrl-V            | Will paste the copied line                                    |
+| Ctrl-P            | Sets the help message in the status                           |
 | Ctrl-LeftArrow    | Moves cursor to previous word                                 |
 | Ctrl-RightArrow   | Moves cursor to next word                                     |
 
