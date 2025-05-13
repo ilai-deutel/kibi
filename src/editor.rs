@@ -18,13 +18,14 @@ const GOTO: u8 = ctrl_key(b'G');
 const CUT: u8 = ctrl_key(b'X');
 const COPY: u8 = ctrl_key(b'C');
 const PASTE: u8 = ctrl_key(b'V');
+const HELP: u8 = ctrl_key(b'P');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
-                            ^C copy | ^X cut | ^V paste";
+                            ^C copy | ^X cut | ^V paste | ^P help";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size,
@@ -675,6 +676,7 @@ impl Editor {
             Key::Char(COPY) => self.copy_current_row(),
             Key::Char(PASTE) => self.paste_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
+            Key::Char(HELP) => set_status!(self, "{}", HELP_MESSAGE),
             Key::Char(c) => self.insert_byte(*c),
         }
         self.quit_times = quit_times;
