@@ -145,7 +145,7 @@ fn format_size(n: u64) -> String {
     // i is the largest value such that 1024 ^ i < n
     // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1
     // from it
-    let i = (64 - n.leading_zeros() + 9) / 10 - 1;
+    let i = (64 - n.leading_zeros()).div_ceil(10) - 1;
     // Compute the size with two decimal places (rounded down) as the last two
     // digits of q This avoid float formatting reducing the binary size
     let q = 100 * n / (1024 << ((i - 1) * 10));
@@ -243,7 +243,7 @@ impl Editor {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
-            let mut bytes = sys::stdin()?.bytes();
+            let mut bytes = BufReader::new(sys::stdin()?).bytes();
             // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
             // the next few bytes.
             match bytes.next().transpose()? {
@@ -287,7 +287,7 @@ impl Editor {
                     });
                 }
                 Some(a) => return Ok(Key::Char(a)),
-                None => continue,
+                None => {}
             }
         }
     }
@@ -476,6 +476,7 @@ impl Editor {
         // row to `self.rows`. Unfortunately, BufReader::split doesn't yield an
         // empty Vec in this case, so we need to check the last byte directly.
         file.seek(io::SeekFrom::End(0))?;
+        #[allow(clippy::unbuffered_bytes)]
         if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
             self.rows.push(Row::new(Vec::new()));
         }
