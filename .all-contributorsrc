@@ -322,6 +322,15 @@
       "contributions": [
         "syntax-highlighting"
       ]
+    },
+    {
+      "login": "lythd",
+      "name": "ly",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22566088?v=4",
+      "profile": "https://github.com/lythd",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
