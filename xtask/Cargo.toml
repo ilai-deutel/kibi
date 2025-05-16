@@ -8,6 +8,7 @@ repository = "https://github.com/ilai-deutel/kibi"
 readme = "README.md"
 keywords = ["scripts"]
 categories = ["development-tools"]
+publish = false
 
 [dependencies]
 anstream = "0.6.18"
