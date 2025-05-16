@@ -60,7 +60,7 @@ impl Config {
                             .map_err(|x| x.to_string())?,
                     "show_line_numbers" => conf.show_line_num = parse_value(value)?,
                     _ => return Err(format!("Invalid key: {key}")),
-                };
+                }
                 Ok(())
             })?;
         }

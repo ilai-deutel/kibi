@@ -60,9 +60,9 @@ impl Conf {
                         let (sc, extensions) = Self::from_file(&dir_entry?.path())?;
                         if extensions.into_iter().any(|e| e == ext) {
                             return Ok(Some(sc));
-                        };
+                        }
                     },
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
                 Err(e) => return Err(e.into()),
             }
         }
