@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["xtask"]
+members = ["fuzz", "xtask"]
 
 [package]
 name = "kibi"
