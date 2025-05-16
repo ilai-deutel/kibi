@@ -16,12 +16,12 @@ env-test-util = "1.0.1"
 [dependencies.kibi]
 path = ".."
 
-# Prevent this from interfering with workspaces
-[workspace]
-members = ["."]
-
 [[bin]]
 name = "fuzz_config_load"
 path = "fuzz_targets/fuzz_config_load.rs"
 test = false
 doc = false
+bench = false
+
+[lints]
+workspace = true
