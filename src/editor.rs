@@ -667,7 +667,12 @@ impl Editor {
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
             Key::Char(FIND) =>
-                prompt_mode = Some(PromptMode::Find(String::new(), String::from("\n"), self.cursor.clone(), None)),
+                prompt_mode = Some(PromptMode::Find(
+                    String::new(),
+                    String::from("\n"),
+                    self.cursor.clone(),
+                    None,
+                )),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(CUT) => {
@@ -686,32 +691,34 @@ impl Editor {
 
     /// Try to find a query, this is called after pressing Ctrl-F and for each
     /// key that is pressed. `last_match` is the last row that was matched,
-    /// `forward` indicates whether to search forward or backward. If `do_replace`
-    /// is true it will replace the last_match if it exists with `replace`. Returns
-    /// the row of a new match, or `None` if the search was unsuccessful.
+    /// `mode` is >= 4 to represent forward, and mode % 4 == 1 for replace
+    /// `forward` indicates whether to search forward or backward. If
+    /// `do_rep` is true it will replace the last_match if it exists
+    /// with `rep`. Returns the row of a new match, or `None` if the
+    /// search was unsuccessful.
     #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
-    fn find(&mut self, query: &str, replace: &str, last_match: Option<usize>, forward: bool, do_replace: bool) -> Option<usize> {
-        let num_rows = self.rows.len();
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
-        let mut do_replace = do_replace && last_match.is_some();
+    fn find(
+        &mut self, query: &str, rep: &str, last_match: Option<usize>, mode: u8,
+    ) -> Option<usize> {
+        let mut current = last_match.unwrap_or_else(|| self.rows.len().saturating_sub(1));
+        let (num_rows, mut do_rep) = (self.rows.len(), mode % 4 == 1 && last_match.is_some());
         // TODO: Handle multiple matches per line
         for _ in 0..num_rows {
-            if !do_replace { current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows; } // if do_replace we need to start on the last match to replace it
-            let row = &mut self.rows[current];
+            // if do_rep we need to start on the last match to replace it
+            current += if do_rep { 0 } else { if mode >= 4 { 1 } else { num_rows - 1 } };
+            let row = &mut self.rows[current % num_rows];
             if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
                 // self.cursor.coff: Try to reset the column offset; if the match is after the
                 // offset, this will be updated in self.cursor.scroll() so that
                 // the result is visible
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
-                let rx = row.cx2rx[cx];
-                row.match_segment = Some(rx..rx + query.len());
-                if do_replace {
-                    do_replace = false;
-                    row.chars.splice(rx..rx + query.len(), replace.bytes());
-                    row.match_segment = None;
-                    self.update_row(current, false);
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current % num_rows, 0);
+                row.match_segment = Some(row.cx2rx[cx]..row.cx2rx[cx] + query.len());
+                if do_rep {
+                    row.chars.splice(row.cx2rx[cx]..row.cx2rx[cx] + query.len(), rep.bytes());
+                    (do_rep, row.match_segment) = (false, None);
+                    self.update_row(current % num_rows, false);
                 } else {
-                    return Some(current);
+                    return Some(current % num_rows);
                 }
             }
         }
@@ -769,7 +776,8 @@ impl Drop for Editor {
 enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
-    /// Find(find prompt buffer, replace prompt buffer, saved cursor state, last match), when not in replace mode replace buffer should be '\n'
+    /// Find(find prompt buffer, replace prompt buffer, saved cursor state, last
+    /// match), when not in replace mode replace buffer should be '\n'
     Find(String, String, CursorState, Option<usize>),
     /// GoTo(prompt buffer)
     GoTo(String),
@@ -784,8 +792,10 @@ impl PromptMode {
     fn status_msg(&self) -> String {
         match self {
             Self::Save(buffer) => format!("Save as: {buffer}"),
-            Self::Find(fbuffer, rbuffer, ..) if rbuffer == "\n" => format!("Search (Use ESC/Arrows/Enter, ^R to replace): {fbuffer}"),
-            Self::Find(fbuffer, rbuffer, ..) => format!("Replace `{fbuffer}` (Use ESC/Arrows/Enter, ^R to replace): {rbuffer}"),
+            Self::Find(fbuffer, rbuffer, ..) if rbuffer == "\n" =>
+                format!("Search (Use ESC/Arrows/Enter, ^R to replace): {fbuffer}"),
+            Self::Find(fbuffer, rbuffer, ..) =>
+                format!("Replace `{fbuffer}` (Use ESC/Arrows/Enter, ^R to replace): {rbuffer}"),
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {buffer}"),
             Self::Execute(buffer) => format!("Command to execute: {buffer}"),
         }
@@ -800,26 +810,33 @@ impl PromptMode {
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
                 PromptState::Completed(file_name) => ed.save_as(file_name)?,
             },
-            Self::Find(f, r, saved_cursor, last_match) => {
-                if let Some(row_idx) = last_match {
+            // find, replace, saved cursor, last match
+            Self::Find(f, r, saved_cursor, last) => {
+                if let Some(row_idx) = last {
                     ed.rows[row_idx].match_segment = None;
                 }
-                let no_replace = r == "\n";
-                let (b, o) = if no_replace { (f, r) } else { (r, f) }; // choose which is the active buffer
+                let m: u8 = if r == "\n" { 2 } else { 0 }; // m:mode, 2 = not currently in replace mode
+                let (b, o) = if no_repl == 2 { (f, r) } else { (r, f) }; // choose which is the active buffer and which is the other buffer
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(prompted) => {
                         #[allow(clippy::wildcard_enum_match_arm)]
-                        let (last_match, forward, do_replace) = match key {
-                            Key::Char(REPLACE) => (last_match, true, true),
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true, false),
-                            Key::Arrow(AKey::Left | AKey::Up) => (last_match, false, false),
-                            _ => (None, true, false),
+                        let (last, m) = match key {
+                            // last match, mode has 4 for forward, and 1 for replace action
+                            Key::Char(REPLACE) => (last, 5 + m),
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => (last, 4 + m),
+                            Key::Arrow(AKey::Left | AKey::Up) => (last, m),
+                            _ => (None, 4 + m),
                         };
-                        // get them back based on which is the active buffer, if we are just entering replace (no_replace && do_replace) we clear the replace buffer
-                        let (f, r) = if no_replace { (prompted, if do_replace {String::new() } else { o }) } else { (o, prompted) };
-                        let curr_match = if do_replace && no_replace && last_match.is_some() { last_match } else { ed.find(&f, &r, last_match, forward, do_replace && !no_replace) };
-                        return Ok(Some(Self::Find(f, r, saved_cursor, curr_match)));
+                        // get them back based on which is the active buffer, if we are just
+                        // entering replace (not in replace mode, and replace action) we clear the
+                        // replace buffer
+                        let n = if m % 4 >= 2 { String::new() } else { o }; // not yet replace mode
+                        let (f, r) = if m % 2 == 1 { (prompted, n) } else { (o, prompted) }; // replace action
+                        let (fnd, mut curr) = (m % 4 != 3 || !last.is_some(), last); // replace && not yet replace mode
+                        // we use the last match if we are entering replace for the first time so
+                        // that we don't go to a new entry
+                        curr = if fnd { ed.find(&f, &r, last, m) } else { curr };
+                        return Ok(Some(Self::Find(f, r, saved_cursor, curr)));
                     }
                     // The prompt was cancelled. Restore the previous position.
                     PromptState::Cancelled => ed.cursor = saved_cursor,
