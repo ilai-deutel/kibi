@@ -26,7 +26,7 @@ pub fn count_loc() -> Result<()> {
 /// Filter out lines that contain lints and anything after
 /// `#[cfg(test)]` attributes.
 pub fn filter_lines(path: &Path) -> Result<String> {
-    let regex = Regex::new(r"^\s*#!?\[(?:allow|warn|deny)\(")?;
+    let regex = Regex::new(r"^\s*#!?\[(?:allow|warn|deny|expect)\(")?;
     let content = std::fs::read_to_string(path)?;
     let lines = content
         .lines()
