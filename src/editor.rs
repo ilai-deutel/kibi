@@ -53,7 +53,7 @@ enum AKey {
 }
 
 /// Describes the cursor position and the screen offset
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 struct CursorState {
     /// x position (indexing the characters, not the columns)
     x: usize,
@@ -755,6 +755,7 @@ impl Drop for Editor {
 }
 
 /// The prompt mode.
+#[derive(Debug)] 
 enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
@@ -878,6 +879,430 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // crate::row::Row is in scope via super::* already because row.rs is in the same crate (lib)
+    // crate::Config is in scope via super::* already
+    // Key, AKey, PromptMode, etc. are already in scope via `super::*`
+
+    // Helper to create a default editor for testing
+    // Avoids Editor::new() due to terminal manipulation & signal handlers
+    fn editor_for_test() -> Editor {
+        let mut editor = Editor::default();
+        // Simulate minimum required setup from Editor::new() or update_window_size()
+        // if specific tests depend on these values being non-zero.
+        // For now, many prompt tests might not need specific screen dimensions.
+        editor.config = Config::default(); 
+        editor.quit_times = editor.config.quit_times;
+        // Ensure there's at least one row for some operations, like saving an empty file
+        if editor.rows.is_empty() {
+            editor.rows.push(Row::default());
+        }
+        editor
+    }
+
+    // --- PromptMode::Save Tests ---
+
+    #[test]
+    fn test_prompt_save_enter_mode() {
+        let mut editor = editor_for_test();
+        editor.file_name = None; // Ensure we enter prompt mode for new file
+
+        let (should_quit, new_prompt_mode) = editor.process_keypress(&Key::Char(SAVE));
+        assert!(!should_quit);
+        assert!(matches!(new_prompt_mode, Some(PromptMode::Save(_))));
+        
+        // Update editor state as the main loop would
+        editor.prompt_mode = new_prompt_mode;
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::Save(ref s)) if s.is_empty()));
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Save as: ");
+    }
+
+    #[test]
+    fn test_prompt_save_typing() {
+        let mut editor = editor_for_test();
+        editor.prompt_mode = Some(PromptMode::Save(String::new()));
+
+        // Simulate typing "test.txt"
+        let keys = vec![Key::Char(b't'), Key::Char(b'e'), Key::Char(b's'), Key::Char(b't'), Key::Char(b'.'), Key::Char(b't'), Key::Char(b'x'), Key::Char(b't')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            } else {
+                panic!("Prompt mode should remain active");
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::Save(ref s)) if s == "test.txt"));
+        // The status message is updated by refresh_screen in the main loop,
+        // so we check the prompt_mode's own status_msg method.
+        assert_eq!(editor.prompt_mode.as_ref().unwrap().status_msg(), "Save as: test.txt");
+    }
+    
+    #[test]
+    fn test_prompt_save_cancel_escape() {
+        let mut editor = editor_for_test();
+        editor.file_name = None;
+        editor.prompt_mode = Some(PromptMode::Save("initial_text".to_string()));
+
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Escape).unwrap();
+        assert!(new_prompt_mode.is_none()); // Prompt mode cancelled
+        editor.prompt_mode = new_prompt_mode;
+
+        assert!(editor.prompt_mode.is_none());
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Save aborted");
+        assert!(editor.file_name.is_none()); // Should not be set
+        assert!(!editor.dirty); // Assuming empty file, not dirty or dirty state unchanged
+    }
+
+    #[test]
+    fn test_prompt_save_cancel_ctrl_q() {
+        let mut editor = editor_for_test();
+        editor.file_name = None;
+        editor.prompt_mode = Some(PromptMode::Save("initial_text".to_string()));
+
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(EXIT)).unwrap();
+        assert!(new_prompt_mode.is_none()); // Prompt mode cancelled
+        editor.prompt_mode = new_prompt_mode;
+        
+        assert!(editor.prompt_mode.is_none());
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Save aborted");
+    }
+
+    #[test]
+    fn test_prompt_save_complete_new_file() {
+        let mut editor = editor_for_test();
+        editor.file_name = None;
+        editor.dirty = true; // Make it dirty to check if it's cleared
+        editor.rows = vec![Row::new(b"some content".to_vec())]; // Add some content
+        editor.n_bytes = editor.rows[0].chars.len() as u64;
+        editor.prompt_mode = Some(PromptMode::Save("new_file.txt".to_string()));
+
+        // Simulate successful save by overriding Editor::save behavior for the test.
+        // We can't easily mock `Editor::save` directly here.
+        // Instead, we rely on `save_as` to correctly set status messages and flags.
+        // The test focuses on the state changes after `PromptMode::Save` completes.
+        
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode.is_none()); // Prompt mode ends
+        editor.prompt_mode = new_prompt_mode;
+
+        assert_eq!(editor.file_name.as_deref(), Some("new_file.txt"));
+        assert!(!editor.dirty); // Dirty flag should be cleared on successful save
+        assert!(editor.status_msg.as_ref().unwrap().msg.contains("written to new_file.txt"));
+        
+        // Check if syntax highlighting might have been updated (e.g. syntax.name is not default)
+        // This is an indirect check, assuming new_file.txt might have a known extension.
+        // For "new_file.txt", syntax might become "text" or remain default if no rule matches.
+        // If syntax was default and remains default, this check is weak.
+        // A better test would mock select_syntax_highlight or check if update_all_rows was called.
+        // For now, we assume it's called and syntax might change or rows might be re-rendered.
+        // This part is hard to test deeply without more mocking capabilities.
+    }
+
+    // --- PromptMode::Find Tests ---
+
+    #[test]
+    fn test_prompt_find_enter_mode() {
+        let mut editor = editor_for_test();
+        let initial_cursor_state = editor.cursor.clone();
+
+        let (should_quit, new_prompt_mode) = editor.process_keypress(&Key::Char(FIND));
+        assert!(!should_quit);
+        
+        editor.prompt_mode = new_prompt_mode;
+        match editor.prompt_mode {
+            Some(PromptMode::Find(ref query, ref saved_cursor, ref last_match)) => {
+                assert!(query.is_empty());
+                assert_eq!(saved_cursor.x, initial_cursor_state.x);
+                assert_eq!(saved_cursor.y, initial_cursor_state.y);
+                assert!(last_match.is_none());
+            }
+            _ => panic!("Expected PromptMode::Find"),
+        }
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Search (Use ESC/Arrows/Enter): ");
+    }
+
+    #[test]
+    fn test_prompt_find_typing_and_search() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![
+            Row::new(b"hello world".to_vec()),
+            Row::new(b"another line with world".to_vec()),
+        ];
+        editor.update_all_rows(); // Important for cx2rx mappings
+
+        editor.prompt_mode = Some(PromptMode::Find(String::new(), editor.cursor.clone(), None));
+
+        // Type "world"
+        let keys = vec![Key::Char(b'w'), Key::Char(b'o'), Key::Char(b'r'), Key::Char(b'l'), Key::Char(b'd')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+        
+        // After typing, a search should have occurred (implicitly forward from start)
+        match editor.prompt_mode {
+            Some(PromptMode::Find(ref query, _, Some(match_idx))) => {
+                assert_eq!(query, "world");
+                assert_eq!(match_idx, 0); // First match should be in row 0
+                assert_eq!(editor.cursor.y, 0);
+                assert_eq!(editor.cursor.x, editor.rows[0].chars.windows("world".len()).position(|w| w == b"world").unwrap());
+                assert_eq!(editor.rows[0].match_segment, Some(editor.rows[0].cx2rx[editor.cursor.x]..editor.rows[0].cx2rx[editor.cursor.x] + "world".len()));
+            }
+            _ => panic!("Expected PromptMode::Find with a match after typing: {:?}", editor.prompt_mode),
+        }
+        assert_eq!(editor.prompt_mode.as_ref().unwrap().status_msg(), "Search (Use ESC/Arrows/Enter): world");
+
+        // Simulate pressing "Find Next" (Ctrl+F again, or ArrowDown/Right in some implementations)
+        // Here, we simulate it by calling process_keypress with Key::Char(FIND) which implies forward search from current match
+        if let Some(pm_before_next) = editor.prompt_mode.take() {
+             editor.prompt_mode = pm_before_next.process_keypress(&mut editor, &Key::Char(FIND)).unwrap();
+        }
+
+        match editor.prompt_mode {
+            Some(PromptMode::Find(ref query, _, Some(match_idx))) => {
+                assert_eq!(query, "world");
+                assert_eq!(match_idx, 1); // Second match should be in row 1
+                assert_eq!(editor.cursor.y, 1);
+                assert_eq!(editor.cursor.x, editor.rows[1].chars.windows("world".len()).position(|w| w == b"world").unwrap());
+                assert_eq!(editor.rows[1].match_segment, Some(editor.rows[1].cx2rx[editor.cursor.x]..editor.rows[1].cx2rx[editor.cursor.x] + "world".len()));
+            }
+            _ => panic!("Expected PromptMode::Find with a second match: {:?}", editor.prompt_mode),
+        }
+         // Clear match segment on the first row
+        editor.rows[0].match_segment = None; 
+    }
+    
+    #[test]
+    fn test_prompt_find_no_match() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![Row::new(b"hello there".to_vec())];
+        editor.update_all_rows();
+        let original_cursor = editor.cursor.clone();
+
+        editor.prompt_mode = Some(PromptMode::Find(String::new(), editor.cursor.clone(), None));
+        
+        // Type "xyz"
+        let keys = vec![Key::Char(b'x'), Key::Char(b'y'), Key::Char(b'z')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+
+        match editor.prompt_mode {
+            Some(PromptMode::Find(ref query, _, None)) => { // Expect None for last_match
+                assert_eq!(query, "xyz");
+            }
+            _ => panic!("Expected PromptMode::Find with no match: {:?}", editor.prompt_mode),
+        }
+        // Cursor should not have moved from original if no match found initially
+        assert_eq!(editor.cursor.x, original_cursor.x);
+        assert_eq!(editor.cursor.y, original_cursor.y);
+    }
+
+    #[test]
+    fn test_prompt_find_cancel_escape() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![Row::new(b"some text to search".to_vec())];
+        editor.update_all_rows();
+        editor.cursor.y = 0;
+        editor.cursor.x = 5; // Place cursor somewhere
+        let saved_cursor_state = editor.cursor.clone();
+
+        // Enter find mode and type something that matches to move cursor
+        editor.prompt_mode = Some(PromptMode::Find("search".to_string(), saved_cursor_state.clone(), None));
+        // Simulate finding "search" which would move the cursor
+        let _ = editor.find("search", None, true); 
+        assert_ne!(editor.cursor.x, saved_cursor_state.x); // Cursor has moved
+        assert_eq!(editor.rows[0].match_segment.is_some(), true);
+
+
+        // Now cancel
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Escape).unwrap();
+        assert!(new_prompt_mode.is_none());
+        editor.prompt_mode = new_prompt_mode;
+
+        assert!(editor.prompt_mode.is_none());
+        assert_eq!(editor.cursor.x, saved_cursor_state.x); // Cursor restored
+        assert_eq!(editor.cursor.y, saved_cursor_state.y);
+        assert_eq!(editor.rows[0].match_segment, None); // Match segment should be cleared
+        assert!(editor.status_msg.is_none()); // Or some "Search cancelled" message, depends on exact logic
+    }
+    
+    #[test]
+    fn test_prompt_find_complete_enter() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![Row::new(b"find me".to_vec())];
+        editor.update_all_rows();
+        let saved_cursor_state = editor.cursor.clone();
+        
+        // Type "me" and find it
+        editor.prompt_mode = Some(PromptMode::Find("me".to_string(), saved_cursor_state, None));
+        let _ = editor.find("me", None, true); // This moves cursor and sets match_segment
+        assert_eq!(editor.cursor.y, 0);
+        assert_eq!(editor.cursor.x, editor.rows[0].chars.windows("me".len()).position(|w| w == b"me").unwrap());
+        let expected_match_segment = Some(editor.rows[0].cx2rx[editor.cursor.x]..editor.rows[0].cx2rx[editor.cursor.x] + "me".len());
+        assert_eq!(editor.rows[0].match_segment, expected_match_segment);
+
+        // Press Enter to complete
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode.is_none()); // Prompt mode should end
+        editor.prompt_mode = new_prompt_mode;
+        
+        // Editor stays at the found location, match segment might persist or be cleared by next action.
+        // The current PromptMode::Find logic for Enter doesn't explicitly clear match_segment,
+        // but it's often cleared by subsequent editor actions or refresh_screen if no longer relevant.
+        // For this test, we check that the cursor remains.
+        assert_eq!(editor.cursor.y, 0);
+        assert_eq!(editor.cursor.x, editor.rows[0].chars.windows("me".len()).position(|w| w == b"me").unwrap());
+        // match_segment should ideally remain from the last find operation when Enter is pressed.
+        assert_eq!(editor.rows[0].match_segment, expected_match_segment);
+    }
+
+    // --- PromptMode::GoTo Tests ---
+    #[test]
+    fn test_prompt_goto_enter_mode() {
+        let mut editor = editor_for_test();
+        let (_should_quit, new_prompt_mode) = editor.process_keypress(&Key::Char(GOTO));
+        editor.prompt_mode = new_prompt_mode;
+
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::GoTo(ref s)) if s.is_empty()));
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Enter line number[:column number]: ");
+    }
+
+    #[test]
+    fn test_prompt_goto_typing_and_complete_line_only() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![Row::default(), Row::default(), Row::new(b"Line three".to_vec())]; // 3 lines
+        editor.prompt_mode = Some(PromptMode::GoTo(String::new()));
+
+        // Type "3"
+        let keys = vec![Key::Char(b'3')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::GoTo(ref s)) if s == "3"));
+
+        // Press Enter
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode.is_none()); // Prompt mode ends
+
+        assert_eq!(editor.cursor.y, 2); // Line 3 is index 2
+        assert_eq!(editor.cursor.x, 0); // Default to column 0 (start of line)
+    }
+    
+    #[test]
+    fn test_prompt_goto_line_and_column() {
+        let mut editor = editor_for_test();
+        editor.rows = vec![Row::default(), Row::new(b"Line two content".to_vec())];
+        editor.update_all_rows(); // For rx2cx
+        editor.prompt_mode = Some(PromptMode::GoTo(String::new()));
+
+        // Type "2:5" (Line 2, Column 5 - 1-indexed for user)
+        // Column 5 means rx=4. We need to check x (byte index) based on rx2cx.
+        let keys = vec![Key::Char(b'2'), Key::Char(b':'), Key::Char(b'5')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::GoTo(ref s)) if s == "2:5"));
+
+        // Press Enter
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode.is_none());
+
+        assert_eq!(editor.cursor.y, 1); // Line 2 is index 1
+        // For "Line two content", rx=4 is 'e'. cx for 'e' is 4.
+        let expected_cx = editor.rows[1].rx2cx[4.min(editor.rows[1].rx2cx.len().saturating_sub(1))];
+        assert_eq!(editor.cursor.x, expected_cx); 
+    }
+
+    #[test]
+    fn test_prompt_goto_invalid_input() {
+        let mut editor = editor_for_test();
+        editor.prompt_mode = Some(PromptMode::GoTo("abc".to_string())); // Invalid non-numeric
+        
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode.is_none());
+        assert!(editor.status_msg.as_ref().unwrap().msg.contains("Parsing error"));
+
+        editor.prompt_mode = Some(PromptMode::GoTo("1000".to_string())); // Out of bounds line
+        let new_prompt_mode_2 = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Char(b'\r')).unwrap();
+        assert!(new_prompt_mode_2.is_none());
+        assert_eq!(editor.cursor.y, editor.rows.len().saturating_sub(1)); // Should go to last line
+    }
+
+    #[test]
+    fn test_prompt_goto_cancel() {
+        let mut editor = editor_for_test();
+        let original_cursor = editor.cursor.clone();
+        editor.prompt_mode = Some(PromptMode::GoTo("1:1".to_string()));
+
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Escape).unwrap();
+        assert!(new_prompt_mode.is_none());
+        assert_eq!(editor.cursor.x, original_cursor.x);
+        assert_eq!(editor.cursor.y, original_cursor.y);
+    }
+
+    // --- PromptMode::Execute Tests ---
+    // These are harder due to Command interaction. We'll focus on how editor processes the *result*.
+    // We can't truly mock Command::output easily here, so we test the editor's reaction to PromptState::Completed.
+    // The actual command execution part of PromptMode::Execute won't be tested, only the prompt interaction.
+
+    #[test]
+    fn test_prompt_execute_enter_mode_and_type() {
+        let mut editor = editor_for_test();
+        let (_should_quit, new_prompt_mode) = editor.process_keypress(&Key::Char(EXECUTE));
+        editor.prompt_mode = new_prompt_mode;
+
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::Execute(ref s)) if s.is_empty()));
+        assert_eq!(editor.status_msg.as_ref().unwrap().msg, "Command to execute: ");
+        
+        // Type a command
+        let keys = vec![Key::Char(b'e'), Key::Char(b'c'), Key::Char(b'h'), Key::Char(b'o')];
+        let mut current_prompt_mode = editor.prompt_mode.take();
+        for key in keys {
+            if let Some(pm) = current_prompt_mode {
+                current_prompt_mode = pm.process_keypress(&mut editor, &key).unwrap();
+            }
+        }
+        editor.prompt_mode = current_prompt_mode;
+        assert!(matches!(editor.prompt_mode, Some(PromptMode::Execute(ref s)) if s == "echo"));
+        assert_eq!(editor.prompt_mode.as_ref().unwrap().status_msg(), "Command to execute: echo");
+    }
+
+    #[test]
+    fn test_prompt_execute_cancel() {
+        let mut editor = editor_for_test();
+        editor.prompt_mode = Some(PromptMode::Execute("some command".to_string()));
+        
+        let new_prompt_mode = editor.prompt_mode.take().unwrap().process_keypress(&mut editor, &Key::Escape).unwrap();
+        assert!(new_prompt_mode.is_none());
+        // Status message behavior on cancel for Execute isn't explicitly "Execute aborted" in code,
+        // it just clears prompt_mode and relies on next refresh_screen to clear prompt from status_msg.
+        // For test purposes, we check prompt_mode is None.
+        assert!(editor.prompt_mode.is_none());
+    }
+    
+    // Testing the "completion" part of Execute directly is hard as it involves std::process::Command.
+    // The PromptMode::Execute logic for Completed(b) has side effects (inserting output/stderr).
+    // We'd need to simulate Ok/Err from Command::output.
+    // For now, testing entry, typing, and cancel for Execute prompt is sufficient given limitations.
 
     #[test]
     fn format_size_output() {

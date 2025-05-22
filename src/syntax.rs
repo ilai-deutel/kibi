@@ -9,7 +9,7 @@ use crate::{Error, sys};
 /// Each `HLType` is associated with a color, via its discriminant. The ANSI
 /// color is equal to the discriminant, modulo 100. The colors are described
 /// here: <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum HlType {
     Normal = 39,     // Default foreground color
     Number = 31,     // Red
@@ -128,5 +128,18 @@ mod tests {
             Err(Error::Config(path, 0, _)) if path == tmp_path => (),
             Err(e) => panic!("Unexpected error {:?}", e),
         }
+    }
+
+    #[test]
+    fn test_hltype_display() {
+        assert_eq!(format!("{}", HlType::Normal), "\x1b[39m");
+        assert_eq!(format!("{}", HlType::Number), "\x1b[31m");
+        assert_eq!(format!("{}", HlType::Match), "\x1b[46m");
+        assert_eq!(format!("{}", HlType::String), "\x1b[32m");
+        assert_eq!(format!("{}", HlType::MlString), "\x1b[32m"); // 132 % 100 = 32
+        assert_eq!(format!("{}", HlType::Comment), "\x1b[34m");
+        assert_eq!(format!("{}", HlType::MlComment), "\x1b[34m"); // 134 % 100 = 34
+        assert_eq!(format!("{}", HlType::Keyword1), "\x1b[33m");
+        assert_eq!(format!("{}", HlType::Keyword2), "\x1b[35m");
     }
 }
