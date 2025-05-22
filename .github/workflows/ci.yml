@@ -174,7 +174,7 @@ jobs:
         if: ${{ matrix.target == 'wasm32-wasip1' }}
         run: cargo check --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
       - name: Check
-        if: ${{ github.event_name != 'pull_request' || (matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'wasm32-wasip1') }}
+        if: ${{ (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1' }}
         run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
       - name: Clippy
         if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
@@ -183,5 +183,5 @@ jobs:
         if: ${{ matrix.target == 'wasm32-wasip1' }}
         run: cargo clippy --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
       - name: Clippy
-        if: ${{ github.event_name != 'pull_request' || (matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'wasm32-wasip1') }}
+        if: ${{ (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1' }}
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
