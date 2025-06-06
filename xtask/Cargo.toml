@@ -13,7 +13,7 @@ publish = false
 [dependencies]
 anstream = "0.6.18"
 anstyle = "1.0.10"
-clap = { version = "4.5.38", features = ["derive"] }
+clap = { version = "4.5.39", features = ["derive"] }
 glob = "0.3.2"
 regex = { version = "1.11.1" }
 tokei = "12.1.2"
