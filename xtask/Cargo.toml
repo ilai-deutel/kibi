@@ -11,7 +11,7 @@ categories = ["development-tools"]
 publish = false
 
 [dependencies]
-anstream = "0.6.18"
+anstream = "0.6.19"
 anstyle = "1.0.10"
 clap = { version = "4.5.39", features = ["derive"] }
 glob = "0.3.2"
