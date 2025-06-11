@@ -34,7 +34,7 @@ pub fn stdin() -> std::io::Result<std::fs::File> { std::fs::File::open("/dev/tty
 
 pub fn path(filename: &str) -> std::path::PathBuf {
     // If the filename is absolute then it starts with a forward slash and we
-    // can just open the file however if it lacks a forwrad slash then its
+    // can just open the file however if it lacks a forward slash then its
     // relative to the current working directory. As WASI does not have an ABI
     // for current directory we are using the PWD environment variable as a
     // defacto standard
