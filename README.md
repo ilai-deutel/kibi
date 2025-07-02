@@ -11,7 +11,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-35-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-36-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -398,6 +398,9 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/BanuAdrian"><img src="https://avatars.githubusercontent.com/u/66678108?v=4" width="100px;" alt=""/><br /><sub><b>Adrian Banu</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=BanuAdrian" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/vanillajonathan"><img src="https://avatars.githubusercontent.com/u/10222521?v=4" width="100px;" alt=""/><br /><sub><b>Jonathan</b></sub></a><br /><a href="#syntax-highlighting-vanillajonathan" title="Contributing to syntax highlighting configuration files">💠</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/lythd"><img src="https://avatars.githubusercontent.com/u/22566088?v=4" width="100px;" alt=""/><br /><sub><b>ly</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=lythd" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kianmeng"><img src="https://avatars.githubusercontent.com/u/134518?v=4" width="100px;" alt=""/><br /><sub><b>Kian-Meng Ang</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=kianmeng" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
