@@ -58,15 +58,15 @@
   ([#12](https://github.com/ilai-deutel/kibi/issues/12)), `Editor`
   ([#20](https://github.com/ilai-deutel/kibi/issues/20)), and the `Debug` trait
   for `Error` ([#35](https://github.com/ilai-deutel/kibi/issues/35))
-- The _find_ command now searchs in `row.chars`, not `row.renders`. A _tab_ will
+- The _find_ command now searches in `row.chars`, not `row.renders`. A _tab_ will
   no longer be matched when searching for a space
   ([#23](https://github.com/ilai-deutel/kibi/issues/23))
 - Use the XDG base directory specification for configuration files
-  (global configuration, syntax highlighting confiuration) ([#42](https://github.com/ilai-deutel/kibi/issues/42))
+  (global configuration, syntax highlighting configuration) ([#42](https://github.com/ilai-deutel/kibi/issues/42))
 
 ### Fixed
 
-- Fix syntax higlighting issue when an empty line is inserted in the middle of a
+- Fix syntax highlighting issue when an empty line is inserted in the middle of a
   multi-line string or a multi-line comment ([#7](https://github.com/ilai-deutel/kibi/issues/7))
 - Fix crash when inserting a new line in the middle of a row ([#13](https://github.com/ilai-deutel/kibi/issues/13))
 - Fix comments ([#12](https://github.com/ilai-deutel/kibi/issues/12), [#17](https://github.com/ilai-deutel/kibi/issues/17))
