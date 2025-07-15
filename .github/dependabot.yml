@@ -8,3 +8,7 @@ updates:
   directory: "/fuzz/"
   schedule:
     interval: weekly
+- package-ecosystem: cargo
+  directory: "/xtask/"
+  schedule:
+    interval: weekly
