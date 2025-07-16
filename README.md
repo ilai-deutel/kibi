@@ -316,6 +316,19 @@ under 1024. To check this run:
 cargo xtask count-loc
 ```
 
+### Setting the Development environment
+
+To reduce CI friction and ensure code quality, we use
+[prefligit](https://github.com/j178/prefligit) to run local static checks before each
+commit. It can be installed by following the
+[instructions](https://github.com/j178/prefligit?tab=readme-ov-file#installation).
+
+After installing it, you can run:
+
+```bash
+prefligit install
+```
+
 ## Dependencies
 
 This project must remain tiny, so using advanced dependencies such as [`ncurses`](https://crates.io/crates/ncurses),
