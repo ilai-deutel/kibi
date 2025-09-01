@@ -63,7 +63,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install gcc-multilib
         if: matrix.target == 'i686-unknown-linux-gnu'
         run: |
@@ -102,7 +102,7 @@ jobs:
       RUSTFLAGS: "-D warnings -C instrument-coverage"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Rust toolchain
         run: |
           rustup toolchain install nightly --component llvm-tools-preview --allow-downgrade
@@ -155,7 +155,7 @@ jobs:
       checks: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install nightly with clippy and rustfmt
         uses: dtolnay/rust-toolchain@nightly
         with:
