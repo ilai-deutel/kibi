@@ -21,5 +21,5 @@ fn load_config_does_not_crash(config_bytes: &[u8]) -> Result<(), Box<dyn Error>>
 
 fuzz_target!(|data: &[u8]| {
     #[expect(clippy::expect_used)]
-    load_config_does_not_crash(data).expect("Unexpected error");
+    load_config_does_not_crash(data).expect("Unexpected error loading config");
 });

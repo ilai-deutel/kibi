@@ -9,12 +9,10 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+libfuzzer-sys = "0.4.10"
 tempfile = "3.23.0"
 env-test-util = "1.0.1"
-
-[dependencies.kibi]
-path = ".."
+kibi = { path = ".." }
 
 [[bin]]
 name = "fuzz_config_load"
