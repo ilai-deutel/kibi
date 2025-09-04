@@ -428,14 +428,21 @@ impl Editor {
         }
     }
 
-    fn duplicate_current_row(&mut self) { self.copy_current_row(); self.paste_current_row(); }
+    fn duplicate_current_row(&mut self) {
+        self.copy_current_row();
+        self.paste_current_row();
+    }
 
     fn copy_current_row(&mut self) {
-        if let Some(row) = self.current_row() {self.copied_row = row.chars.clone();}
+        if let Some(row) = self.current_row() {
+            self.copied_row = row.chars.clone();
+        }
     }
 
     fn paste_current_row(&mut self) {
-        if self.copied_row.is_empty() {return;}
+        if self.copied_row.is_empty() {
+            return;
+        }
         self.n_bytes += self.copied_row.len() as u64;
         if self.cursor.y == self.rows.len() {
             self.rows.push(Row::new(self.copied_row.clone()));
@@ -463,10 +470,14 @@ impl Editor {
         if row.chars.get(pos..pos + cb.len()) == Some(cb) {
             // Remove the comment
             row.chars.drain(pos..pos + cb.len());
-            if row.chars.get(pos) == Some(&b' ') { row.chars.remove(pos); }
+            if row.chars.get(pos) == Some(&b' ') {
+                row.chars.remove(pos);
+            }
             self.n_bytes = self.n_bytes.saturating_sub(cb.len() as u64);
             // Adjust cursor position if it's after the removed comment
-            if self.cursor.x > pos { self.cursor.x = self.cursor.x.saturating_sub(cb.len() + 1).min(row.chars.len());}
+            if self.cursor.x > pos {
+                self.cursor.x = self.cursor.x.saturating_sub(cb.len() + 1).min(row.chars.len());
+            }
         } else {
             // Add comment
             let cmt = [cb, b" "].concat();
@@ -474,7 +485,9 @@ impl Editor {
             row.chars.splice(pos..pos, cmt.iter().copied());
             self.n_bytes += cmt.len() as u64;
             // Adjust cursor position if it's after the insertion point
-            if self.cursor.x >= pos {self.cursor.x += cmt.len();}
+            if self.cursor.x >= pos {
+                self.cursor.x += cmt.len();
+            }
         }
 
         self.update_row(self.cursor.y, false);
