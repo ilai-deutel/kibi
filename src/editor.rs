@@ -2,7 +2,7 @@
 
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
-use std::iter::{self, repeat, successors};
+use std::iter::{self, repeat, successors as scsr};
 use std::{fs::File, path::Path, process::Command, thread, time::Instant};
 
 use crate::row::{HlState, Row};
@@ -310,8 +310,7 @@ impl Editor {
         // The maximum number of digits to use for the line number is the number of
         // digits of the last line number. This is equal to the number of times
         // we can divide this number by ten, computed below using `successors`.
-        let n_digits =
-            successors(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
+        let n_digits = scsr(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
         let show_line_num = self.config.show_line_num && n_digits + 2 < self.window_width / 4;
         self.ln_pad = if show_line_num { n_digits + 2 } else { 0 };
         self.screen_cols = self.window_width.saturating_sub(self.ln_pad);
@@ -429,21 +428,14 @@ impl Editor {
         }
     }
 
-    fn duplicate_current_row(&mut self) {
-        self.copy_current_row();
-        self.paste_current_row();
-    }
+    fn duplicate_current_row(&mut self) { self.copy_current_row(); self.paste_current_row(); }
 
     fn copy_current_row(&mut self) {
-        if let Some(row) = self.current_row() {
-            self.copied_row = row.chars.clone();
-        }
+        if let Some(row) = self.current_row() {self.copied_row = row.chars.clone();}
     }
 
     fn paste_current_row(&mut self) {
-        if self.copied_row.is_empty() {
-            return;
-        }
+        if self.copied_row.is_empty() {return;}
         self.n_bytes += self.copied_row.len() as u64;
         if self.cursor.y == self.rows.len() {
             self.rows.push(Row::new(self.copied_row.clone()));
@@ -461,47 +453,28 @@ impl Editor {
     /// uncomment it. If not, add a comment symbol at the beginning.
     fn toggle_comment(&mut self) {
         // Get the first single-line comment start symbol from syntax config
-        let Some(comment_symbol) = self.syntax.sl_comment_start.first() else { return };
-
+        let Some(sym) = self.syntax.sl_comment_start.first() else { return };
         let row = &mut self.rows[self.cursor.y];
-        let comment_bytes = comment_symbol.as_bytes();
-
+        let cb = sym.as_bytes();
         // Find the first non-whitespace character position
-        let first_ws_pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
+        let pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
 
         // Check if the line is already commented
-        let is_commented = row.chars.len() >= first_ws_pos + comment_bytes.len()
-            && row.chars[first_ws_pos..first_ws_pos + comment_bytes.len()].eq(comment_bytes);
-
-        if is_commented {
+        if row.chars.get(pos..pos + cb.len()) == Some(cb) {
             // Remove the comment
-            row.chars.splice(first_ws_pos..first_ws_pos + comment_bytes.len(), iter::empty());
-
-            // Remove the space after comment symbol if it exists
-            if row.chars.len() > first_ws_pos && row.chars[first_ws_pos] == b' ' {
-                row.chars.remove(first_ws_pos);
-            }
-
-            self.n_bytes = self.n_bytes.saturating_sub(comment_bytes.len() as u64);
-
+            row.chars.drain(pos..pos + cb.len());
+            if row.chars.get(pos) == Some(&b' ') { row.chars.remove(pos); }
+            self.n_bytes = self.n_bytes.saturating_sub(cb.len() as u64);
             // Adjust cursor position if it's after the removed comment
-            if self.cursor.x > first_ws_pos {
-                self.cursor.x =
-                    self.cursor.x.saturating_sub(comment_bytes.len() + 1).min(row.chars.len());
-            }
+            if self.cursor.x > pos { self.cursor.x = self.cursor.x.saturating_sub(cb.len() + 1).min(row.chars.len());}
         } else {
             // Add comment
-            let comment = [comment_bytes, b" "].concat();
-
+            let cmt = [cb, b" "].concat();
             // Insert comment at the first non-whitespace position
-            row.chars.splice(first_ws_pos..first_ws_pos, comment.iter().copied());
-
-            self.n_bytes += comment.len() as u64;
-
+            row.chars.splice(pos..pos, cmt.iter().copied());
+            self.n_bytes += cmt.len() as u64;
             // Adjust cursor position if it's after the insertion point
-            if self.cursor.x >= first_ws_pos {
-                self.cursor.x += comment.len();
-            }
+            if self.cursor.x >= pos {self.cursor.x += cmt.len();}
         }
 
         self.update_row(self.cursor.y, false);
