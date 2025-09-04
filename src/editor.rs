@@ -461,11 +461,7 @@ impl Editor {
     /// uncomment it. If not, add a comment symbol at the beginning.
     fn toggle_comment(&mut self) {
         // Get the first single-line comment start symbol from syntax config
-        let comment_symbol = match self.syntax.sl_comment_start.first() {
-            Some(symbol) => symbol,
-            None => return, // No comment symbol defined for this language
-        };
-
+        let Some(comment_symbol) = self.syntax.sl_comment_start.first() else { return };
         // Check if we have a current row
         if self.cursor.y >= self.rows.len() {
             return;
@@ -1252,7 +1248,7 @@ mod tests {
         let mut editor = Editor::default();
 
         // Set up Python syntax configuration for testing
-        editor.syntax.sl_comment_start = vec!["#".to_string()];
+        editor.syntax.sl_comment_start = vec!["#".to_owned()];
 
         for b in b"def hello():\n    print(\"Hello\")\n    return True" {
             if *b == b'\n' {
