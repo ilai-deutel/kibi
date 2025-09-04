@@ -21,10 +21,11 @@ const PASTE: u8 = ctrl_key(b'V');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
+const TOGGLE_COMMENT: u8 = 31; // Ctrl+/ typically sends ASCII 31 (Unit Separator)
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
-                            ^C copy | ^X cut | ^V paste";
+                            ^C copy | ^X cut | ^V paste | ^/ comment";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size,
@@ -455,6 +456,77 @@ impl Editor {
         self.update_screen_cols();
     }
 
+    /// Toggle comment on the current line using the appropriate comment symbol
+    /// from the syntax configuration. If the line is already commented,
+    /// uncomment it. If not, add a comment symbol at the beginning.
+    fn toggle_comment(&mut self) {
+        // Get the first single-line comment start symbol from syntax config
+        let comment_symbol = match self.syntax.sl_comment_start.first() {
+            Some(symbol) => symbol,
+            None => return, // No comment symbol defined for this language
+        };
+
+        // Check if we have a current row
+        if self.cursor.y >= self.rows.len() {
+            return;
+        }
+
+        let row = &mut self.rows[self.cursor.y];
+        let comment_bytes = comment_symbol.as_bytes();
+
+        // Find the first non-whitespace character position
+        let first_non_ws_pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
+
+        // Check if the line is already commented
+        let is_commented = row.chars.len() >= first_non_ws_pos + comment_bytes.len()
+            && row.chars[first_non_ws_pos..first_non_ws_pos + comment_bytes.len()]
+                .eq(comment_bytes);
+
+        if is_commented {
+            // Remove the comment
+            row.chars
+                .splice(first_non_ws_pos..first_non_ws_pos + comment_bytes.len(), iter::empty());
+
+            let mut removed_chars = comment_bytes.len();
+
+            // Remove the space after comment symbol if it exists
+            if row.chars.len() > first_non_ws_pos && row.chars[first_non_ws_pos] == b' ' {
+                row.chars.remove(first_non_ws_pos);
+                removed_chars += 1;
+                self.n_bytes = self.n_bytes.saturating_sub(1);
+            }
+
+            self.n_bytes = self.n_bytes.saturating_sub(comment_bytes.len() as u64);
+
+            // Adjust cursor position if it's after the removed comment
+            if self.cursor.x > first_non_ws_pos {
+                self.cursor.x = self.cursor.x.saturating_sub(removed_chars);
+                // Ensure cursor doesn't go beyond the line length
+                self.cursor.x = self.cursor.x.min(row.chars.len());
+            }
+        } else {
+            // Add comment
+            let mut comment_with_space = comment_bytes.to_vec();
+            comment_with_space.push(b' ');
+
+            // Insert comment at the first non-whitespace position
+            row.chars
+                .splice(first_non_ws_pos..first_non_ws_pos, comment_with_space.iter().copied());
+
+            self.n_bytes += comment_with_space.len() as u64;
+
+            // Adjust cursor position if it's after the insertion point
+            if self.cursor.x >= first_non_ws_pos {
+                self.cursor.x += comment_with_space.len();
+            }
+        }
+
+        self.update_row(self.cursor.y, false);
+        // Update cursor position to ensure it's valid after row update
+        self.update_cursor_x_position();
+        self.dirty = true;
+    }
+
     /// Try to load a file. If found, load the rows and update the render and
     /// syntax highlighting. If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
@@ -675,6 +747,7 @@ impl Editor {
             }
             Key::Char(COPY) => self.copy_current_row(),
             Key::Char(PASTE) => self.paste_current_row(),
+            Key::Char(TOGGLE_COMMENT) => self.toggle_comment(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
@@ -1172,5 +1245,55 @@ mod tests {
         editor.process_keypress(&Key::End);
         assert_eq!(editor.cursor.x, 5);
         assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_toggle_comment() {
+        let mut editor = Editor::default();
+
+        // Set up Python syntax configuration for testing
+        editor.syntax.sl_comment_start = vec!["#".to_string()];
+
+        for b in b"def hello():\n    print(\"Hello\")\n    return True" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // Test commenting a line
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Test uncommenting the same line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Test commenting an indented line
+        editor.cursor.y = 1; // Second line (indented)
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    # print(\"Hello\")");
+
+        // Test uncommenting the indented line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    print(\"Hello\")");
+
+        // Test the bug case: cursor at end of line during toggle
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Comment
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Now uncomment with cursor still at end - this should not panic
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end again
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Uncomment
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Verify cursor position is valid
+        assert!(editor.cursor.x <= editor.rows[0].chars.len());
     }
 }
