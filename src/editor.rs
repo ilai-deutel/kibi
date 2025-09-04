@@ -462,58 +462,45 @@ impl Editor {
     fn toggle_comment(&mut self) {
         // Get the first single-line comment start symbol from syntax config
         let Some(comment_symbol) = self.syntax.sl_comment_start.first() else { return };
-        // Check if we have a current row
-        if self.cursor.y >= self.rows.len() {
-            return;
-        }
 
         let row = &mut self.rows[self.cursor.y];
         let comment_bytes = comment_symbol.as_bytes();
 
         // Find the first non-whitespace character position
-        let first_non_ws_pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
+        let first_ws_pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
 
         // Check if the line is already commented
-        let is_commented = row.chars.len() >= first_non_ws_pos + comment_bytes.len()
-            && row.chars[first_non_ws_pos..first_non_ws_pos + comment_bytes.len()]
-                .eq(comment_bytes);
+        let is_commented = row.chars.len() >= first_ws_pos + comment_bytes.len()
+            && row.chars[first_ws_pos..first_ws_pos + comment_bytes.len()].eq(comment_bytes);
 
         if is_commented {
             // Remove the comment
-            row.chars
-                .splice(first_non_ws_pos..first_non_ws_pos + comment_bytes.len(), iter::empty());
-
-            let mut removed_chars = comment_bytes.len();
+            row.chars.splice(first_ws_pos..first_ws_pos + comment_bytes.len(), iter::empty());
 
             // Remove the space after comment symbol if it exists
-            if row.chars.len() > first_non_ws_pos && row.chars[first_non_ws_pos] == b' ' {
-                row.chars.remove(first_non_ws_pos);
-                removed_chars += 1;
-                self.n_bytes = self.n_bytes.saturating_sub(1);
+            if row.chars.len() > first_ws_pos && row.chars[first_ws_pos] == b' ' {
+                row.chars.remove(first_ws_pos);
             }
 
             self.n_bytes = self.n_bytes.saturating_sub(comment_bytes.len() as u64);
 
             // Adjust cursor position if it's after the removed comment
-            if self.cursor.x > first_non_ws_pos {
-                self.cursor.x = self.cursor.x.saturating_sub(removed_chars);
-                // Ensure cursor doesn't go beyond the line length
-                self.cursor.x = self.cursor.x.min(row.chars.len());
+            if self.cursor.x > first_ws_pos {
+                self.cursor.x =
+                    self.cursor.x.saturating_sub(comment_bytes.len() + 1).min(row.chars.len());
             }
         } else {
             // Add comment
-            let mut comment_with_space = comment_bytes.to_vec();
-            comment_with_space.push(b' ');
+            let comment = [comment_bytes, b" "].concat();
 
             // Insert comment at the first non-whitespace position
-            row.chars
-                .splice(first_non_ws_pos..first_non_ws_pos, comment_with_space.iter().copied());
+            row.chars.splice(first_ws_pos..first_ws_pos, comment.iter().copied());
 
-            self.n_bytes += comment_with_space.len() as u64;
+            self.n_bytes += comment.len() as u64;
 
             // Adjust cursor position if it's after the insertion point
-            if self.cursor.x >= first_non_ws_pos {
-                self.cursor.x += comment_with_space.len();
+            if self.cursor.x >= first_ws_pos {
+                self.cursor.x += comment.len();
             }
         }
 
