@@ -340,6 +340,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "iamdhakrey",
+      "name": "Hrithik Dhakrey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35266081?v=4",
+      "profile": "https://iamdhakrey.dev",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
