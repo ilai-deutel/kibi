@@ -8,19 +8,19 @@ use std::{fs::File, path::Path, process::Command, thread, time::Instant};
 use crate::row::{HlState, Row};
 use crate::{Config, Error, ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal};
 
-const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
-const EXIT: u8 = ctrl_key(b'Q');
-const DELETE_BIS: u8 = ctrl_key(b'H');
-const REFRESH_SCREEN: u8 = ctrl_key(b'L');
-const SAVE: u8 = ctrl_key(b'S');
-const FIND: u8 = ctrl_key(b'F');
-const GOTO: u8 = ctrl_key(b'G');
-const CUT: u8 = ctrl_key(b'X');
-const COPY: u8 = ctrl_key(b'C');
-const PASTE: u8 = ctrl_key(b'V');
-const DUPLICATE: u8 = ctrl_key(b'D');
-const EXECUTE: u8 = ctrl_key(b'E');
-const REMOVE_LINE: u8 = ctrl_key(b'R');
+// const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
+const EXIT: u8 = b'Q' & 0x1f; // Ctrl+Q
+const DELETE_BIS: u8 = b'H' & 0x1f; // Ctrl+H
+const REFRESH_SCREEN: u8 = b'L' & 0x1f; // Ctrl+L
+const SAVE: u8 = b'S' & 0x1f; // Ctrl+S
+const FIND: u8 = b'F' & 0x1f; // Ctrl+F
+const GOTO: u8 = b'G' & 0x1f; // Ctrl+G
+const CUT: u8 = b'X' & 0x1f; // Ctrl+X
+const COPY: u8 = b'C' & 0x1f; // Ctrl+C
+const PASTE: u8 = b'V' & 0x1f; // Ctrl+V
+const DUPLICATE: u8 = b'D' & 0x1f; // Ctrl+D
+const EXECUTE: u8 = b'E' & 0x1f; // Ctrl+E
+const REMOVE_LINE: u8 = b'R' & 0x1f; // Ctrl+R
 const TOGGLE_COMMENT: u8 = 31; // Ctrl+/ typically sends ASCII 31 (Unit Separator)
 const BACKSPACE: u8 = 127;
 
