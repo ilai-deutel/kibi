@@ -3,6 +3,8 @@
 //! WASI-specific structs and functions. Will be imported as `sys` on WASI
 //! systems.
 
+use std::{fs::File, io};
+
 use crate::Error;
 pub use crate::xdg::*;
 
@@ -30,7 +32,7 @@ pub const fn set_term_mode(_term: &TermMode) -> Result<(), Error> { Ok(()) }
 #[allow(clippy::unnecessary_wraps)] // Result required on other platforms
 pub const fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
 
-pub fn stdin() -> std::io::Result<std::fs::File> { std::fs::File::open("/dev/tty") }
+pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::BufReader::new(File::open("/dev/tty")?)) }
 
 pub fn path(filename: &str) -> std::path::PathBuf {
     // If the filename is absolute then it starts with a forward slash and we

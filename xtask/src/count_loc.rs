@@ -2,10 +2,21 @@ use std::path::{Path, PathBuf};
 
 use anstream::println;
 use glob::glob;
-use regex::Regex;
 use tokei::LanguageType;
 
 use crate::{BOLD, GREEN, RED, RESET, Result};
+
+const INNER_ATTRIBUTE_PREFIX: &str = "#![";
+const OUTER_ATTRIBUTE_PREFIX: &str = "#[";
+const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 5] = [
+    // Lint directives
+    "allow(",
+    "warn(",
+    "deny(",
+    "expect(",
+    // Test-only attributes
+    "cfg_attr(test,",
+];
 
 pub fn count_loc() -> Result<()> {
     let mut results = Vec::new();
@@ -26,11 +37,17 @@ pub fn count_loc() -> Result<()> {
 /// Filter out lines that contain lints and anything after
 /// `#[cfg(test)]` attributes.
 pub fn filter_lines(path: &Path) -> Result<String> {
-    let regex = Regex::new(r"^\s*#!?\[(?:allow|warn|deny|expect)\(")?;
     let content = std::fs::read_to_string(path)?;
     let lines = content
         .lines()
-        .filter(|line| !regex.is_match(line))
+        .filter(|line| {
+            let line = line.trim_start();
+            // TODO: Use strip_prefix_of when https://github.com/rust-lang/rfcs/pull/528 is stabilized
+            line.strip_prefix(INNER_ATTRIBUTE_PREFIX)
+                .or_else(|| line.strip_prefix(OUTER_ATTRIBUTE_PREFIX))
+                .filter(|s| ATTRIBUTE_PREFIXES_TO_IGNORE.iter().any(|prefix| s.starts_with(prefix)))
+                .is_none()
+        })
         .take_while(|line| !line.contains("#[cfg(test)]"));
     let filtered_content = lines.collect::<Vec<_>>().join("\n");
     Ok(filtered_content)
