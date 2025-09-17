@@ -32,6 +32,7 @@ const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicat
 macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
 
 /// Enum of input keys
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum Key {
     Arrow(AKey),
     CtrlArrow(AKey),
@@ -45,6 +46,7 @@ enum Key {
 }
 
 /// Enum of arrow keys
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum AKey {
     Left,
     Right,
@@ -143,19 +145,26 @@ fn format_size(n: u64) -> String {
         return format!("{n}B");
     }
     // i is the largest value such that 1024 ^ i < n
-    // To find i we compute the smallest b such that n <= 1024 ^ b and subtract 1
-    // from it
-    let i = (64 - n.leading_zeros()).div_ceil(10) - 1;
+    let i = n.ilog2() / 10;
+
     // Compute the size with two decimal places (rounded down) as the last two
     // digits of q This avoid float formatting reducing the binary size
     let q = 100 * n / (1024 << ((i - 1) * 10));
     format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i as usize] as char)
 }
 
-/// `slice_find` returns the index of `needle` in slice `s` if `needle` is a
-/// subslice of `s`, otherwise returns `None`.
-fn slice_find<T: PartialEq>(s: &[T], needle: &[T]) -> Option<usize> {
-    (0..(s.len() + 1).saturating_sub(needle.len())).find(|&i| s[i..].starts_with(needle))
+/// Return an Arrow Key given and ANSI code.
+///
+/// The argument must be a valide arrow key ANSI code (`a`, `b`, `c` or `d`),
+/// case-insensitive).
+fn get_akey(c: u8) -> AKey {
+    match c {
+        b'a' | b'A' => AKey::Up,
+        b'b' | b'B' => AKey::Down,
+        b'c' | b'C' => AKey::Right,
+        b'd' | b'D' => AKey::Left,
+        _ => unreachable!("Invalid ANSI code for arrow key {}", c),
+    }
 }
 
 impl Editor {
@@ -236,58 +245,48 @@ impl Editor {
     /// to check if a window size change signal has been received. When
     /// bytes are received, we match to a corresponding `Key`. In particular,
     /// we handle ANSI escape codes to return `Key::Delete`, `Key::Home` etc.
-    fn loop_until_keypress(&mut self) -> Result<Key, Error> {
+    fn loop_until_keypress(&mut self, input: &mut impl BufRead) -> Result<Key, Error> {
+        let mut bytes = input.bytes();
         loop {
             // Handle window size if a signal has be received
             if sys::has_window_size_changed() {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
-            let mut bytes = BufReader::new(sys::stdin()?).bytes();
-            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
-            // the next few bytes.
-            match bytes.next().transpose()? {
-                Some(b'\x1b') => {
-                    return Ok(match bytes.next().transpose()? {
-                        Some(b @ (b'[' | b'O')) => match (b, bytes.next().transpose()?) {
-                            (b'[', Some(b'A')) => Key::Arrow(AKey::Up),
-                            (b'[', Some(b'B')) => Key::Arrow(AKey::Down),
-                            (b'[', Some(b'C')) => Key::Arrow(AKey::Right),
-                            (b'[', Some(b'D')) => Key::Arrow(AKey::Left),
-                            (b'[' | b'O', Some(b'H')) => Key::Home,
-                            (b'[' | b'O', Some(b'F')) => Key::End,
-                            (b'[', mut c @ Some(b'0'..=b'8')) => {
-                                let mut d = bytes.next().transpose()?;
-                                if (c, d) == (Some(b'1'), Some(b';')) {
-                                    // 1 is the default modifier value. Therefore, <ESC>[1;5C is
-                                    // equivalent to <ESC>[5C, etc.
-                                    c = bytes.next().transpose()?;
-                                    d = bytes.next().transpose()?;
-                                }
-                                match (c, d) {
-                                    (Some(c), Some(b'~')) if c == b'1' || c == b'7' => Key::Home,
-                                    (Some(c), Some(b'~')) if c == b'4' || c == b'8' => Key::End,
-                                    (Some(b'3'), Some(b'~')) => Key::Delete,
-                                    (Some(b'5'), Some(b'~')) => Key::PageUp,
-                                    (Some(b'6'), Some(b'~')) => Key::PageDown,
-                                    (Some(b'5'), Some(b'A')) => Key::CtrlArrow(AKey::Up),
-                                    (Some(b'5'), Some(b'B')) => Key::CtrlArrow(AKey::Down),
-                                    (Some(b'5'), Some(b'C')) => Key::CtrlArrow(AKey::Right),
-                                    (Some(b'5'), Some(b'D')) => Key::CtrlArrow(AKey::Left),
-                                    _ => Key::Escape,
-                                }
-                            }
-                            (b'O', Some(b'a')) => Key::CtrlArrow(AKey::Up),
-                            (b'O', Some(b'b')) => Key::CtrlArrow(AKey::Down),
-                            (b'O', Some(b'c')) => Key::CtrlArrow(AKey::Right),
-                            (b'O', Some(b'd')) => Key::CtrlArrow(AKey::Left),
-                            _ => Key::Escape,
-                        },
-                        _ => Key::Escape,
-                    });
+            if let Some(a) = bytes.next().transpose()? {
+                // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
+                // the next few bytes.
+                if a != b'\x1b' {
+                    return Ok(Key::Char(a));
                 }
-                Some(a) => return Ok(Key::Char(a)),
-                None => {}
+                return Ok(match bytes.next().transpose()? {
+                    Some(b @ (b'[' | b'O')) => match (b, bytes.next().transpose()?) {
+                        (b'[', Some(c @ b'A'..=b'D')) => Key::Arrow(get_akey(c)),
+                        (b'[' | b'O', Some(b'H')) => Key::Home,
+                        (b'[' | b'O', Some(b'F')) => Key::End,
+                        (b'[', mut c @ Some(b'0'..=b'8')) => {
+                            let mut d = bytes.next().transpose()?;
+                            if (c, d) == (Some(b'1'), Some(b';')) {
+                                // 1 is the default modifier value. Therefore, <ESC>[1;5C is
+                                // equivalent to <ESC>[5C, etc.
+                                c = bytes.next().transpose()?;
+                                d = bytes.next().transpose()?;
+                            }
+                            match (c, d) {
+                                (Some(c), Some(b'~')) if c == b'1' || c == b'7' => Key::Home,
+                                (Some(c), Some(b'~')) if c == b'4' || c == b'8' => Key::End,
+                                (Some(b'3'), Some(b'~')) => Key::Delete,
+                                (Some(b'5'), Some(b'~')) => Key::PageUp,
+                                (Some(b'6'), Some(b'~')) => Key::PageDown,
+                                (Some(b'5'), Some(d @ b'A'..=b'D')) => Key::CtrlArrow(get_akey(d)),
+                                _ => Key::Escape,
+                            }
+                        }
+                        (b'O', Some(c @ b'a'..=b'd')) => Key::CtrlArrow(get_akey(c)),
+                        _ => Key::Escape,
+                    },
+                    _ => Key::Escape,
+                });
             }
         }
     }
@@ -694,7 +693,7 @@ impl Editor {
         for _ in 0..num_rows {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
-            if let Some(cx) = slice_find(&row.chars, query.as_bytes()) {
+            if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
                 // self.cursor.coff: Try to reset the column offset; if the match is after the
                 // offset, this will be updated in self.cursor.scroll() so that
                 // the result is visible
@@ -726,7 +725,7 @@ impl Editor {
                 set_status!(self, "{}", mode.status_msg());
             }
             self.refresh_screen()?;
-            let key = self.loop_until_keypress()?;
+            let key = self.loop_until_keypress(&mut sys::stdin()?)?;
             // TODO: Can we avoid using take()?
             self.prompt_mode = match self.prompt_mode.take() {
                 // process_keypress returns (should_quit, prompt_mode)
@@ -877,6 +876,8 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
 
     #[test]
@@ -1172,5 +1173,32 @@ mod tests {
         editor.process_keypress(&Key::End);
         assert_eq!(editor.cursor.x, 5);
         assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn loop_until_keypress() -> Result<(), Error> {
+        let mut editor = Editor::default();
+        let mut fake_stdin = Cursor::new(
+            b"abc\x1b[A\x1b[B\x1b[C\x1b[D\x1b[H\x1bOH\x1b[F\x1bOF\x1b[1;5C\x1b[5C\x1b[99",
+        );
+        for expected_key in [
+            Key::Char(b'a'),
+            Key::Char(b'b'),
+            Key::Char(b'c'),
+            Key::Arrow(AKey::Up),
+            Key::Arrow(AKey::Down),
+            Key::Arrow(AKey::Right),
+            Key::Arrow(AKey::Left),
+            Key::Home,
+            Key::Home,
+            Key::End,
+            Key::End,
+            Key::CtrlArrow(AKey::Right),
+            Key::CtrlArrow(AKey::Right),
+            Key::Escape,
+        ] {
+            assert_eq!(editor.loop_until_keypress(&mut fake_stdin)?, expected_key);
+        }
+        Ok(())
     }
 }

@@ -4,6 +4,7 @@
 //! systems.
 #![allow(unsafe_code)]
 
+use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 // On UNIX systems, termios represents the terminal mode.
@@ -84,6 +85,6 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
 }
 
 #[allow(clippy::unnecessary_wraps)] // Result required on other platforms
-pub fn stdin() -> std::io::Result<std::io::Stdin> { Ok(std::io::stdin()) }
+pub fn stdin() -> std::io::Result<impl BufRead> { Ok(std::io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

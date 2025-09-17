@@ -62,6 +62,6 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
 }
 
 #[allow(clippy::unnecessary_wraps)] // Result required on other platforms
-pub fn stdin() -> io::Result<io::Stdin> { Ok(io::stdin()) }
+pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }
