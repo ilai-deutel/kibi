@@ -2,29 +2,30 @@
 
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
-use std::iter::{self, repeat, successors};
+use std::iter::{self, repeat, successors as scsr};
 use std::{fs::File, path::Path, process::Command, thread, time::Instant};
 
 use crate::row::{HlState, Row};
 use crate::{Config, Error, ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal};
 
-const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
-const EXIT: u8 = ctrl_key(b'Q');
-const DELETE_BIS: u8 = ctrl_key(b'H');
-const REFRESH_SCREEN: u8 = ctrl_key(b'L');
-const SAVE: u8 = ctrl_key(b'S');
-const FIND: u8 = ctrl_key(b'F');
-const GOTO: u8 = ctrl_key(b'G');
-const CUT: u8 = ctrl_key(b'X');
-const COPY: u8 = ctrl_key(b'C');
-const PASTE: u8 = ctrl_key(b'V');
-const DUPLICATE: u8 = ctrl_key(b'D');
-const EXECUTE: u8 = ctrl_key(b'E');
-const REMOVE_LINE: u8 = ctrl_key(b'R');
+// const fn ctrl_key(key: u8) -> u8 { key & 0x1f }
+const EXIT: u8 = b'Q' & 0x1f; // Ctrl+Q
+const DELETE_BIS: u8 = b'H' & 0x1f; // Ctrl+H
+const REFRESH_SCREEN: u8 = b'L' & 0x1f; // Ctrl+L
+const SAVE: u8 = b'S' & 0x1f; // Ctrl+S
+const FIND: u8 = b'F' & 0x1f; // Ctrl+F
+const GOTO: u8 = b'G' & 0x1f; // Ctrl+G
+const CUT: u8 = b'X' & 0x1f; // Ctrl+X
+const COPY: u8 = b'C' & 0x1f; // Ctrl+C
+const PASTE: u8 = b'V' & 0x1f; // Ctrl+V
+const DUPLICATE: u8 = b'D' & 0x1f; // Ctrl+D
+const EXECUTE: u8 = b'E' & 0x1f; // Ctrl+E
+const REMOVE_LINE: u8 = b'R' & 0x1f; // Ctrl+R
+const TOGGLE_COMMENT: u8 = 31; // Ctrl+/ typically sends ASCII 31 (Unit Separator)
 const BACKSPACE: u8 = 127;
 
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
-                            ^C copy | ^X cut | ^V paste";
+                            ^C copy | ^X cut | ^V paste | ^/ comment";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{} written to {}", file_size,
@@ -309,8 +310,7 @@ impl Editor {
         // The maximum number of digits to use for the line number is the number of
         // digits of the last line number. This is equal to the number of times
         // we can divide this number by ten, computed below using `successors`.
-        let n_digits =
-            successors(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
+        let n_digits = scsr(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
         let show_line_num = self.config.show_line_num && n_digits + 2 < self.window_width / 4;
         self.ln_pad = if show_line_num { n_digits + 2 } else { 0 };
         self.screen_cols = self.window_width.saturating_sub(self.ln_pad);
@@ -428,21 +428,14 @@ impl Editor {
         }
     }
 
-    fn duplicate_current_row(&mut self) {
-        self.copy_current_row();
-        self.paste_current_row();
-    }
+    fn duplicate_current_row(&mut self) { self.copy_current_row(); self.paste_current_row(); }
 
     fn copy_current_row(&mut self) {
-        if let Some(row) = self.current_row() {
-            self.copied_row = row.chars.clone();
-        }
+        if let Some(row) = self.current_row() { self.copied_row = row.chars.clone(); }
     }
 
     fn paste_current_row(&mut self) {
-        if self.copied_row.is_empty() {
-            return;
-        }
+        if self.copied_row.is_empty() { return; }
         self.n_bytes += self.copied_row.len() as u64;
         if self.cursor.y == self.rows.len() {
             self.rows.push(Row::new(self.copied_row.clone()));
@@ -453,6 +446,42 @@ impl Editor {
         (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
         // The line number has changed
         self.update_screen_cols();
+    }
+
+    /// Toggle comment on the current line using the appropriate comment symbol
+    /// from the syntax configuration. If the line is already commented,
+    /// uncomment it. If not, add a comment symbol at the beginning.
+    fn toggle_comment(&mut self) {
+        // Get the first single-line comment start symbol from syntax config
+        let Some(sym) = self.syntax.sl_comment_start.first() else { return };
+        let row = &mut self.rows[self.cursor.y];
+        let cb = sym.as_bytes();
+        // Find the first non-whitespace character position
+        let pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
+
+        // Check if the line is already commented
+        if row.chars.get(pos..pos + cb.len()) == Some(cb) {
+            // Remove the comment
+            row.chars.drain(pos..pos + cb.len());
+            if row.chars.get(pos) == Some(&b' ') { row.chars.remove(pos); }
+            self.n_bytes = self.n_bytes.saturating_sub(cb.len() as u64);
+            // Adjust cursor position if it's after the removed comment
+            if self.cursor.x > pos {
+                self.cursor.x = self.cursor.x.saturating_sub(cb.len() + 1).min(row.chars.len());
+            }
+        } else {
+            // Add comment
+            let cmt = [cb, b" "].concat();
+            // Insert comment at the first non-whitespace position
+            row.chars.splice(pos..pos, cmt.iter().copied());
+            self.n_bytes += cmt.len() as u64;
+            if self.cursor.x >= pos { self.cursor.x += cmt.len(); }
+        }
+
+        self.update_row(self.cursor.y, false);
+        // Update cursor position to ensure it's valid after row update
+        self.update_cursor_x_position();
+        self.dirty = true;
     }
 
     /// Try to load a file. If found, load the rows and update the render and
@@ -675,6 +704,7 @@ impl Editor {
             }
             Key::Char(COPY) => self.copy_current_row(),
             Key::Char(PASTE) => self.paste_current_row(),
+            Key::Char(TOGGLE_COMMENT) => self.toggle_comment(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
@@ -1172,5 +1202,55 @@ mod tests {
         editor.process_keypress(&Key::End);
         assert_eq!(editor.cursor.x, 5);
         assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[test]
+    fn editor_toggle_comment() {
+        let mut editor = Editor::default();
+
+        // Set up Python syntax configuration for testing
+        editor.syntax.sl_comment_start = vec!["#".to_owned()];
+
+        for b in b"def hello():\n    print(\"Hello\")\n    return True" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // Test commenting a line
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Test uncommenting the same line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Test commenting an indented line
+        editor.cursor.y = 1; // Second line (indented)
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    # print(\"Hello\")");
+
+        // Test uncommenting the indented line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    print(\"Hello\")");
+
+        // Test the bug case: cursor at end of line during toggle
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Comment
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Now uncomment with cursor still at end - this should not panic
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end again
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Uncomment
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Verify cursor position is valid
+        assert!(editor.cursor.x <= editor.rows[0].chars.len());
     }
 }
