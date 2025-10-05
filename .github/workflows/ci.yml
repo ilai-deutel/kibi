@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - "*"
   pull_request:
     branches:
       - master
@@ -15,6 +15,19 @@ jobs:
   build_and_test:
     strategy:
       matrix:
+        toolchain:
+          - stable
+          - "1.80"  # MSRV
+          - nightly
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - i686-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
+          - i686-pc-windows-msvc
+          - wasm32-wasip1
         include:
           # Linux
           - os: ubuntu-latest
@@ -40,89 +53,39 @@ jobs:
           - os: ubuntu-latest
             target: wasm32-wasip1
 
-          # MSRV (Linux)
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            toolchain: "1.80"
-          # MSRV (MacOS)
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            toolchain: "1.80"
-          # MSRV (Windows)
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-            toolchain: "1.80"
-          # MSRV (WASI)
-          - os: ubuntu-latest
-            target: wasm32-wasi
-            toolchain: "1.80"
-
     runs-on: ${{ matrix.os }}
 
-    env:
-      RUSTFLAGS: "-D warnings"
-
     steps:
-      - uses: actions/checkout@v5
-      - name: Install gcc-multilib
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Install gcc-multilib (i686)
         if: matrix.target == 'i686-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-multilib
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain || 'stable' }}
-          targets: ${{ matrix.target }}
+      - name: Install Rust ${{ matrix.toolchain }} toolchain
+        run: |
+          rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal
+          rustup default ${{ matrix.toolchain }}
+          rustc +${{ matrix.toolchain }} --version --verbose
       - name: Build
         run: cargo build
+        env:
+          RUSTFLAGS: -D warnings -C instrument-coverage
       - name: Run tests
         run: cargo test --verbose --all-features --no-fail-fast
-
-  build_and_test_nightly_with_coverage:
-    strategy:
-      matrix:
-        include:
-          # Nightly (Linux)
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          # Nightly (MacOS)
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          # Nightly (Windows)
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
-          # Nightly (WASI)
-          - os: ubuntu-latest
-            target: wasm32-wasip1
-
-    runs-on: ${{ matrix.os }}
-
-    env:
-      RUSTFLAGS: "-D warnings -C instrument-coverage"
-
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Rust toolchain
-        run: |
-          rustup toolchain install nightly --component llvm-tools-preview --allow-downgrade
-          rustup override set nightly
-          rustup target add --toolchain nightly ${{ matrix.target }}
-      - name: Build
-        run: cargo build
-      - name: Run tests with coverage instrumentation
-        run: cargo test --verbose --all-features --no-fail-fast
         env:
-          LLVM_PROFILE_FILE: "kibi-%p-%m.profraw"
+          LLVM_PROFILE_FILE: kibi-%p-%m.profraw
       - name: Collect code coverage results
+        if: matrix.toolchain != '1.80'
         run: |
-          cargo install grcov
+          cargo install grcov --no-default-features
           grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
-        uses: codecov/codecov-action@v5
+        if: matrix.toolchain != '1.80'
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7  # v5.5.1
         with:
           files: lcov.info
-          flags: ${{ matrix.target }}
+          flags: ${{ matrix.target }}-${{ matrix.toolchain }}
           fail_ci_if_error: false
           verbose: true
         env:
@@ -155,33 +118,32 @@ jobs:
       checks: write
 
     steps:
-      - uses: actions/checkout@v5
-      - name: Install nightly with clippy and rustfmt
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          targets: ${{ matrix.target }}
-          components: rustfmt, clippy
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Install Rust nightly with clippy and rustfmt
+        run: |
+          rustup toolchain install nightly --target ${{ matrix.target }} --component rustfmt --component clippy --profile minimal --allow-downgrade
+          rustup default nightly
+          rustc +nightly --version --verbose
       - name: Format
-        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
         run: cargo fmt --check --all
       - name: Set up cargo-action-fmt
-        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
-        uses: olix0r/cargo-action-fmt/setup@v2
+        if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
+        uses: olix0r/cargo-action-fmt/setup@9269f3aa1ff01775d95efc97037e2cbdb41d9684 # v2
       - name: Check
-        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
         run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Check
-        if: ${{ matrix.target == 'wasm32-wasip1' }}
+        if: matrix.target == 'wasm32-wasip1'
         run: cargo check --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
       - name: Check
-        if: ${{ (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1' }}
+        if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
         run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
       - name: Clippy
-        if: ${{ github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu' }}
+        if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Clippy
-        if: ${{ matrix.target == 'wasm32-wasip1' }}
+        if: matrix.target == 'wasm32-wasip1'
         run: cargo clippy --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
       - name: Clippy
-        if: ${{ (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1' }}
+        if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
