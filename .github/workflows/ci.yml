@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - "*"
+      - "master"
   pull_request:
     branches:
       - master
@@ -105,7 +105,7 @@ jobs:
 
           # Windows
           - os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
 
           # WASI
           - os: ubuntu-latest
@@ -129,15 +129,15 @@ jobs:
       - name: Set up cargo-action-fmt
         if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
         uses: olix0r/cargo-action-fmt/setup@9269f3aa1ff01775d95efc97037e2cbdb41d9684 # v2
-      - name: Check
+      - name: Check (Linux PRs)
         if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
-      - name: Check
+        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Check (WASI)
         if: matrix.target == 'wasm32-wasip1'
-        run: cargo check --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
-      - name: Check
+        run: cargo check --verbose --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
+      - name: Check (other)
         if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
-        run: cargo check --all-features --all-targets --workspace --target ${{ matrix.target }}
+        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }}
       - name: Clippy
         if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
