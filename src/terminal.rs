@@ -12,11 +12,10 @@ use crate::{Error, ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CU
 /// It is used as an alternative method if `sys::get_window_size()` returns an
 /// error.
 pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
-    let mut stdin = sys::stdin()?;
     print!("{REPOSITION_CURSOR_END}{DEVICE_STATUS_REPORT}");
     io::stdout().flush()?;
     let mut prefix_buffer = [0u8; 2];
-    stdin.read_exact(&mut prefix_buffer)?;
+    sys::stdin()?.read_exact(&mut prefix_buffer)?;
     if prefix_buffer != [b'\x1b', b'['] {
         return Err(Error::CursorPosition);
     }
@@ -27,7 +26,7 @@ pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
 /// (pre-stop byte).
 fn read_value_until<T: std::str::FromStr>(stop_byte: u8) -> Result<T, Error> {
     let mut buf = Vec::new();
-    io::stdin().lock().read_until(stop_byte, &mut buf)?;
+    sys::stdin()?.read_until(stop_byte, &mut buf)?;
     // Check that we have reached `stop_byte`, not EOF.
     buf.pop().filter(|u| *u == stop_byte).ok_or(Error::CursorPosition)?;
     std::str::from_utf8(&buf).or(Err(Error::CursorPosition))?.parse().or(Err(Error::CursorPosition))
