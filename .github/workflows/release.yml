@@ -1,0 +1,177 @@
+name: release
+
+on:
+  push:
+    tags:
+    - 'v[0-9]+\.[0-9]+\.[0-9]+'
+    - release-test
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: &MATRIX
+          # Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+
+          # MacOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+    outputs:
+      hash-x86_64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-gnu }}
+      hash-x86_64-unknown-linux-musl: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-musl }}
+      hash-i686-unknown-linux-gnu: ${{ steps.hash.outputs.hash-i686-unknown-linux-gnu }}
+      hash-x86_64-apple-darwin: ${{ steps.hash-macos.outputs.hash-x86_64-apple-darwin }}
+      hash-x86_64-pc-windows-gnu: ${{ steps.hash.outputs.hash-x86_64-pc-windows-gnu }}
+      hash-x86_64-pc-windows-msvc: ${{ steps.hash.outputs.hash-x86_64-pc-windows-msvc }}
+      hash-i686-pc-windows-msvc: ${{ steps.hash.outputs.hash-i686-pc-windows-msvc }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+      - name: Auto-convert CRLF line endings
+        run: git config --global core.autocrlf input
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install upx-ucl
+          if [[ ${{ matrix.target }} == i686-* ]]; then
+            sudo apt-get install gcc-multilib
+          fi
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install upx
+      - name: Install Rust stable toolchain
+        run: |
+          rustup toolchain install stable --target ${{ matrix.target }} --profile minimal
+          rustup default stable
+          rustc +stable --version --verbose
+      - name:  Build binary
+        run: cargo build --target ${{ matrix.target }} --release --verbose
+        env:
+          RUSTFLAGS: -D warnings
+      - name: Set binary path variable (Unix)
+        if: matrix.os != 'windows-latest'
+        run: echo "BINARY_PATH=target/${{ matrix.target }}/release/kibi" >> $GITHUB_ENV
+      - name: Set binary path variable (Windows)
+        if: matrix.os == 'windows-latest'
+        run: echo "BINARY_PATH=target/${{ matrix.target }}/release/kibi.exe" >> $GITHUB_ENV
+      - name: Compress the binary
+        if: matrix.os != 'macos-latest'
+        run: upx --best --lzma "$BINARY_PATH"
+      - name: Create package directory
+        run: |
+          ARCHIVE_DIR="$(mktemp --directory)"
+          cp -R \
+            "$BINARY_PATH" \
+            CHANGELOG.md \
+            COPYRIGHT \
+            LICENSE-APACHE \
+            LICENSE-MIT \
+            README.md \
+            config_example.ini \
+            syntax.d \
+            "$ARCHIVE_DIR"
+          echo "ARCHIVE_DIR=$ARCHIVE_DIR" >> $GITHUB_ENV
+      - name: Create release asset (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          ASSET_PATH=kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          tar czvf "$ASSET_PATH" -C "$ARCHIVE_DIR" .
+          echo "ASSET_PATH=$ASSET_PATH" >> $GITHUB_ENV
+      - name: Create release asset (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          ASSET_PATH=kibi-${{ github.ref_name }}-${{ matrix.target }}.zip
+          7z a "$ASSET_PATH" "$ARCHIVE_DIR"
+          echo "ASSET_PATH=$ASSET_PATH" >> $GITHUB_ENV
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: ${{ env.ASSET_PATH }}
+          path: ${{ env.ASSET_PATH }}
+          if-no-files-found: error
+      - name: Generate subject (Linux, Windows)
+        if: matrix.os != 'macos-latest'
+        id: hash
+        run: |
+          HASH=$(sha256sum -t "$ASSET_PATH" | base64 -w0)
+          echo "hash-${{ matrix.target }}=$HASH" >> "${GITHUB_OUTPUT}"
+      - name: Generate subject (MacOS)
+        if: matrix.os == 'macos-latest'
+        id: hash-macos
+        run: |
+          HASH=$(sha256sum -t "$ASSET_PATH" | base64)
+          echo "hash-${{ matrix.target }}=$HASH" >> "${GITHUB_OUTPUT}"
+
+  provenance:
+    needs:
+      - build
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: *MATRIX
+    # Can't use commit hash: https://github.com/slsa-framework/slsa-verifier/issues/12
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build.outputs[format('hash-{0}', matrix.target)] }}"
+      upload-assets: false
+
+  create-release:
+    needs:
+      - build
+      - provenance
+    permissions:
+      actions: read
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Download artifacts
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
+        with:
+          path: /tmp/artifacts
+          merge-multiple: true
+      # TODO: Check version matches with Cargo.toml
+      - name: Create release
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title ${{ github.ref_name }} \
+            --draft \
+            --verify-tag \
+            --fail-on-no-commits \
+            /tmp/artifacts/*
+        env:
+          GH_TOKEN: ${{ github.token }}
