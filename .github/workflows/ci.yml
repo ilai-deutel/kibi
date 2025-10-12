@@ -20,7 +20,7 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - "1.80" # MSRV
+          - "1.85" # MSRV
           - nightly
         target:
           - x86_64-unknown-linux-gnu
@@ -88,12 +88,10 @@ jobs:
         env:
           LLVM_PROFILE_FILE: kibi-%p-%m.profraw
       - name: Collect code coverage results
-        if: matrix.toolchain != '1.80'
         run: |
           cargo install grcov --no-default-features
           grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
-        if: matrix.toolchain != '1.80'
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           files: lcov.info

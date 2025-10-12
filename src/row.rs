@@ -3,7 +3,7 @@
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered
 //! string and the syntax highlighting information.
 
-use std::{fmt::Write, iter::repeat};
+use std::{fmt::Write, iter::repeat_n};
 
 use unicode_width::UnicodeWidthChar;
 
@@ -64,8 +64,8 @@ impl Row {
             // The number of rendered characters
             let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
             self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
-            self.cx2rx.extend(repeat(rx).take(c.len_utf8()));
-            self.rx2cx.extend(repeat(cx).take(n_rend_chars));
+            self.cx2rx.extend(repeat_n(rx, c.len_utf8()));
+            self.rx2cx.extend(repeat_n(cx, n_rend_chars));
             (rx, cx) = (rx + n_rend_chars, cx + c.len_utf8());
         }
         let (..) = (self.cx2rx.push(rx), self.rx2cx.push(cx));
@@ -95,7 +95,7 @@ impl Row {
             let find_str = |s: &str| line.get(i..(i + s.len())).is_some_and(|r| r.eq(s.as_bytes()));
 
             if hl_state == HlState::Normal && syntax.sl_comment_start.iter().any(|s| find_str(s)) {
-                self.hl.extend(repeat(HlType::Comment).take(line.len() - i));
+                self.hl.extend(repeat_n(HlType::Comment, line.len() - i));
                 continue;
             }
 
@@ -109,7 +109,7 @@ impl Row {
                     if hl_state == *mstate {
                         if find_str(end) {
                             // Highlight the remaining symbols of the multi line comment end
-                            self.hl.extend(repeat(mtype).take(end.len()));
+                            self.hl.extend(repeat_n(mtype, end.len()));
                             hl_state = HlState::Normal;
                         } else {
                             self.hl.push(*mtype);
@@ -117,7 +117,7 @@ impl Row {
                         continue 'syntax_loop;
                     } else if hl_state == HlState::Normal && find_str(start) {
                         // Highlight the remaining symbols of the multi line comment start
-                        self.hl.extend(repeat(mtype).take(start.len()));
+                        self.hl.extend(repeat_n(mtype, start.len()));
                         hl_state = *mstate;
                         continue 'syntax_loop;
                     }
@@ -155,10 +155,10 @@ impl Row {
                 // This filters makes sure that names such as "in_comment" are not partially
                 // highlighted (even though "in" is a keyword in rust)
                 // The argument is the keyword that is matched at `i`.
-                let s_filter = |kw: &str| line.get(i + kw.len()).map_or(true, |c| is_sep(*c));
+                let s_filter = |kw: &str| line.get(i + kw.len()).is_none_or(|c| is_sep(*c));
                 for (keyword_highlight_type, kws) in &syntax.keywords {
                     for keyword in kws.iter().filter(|kw| find_str(kw) && s_filter(kw)) {
-                        self.hl.extend(repeat(*keyword_highlight_type).take(keyword.len()));
+                        self.hl.extend(repeat_n(*keyword_highlight_type, keyword.len()));
                     }
                 }
             }

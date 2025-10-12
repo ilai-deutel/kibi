@@ -2,7 +2,7 @@
 //!
 //! UNIX-specific structs and functions. Will be imported as `sys` on UNIX
 //! systems.
-#![allow(unsafe_code)]
+#![expect(unsafe_code)]
 
 use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
@@ -42,14 +42,14 @@ static WSC: AtomicBool = AtomicBool::new(false);
 /// Handle a change in window size.
 extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.store(true, Relaxed) }
 
-#[allow(clippy::fn_to_numeric_cast_any)]
+#[expect(clippy::fn_to_numeric_cast_any)]
 /// Register a signal handler that sets a global variable when the window size
 /// changes. After calling this function, use `has_window_size_changed` to query
 /// the global variable.
 pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
     unsafe {
         let mut maybe_sa = std::mem::MaybeUninit::<sigaction>::uninit();
-        cerr(libc::sigemptyset(&mut (*maybe_sa.as_mut_ptr()).sa_mask))?;
+        cerr(libc::sigemptyset(&raw mut (*maybe_sa.as_mut_ptr()).sa_mask))?;
         // We could use sa_handler here, however, sigaction defined in libc does not
         // have sa_handler field, so we use sa_sigaction instead.
         (*maybe_sa.as_mut_ptr()).sa_flags = SA_SIGINFO;
@@ -76,7 +76,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     cerr(unsafe { libc::tcgetattr(STDIN_FILENO, maybe_term.as_mut_ptr()) })?;
     let orig_term = unsafe { maybe_term.assume_init() };
     let mut term = orig_term;
-    unsafe { libc::cfmakeraw(&mut term) };
+    unsafe { libc::cfmakeraw(&raw mut term) };
     // First sets the minimum number of characters for non-canonical reads
     // Second sets the timeout in deciseconds for non-canonical reads
     (term.c_cc[VMIN], term.c_cc[VTIME]) = (0, 1);
@@ -84,7 +84,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok(orig_term)
 }
 
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn stdin() -> std::io::Result<impl BufRead> { Ok(std::io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

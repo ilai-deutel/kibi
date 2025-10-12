@@ -103,8 +103,9 @@ pub fn parse_values<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<Vec<T>
 #[cfg(test)]
 #[cfg(not(target_family = "wasm"))] // No filesystem on wasm
 mod tests {
+    use std::collections::HashMap;
     use std::ffi::{OsStr, OsString};
-    #[cfg(unix)] use std::sync::{LazyLock, Mutex};
+    use std::sync::{LazyLock, Mutex, MutexGuard};
     use std::{env, fs};
 
     use tempfile::TempDir;
@@ -161,7 +162,7 @@ mod tests {
         match ini_processing_helper(ini_content, kv_fn) {
             Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(_, 6, s)) if s == "No '='" => (),
-            Err(e) => panic!("Unexpected error {:?}", e),
+            Err(e) => panic!("Unexpected error {e:?}"),
         }
     }
 
@@ -179,7 +180,7 @@ mod tests {
         match ini_processing_helper(ini_content, kv_fn) {
             Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(_, 3, s)) if s == "test error" => (),
-            Err(e) => panic!("Unexpected error {:?}", e),
+            Err(e) => panic!("Unexpected error {e:?}"),
         }
     }
 
@@ -191,36 +192,60 @@ mod tests {
         match process_ini_file(&tmp_path, kv_fn) {
             Ok(()) => panic!("process_ini_file should return an error"),
             Err(Error::Config(path, 0, _)) if path == tmp_path => (),
-            Err(e) => panic!("Unexpected error {:?}", e),
+            Err(e) => panic!("Unexpected error {e:?}"),
         }
     }
 
-    struct TempEnvVar {
-        key: OsString,
-        orig_value: Option<OsString>,
+    /// Lock for modifying environment variables.
+    static ENV_LOCK: LazyLock<Mutex<()>> = LazyLock::new(Mutex::default);
+
+    struct TempEnvVars<'a> {
+        original_values: HashMap<&'static OsStr, Option<OsString>>,
+        _lock: MutexGuard<'a, ()>,
     }
 
-    impl TempEnvVar {
-        fn new(key: &OsStr, value: Option<&OsStr>) -> Self {
-            let orig_value = env::var_os(key);
-            match value {
-                Some(value) => env::set_var(key, value),
-                None => env::remove_var(key),
+    impl TempEnvVars<'_> {
+        fn new() -> Self {
+            Self {
+                original_values: HashMap::new(),
+                _lock: ENV_LOCK.lock().expect("Could not acquire lock."),
             }
-            Self { key: key.into(), orig_value }
+        }
+
+        fn set(&mut self, key: &'static OsStr, value: Option<&OsStr>) {
+            let original_value = env::var_os(key);
+            assert!(self.original_values.insert(key, original_value).is_none());
+            // SAFETY: Only one test at a time may set or remove an environment variable, as
+            // enforced by ENV_LOCK.
+            #[expect(unsafe_code)]
+            unsafe {
+                match value {
+                    Some(value) => env::set_var(key, value),
+                    None => env::remove_var(key),
+                }
+            }
         }
     }
 
-    impl Drop for TempEnvVar {
+    impl Drop for TempEnvVars<'_> {
         fn drop(&mut self) {
-            match &self.orig_value {
-                Some(orig_value) => env::set_var(&self.key, orig_value),
-                None => env::remove_var(&self.key),
+            // SAFETY: Only one test at a time may set or remove an environment variable, as
+            // enforced by ENV_LOCK.
+            #[expect(unsafe_code)]
+            unsafe {
+                for (key, original_value) in &self.original_values {
+                    match original_value {
+                        Some(original_value) => env::set_var(key, original_value),
+                        None => env::remove_var(key),
+                    }
+                }
             }
         }
     }
 
-    fn test_config_dir(env_key: &OsStr, env_val: &OsStr, kibi_config_home: &Path) {
+    fn test_config_dir(
+        env_key: &'static OsStr, env_val: &OsStr, kibi_config_home: &Path, vars: &mut TempEnvVars,
+    ) {
         let custom_config = Config { tab_stop: 99, quit_times: 50, ..Config::default() };
         let ini_content = format!(
             "# Configuration file
@@ -237,51 +262,50 @@ mod tests {
         let config = Config::load().expect("Could not load configuration.");
         assert_ne!(config, custom_config);
 
-        let config = {
-            let _temp_env_var = TempEnvVar::new(env_key, Some(env_val));
-            let config_res = Config::load();
-            config_res.expect("Could not load configuration.")
-        };
+        vars.set(env_key, Some(env_val));
+        let config = Config::load().expect("Could not load configuration.");
 
         assert_eq!(config, custom_config);
     }
 
     #[cfg(unix)]
-    static XDG_CONFIG_FLAG_LOCK: LazyLock<Mutex<()>> = LazyLock::new(Mutex::default);
-
-    #[cfg(unix)]
     #[test]
     fn xdg_config_home() {
-        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
+        let mut vars = TempEnvVars::new();
         let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
-            "XDG_CONFIG_HOME".as_ref(),
+            OsStr::new("XDG_CONFIG_HOME"),
             tmp_config_home.path().as_os_str(),
             &tmp_config_home.path().join("kibi"),
+            &mut vars,
         );
     }
 
+    #[expect(clippy::significant_drop_tightening)] // Lock is needed until the end
     #[cfg(unix)]
     #[test]
     fn config_home() {
-        let _lock = XDG_CONFIG_FLAG_LOCK.lock();
-        let _temp_env_var = TempEnvVar::new(OsStr::new("XDG_CONFIG_HOME"), None);
+        let mut vars = TempEnvVars::new();
+        vars.set(OsStr::new("XDG_CONFIG_HOME"), None);
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
-            "HOME".as_ref(),
+            OsStr::new("HOME"),
             tmp_home.path().as_os_str(),
             &tmp_home.path().join(".config/kibi"),
+            &mut vars,
         );
     }
 
     #[cfg(windows)]
     #[test]
     fn app_data() {
+        let mut vars = TempEnvVars::new();
         let tmp_home = TempDir::new().expect("Could not create temporary directory");
         test_config_dir(
-            "APPDATA".as_ref(),
+            OsStr::new("APPDATA"),
             tmp_home.path().as_os_str(),
             &tmp_home.path().join("Kibi"),
+            &mut vars,
         );
     }
 }
