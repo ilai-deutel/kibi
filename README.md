@@ -8,8 +8,9 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ilai-deutel/kibi
+[![REUSE status](https://api.reuse.software/badge/github.com/ilai-deutel/kibi)](https://api.reuse.software/info/github.com/ilai-deutel/kibi)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-38-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
