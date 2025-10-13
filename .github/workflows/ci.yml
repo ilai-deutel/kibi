@@ -11,13 +11,16 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+
 jobs:
   build_and_test:
     strategy:
       matrix:
         toolchain:
           - stable
-          - "1.80"  # MSRV
+          - "1.80" # MSRV
           - nightly
         target:
           - x86_64-unknown-linux-gnu
@@ -55,8 +58,17 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          persist-credentials: false
       - name: Install gcc-multilib (i686)
         if: matrix.target == 'i686-unknown-linux-gnu'
         run: |
@@ -82,7 +94,7 @@ jobs:
           grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
       - name: Upload code coverage results
         if: matrix.toolchain != '1.80'
-        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7  # v5.5.1
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           files: lcov.info
           flags: ${{ matrix.target }}-${{ matrix.toolchain }}
@@ -119,7 +131,13 @@ jobs:
       checks: write
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          persist-credentials: false
       - name: Install Rust nightly with clippy and rustfmt
         run: |
           rustup toolchain install nightly --target ${{ matrix.target }} --component rustfmt --component clippy --profile minimal --allow-downgrade
