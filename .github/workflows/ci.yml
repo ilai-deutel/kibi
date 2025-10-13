@@ -93,6 +93,7 @@ jobs:
 
   static_checks:
     strategy:
+      fail-fast: false
       matrix:
         include:
           # Unix
@@ -134,7 +135,7 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Check (WASI)
         if: matrix.target == 'wasm32-wasip1'
-        run: cargo check --verbose --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
+        run: cargo check --verbose --all-features --all-targets --target ${{ matrix.target }}
       - name: Check (other)
         if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
         run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }}
@@ -143,7 +144,7 @@ jobs:
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
       - name: Clippy
         if: matrix.target == 'wasm32-wasip1'
-        run: cargo clippy --all-features --all-targets --workspace --exclude kibi-fuzz --target ${{ matrix.target }}
+        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
       - name: Clippy
         if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
         run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}

@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use anstream::println;
 use glob::glob;
 use tokei::LanguageType;
 
