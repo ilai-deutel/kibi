@@ -1,6 +1,0 @@
-{
-    "workbench.iconTheme": "theia-file-icons",
-    "rust.rustfmt_path": "${env.HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/rustfmt",
-    // Cannot format on save until this is fixed: https://github.com/rust-lang/rls-vscode/issues/438
-    "editor.formatOnSave": false
-}
