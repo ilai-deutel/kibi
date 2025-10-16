@@ -23,40 +23,39 @@ jobs:
           - "1.85" # MSRV
           - nightly
         target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-          - i686-unknown-linux-gnu
-          - x86_64-apple-darwin
-          - x86_64-pc-windows-gnu
-          - x86_64-pc-windows-msvc
-          - i686-pc-windows-msvc
-          - wasm32-wasip1
+          # Tier 1 platforms
+          - aarch64-apple-darwin       # ARM64 macOS (11.0+, Big Sur+)
+          - aarch64-pc-windows-msvc    # ARM64 Windows MSVC
+          - aarch64-unknown-linux-gnu  # ARM64 Linux (kernel 4.1+, glibc 2.17+)
+          - i686-pc-windows-msvc       # 32-bit MSVC (Windows 10+, Windows Server 2016+, Pentium 4) 1 2
+          - i686-unknown-linux-gnu     # 32-bit Linux (kernel 3.2+, glibc 2.17+, Pentium 4) 1
+          - x86_64-pc-windows-gnu      # 64-bit MinGW (Windows 10+, Windows Server 2016+)
+          - x86_64-pc-windows-msvc     # 64-bit MSVC (Windows 10+, Windows Server 2016+)
+          - x86_64-unknown-linux-gnu   # 64-bit Linux (kernel 3.2+, glibc 2.17+)
+          # Tier 2 platforms
+          - x86_64-unknown-linux-musl  # 64-bit Linux with musl 1.2.3
+          - x86_64-apple-darwin        # 64-bit macOS (10.12+, Sierra+)
+          - wasm32-wasip1              # WebAssembly with WASIp1
         include:
-          # Linux
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-          - os: ubuntu-latest
-            target: i686-unknown-linux-gnu
-
           # MacOS
+          - os: macos-latest
+            target: aarch64-apple-darwin
           - os: macos-latest
             target: x86_64-apple-darwin
 
           # Windows
           - os: windows-latest
+            target: aarch64-pc-windows-msvc
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+          - os: windows-latest
             target: x86_64-pc-windows-gnu
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          - os: windows-latest
-            target: i686-pc-windows-msvc
 
-          # WASI
-          - os: ubuntu-latest
-            target: wasm32-wasip1
+          # Default: ubuntu-latest
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
 
     permissions:
       contents: read
@@ -79,6 +78,10 @@ jobs:
           rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal
           rustup default ${{ matrix.toolchain }}
           rustc +${{ matrix.toolchain }} --version --verbose
+      - name: Setup cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
+        with:
+          prefix-key: rust-${{ matrix.toolchain }}
       - name: Build
         run: cargo build
         env:
@@ -141,26 +144,24 @@ jobs:
           rustup toolchain install nightly --target ${{ matrix.target }} --component rustfmt --component clippy --profile minimal --allow-downgrade
           rustup default nightly
           rustc +nightly --version --verbose
+      - name: Setup cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
+        with:
+          prefix-key: rust-nightly
       - name: Format
         run: cargo fmt --check --all
       - name: Set up cargo-action-fmt
         if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
         uses: olix0r/cargo-action-fmt/setup@9269f3aa1ff01775d95efc97037e2cbdb41d9684 # v2
-      - name: Check (Linux PRs)
-        if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
+      - name: Check (Linux, MacOS, Windows)
+        if: matrix.target != 'wasm32-wasip1'
+        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }}
       - name: Check (WASI)
         if: matrix.target == 'wasm32-wasip1'
         run: cargo check --verbose --all-features --all-targets --target ${{ matrix.target }}
-      - name: Check (other)
-        if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
-        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }}
-      - name: Clippy
-        if: github.event_name == 'pull_request' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }} -q --message-format=json | cargo-action-fmt
-      - name: Clippy
+      - name: Clippy (Linux, MacOS, Windows)
+        if: matrix.target != 'wasm32-wasip1'
+        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
+      - name: Clippy (WASI)
         if: matrix.target == 'wasm32-wasip1'
         run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
-      - name: Clippy
-        if: (github.event_name != 'pull_request' || matrix.target != 'x86_64-unknown-linux-gnu') && matrix.target != 'wasm32-wasip1'
-        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
