@@ -1,4 +1,6 @@
-#![allow(clippy::wildcard_imports)]
+// "False positive, see https://github.com/rust-lang/rust-clippy/issues/13358#issuecomment-2767079754"
+#![allow(unfulfilled_lint_expectations)]
+#![expect(clippy::wildcard_imports)]
 
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
@@ -68,7 +70,7 @@ struct CursorState {
 }
 
 impl CursorState {
-    fn move_to_next_line(&mut self) { (self.x, self.y) = (0, self.y + 1); }
+    const fn move_to_next_line(&mut self) { (self.x, self.y) = (0, self.y + 1); }
 
     /// Scroll the terminal window vertically and horizontally (i.e. adjusting
     /// the row offset and the column offset) so that the cursor can be
@@ -174,7 +176,6 @@ impl Editor {
     ///
     /// Will return `Err` if an error occurs when enabling termios raw mode,
     /// creating the signal hook or when obtaining the terminal window size.
-    #[allow(clippy::field_reassign_with_default)] // False positive : https://github.com/rust-lang/rust-clippy/issues/6312
     pub fn new(config: Config) -> Result<Self, Error> {
         sys::register_winsize_change_signal_handler()?;
         let mut editor = Self::default();
@@ -475,8 +476,8 @@ impl Editor {
         // row to `self.rows`. Unfortunately, BufReader::split doesn't yield an
         // empty Vec in this case, so we need to check the last byte directly.
         file.seek(io::SeekFrom::End(0))?;
-        #[allow(clippy::unbuffered_bytes)]
-        if file.bytes().next().transpose()?.map_or(true, |b| b == b'\n') {
+        #[expect(clippy::unbuffered_bytes)]
+        if file.bytes().next().transpose()?.is_none_or(|b| b == b'\n') {
             self.rows.push(Row::new(Vec::new()));
         }
         self.update_all_rows();
@@ -685,7 +686,6 @@ impl Editor {
     /// key that is pressed. `last_match` is the last row that was matched,
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
-    #[allow(clippy::trivially_copy_pass_by_ref)] // This Clippy recommendation is only relevant on 32 bit platforms.
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
         let num_rows = self.rows.len();
         let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
@@ -740,7 +740,7 @@ impl Editor {
 }
 
 impl Drop for Editor {
-    #[allow(clippy::expect_used)]
+    #[expect(clippy::expect_used)]
     /// When the editor is dropped, restore the original terminal mode.
     fn drop(&mut self) {
         if let Some(orig_term_mode) = self.orig_term_mode.take() {
@@ -793,7 +793,7 @@ impl PromptMode {
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
-                        #[allow(clippy::wildcard_enum_match_arm)]
+                        #[expect(clippy::wildcard_enum_match_arm)]
                         let (last_match, forward) = match key {
                             Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
                                 (last_match, true),
@@ -862,7 +862,7 @@ enum PromptState {
 
 /// Process a prompt keypress event and return the new state for the prompt.
 fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
-    #[allow(clippy::wildcard_enum_match_arm)]
+    #[expect(clippy::wildcard_enum_match_arm)]
     match key {
         Key::Char(b'\r') => return PromptState::Completed(buffer),
         Key::Escape | Key::Char(EXIT) => return PromptState::Cancelled,

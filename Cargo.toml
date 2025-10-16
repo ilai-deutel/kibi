@@ -1,20 +1,28 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["fuzz", "xtask"]
+
+[workspace.package]
+version = "0.2.2"
+rust-version = "1.85"
+authors = ["Ilaï Deutel"]
+license = "MIT OR Apache-2.0"
+edition = "2024"
+repository = "https://github.com/ilai-deutel/kibi"
 
 [package]
 name = "kibi"
-version = "0.2.2"
-rust-version = "1.80"
-authors = ["Ilaï Deutel"]
-license = "MIT OR Apache-2.0"
-edition = "2018"
 description = "A text editor in less than 1024 lines of code with syntax highlighting, search and more."
-repository = "https://github.com/ilai-deutel/kibi"
 readme = "README.md"
 keywords = ["editor", "terminal", "text-editor"]
 categories = ["text-editors", "development-tools"]
 include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
+version.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+repository.workspace = true
 
 [dependencies]
 unicode-width = "0.2.2"
@@ -48,7 +56,7 @@ trivial-casts = "deny"
 trivial_numeric_casts = "deny"
 unit-bindings = "deny"
 unnameable-types = "deny"
-unsafe-code = "deny"  # Will only be allowed in platform-specific modules
+unsafe-code = "deny"  # Will only be allowed in platform-specific modules and tests
 unused-import-braces = "deny"
 unused-lifetimes = "deny"
 unused-macro-rules = "deny"

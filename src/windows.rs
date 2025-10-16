@@ -3,9 +3,9 @@
 //! Windows-specific structs and functions. Will be imported as `sys` on Windows
 //! systems.
 
-#![allow(clippy::wildcard_imports)]
+#![expect(clippy::wildcard_imports)]
 
-use std::{convert::TryInto, env::var, io};
+use std::{env::var, io};
 
 use winapi::um::wincon::*;
 use winapi_util::{HandleRef, console as cons};
@@ -31,13 +31,13 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
     }
 }
 
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
 pub fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode.
-#[allow(clippy::trivially_copy_pass_by_ref)]
+#[expect(clippy::trivially_copy_pass_by_ref)]
 pub fn set_term_mode((stdin_mode, stdout_mode): &TermMode) -> Result<(), io::Error> {
     cons::set_mode(HandleRef::stdin(), *stdin_mode)?;
     cons::set_mode(HandleRef::stdout(), *stdout_mode)
@@ -61,7 +61,7 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok((mode_in0, mode_out0))
 }
 
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

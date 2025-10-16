@@ -126,7 +126,7 @@ mod tests {
         match Conf::from_file(&tmp_path) {
             Ok(_) => panic!("Conf::from_file should return an error"),
             Err(Error::Config(path, 0, _)) if path == tmp_path => (),
-            Err(e) => panic!("Unexpected error {:?}", e),
+            Err(e) => panic!("Unexpected error {e:?}"),
         }
     }
 }

@@ -17,7 +17,7 @@ pub const fn get_window_size() -> Result<(usize, usize), Error> { Err(Error::Inv
 
 /// Register a signal handler that sets a global variable when the window size
 /// changes. On WASI platforms, this does nothing.
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub const fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
 /// Check if the windows size has changed since the last call to this function.
@@ -25,11 +25,11 @@ pub const fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(
 pub const fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode. On WASI platforms, this does nothing.
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub const fn set_term_mode(_term: &TermMode) -> Result<(), Error> { Ok(()) }
 
 // Opening the file /dev/tty is effectively the same as `raw_mode`
-#[allow(clippy::unnecessary_wraps)] // Result required on other platforms
+#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub const fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
 
 pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::BufReader::new(File::open("/dev/tty")?)) }

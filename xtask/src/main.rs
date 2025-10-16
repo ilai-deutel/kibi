@@ -1,4 +1,4 @@
-#![allow(clippy::multiple_crate_versions)]
+#![expect(clippy::multiple_crate_versions)]
 use std::process::ExitCode;
 
 use anstyle::{AnsiColor, Reset, Style};
