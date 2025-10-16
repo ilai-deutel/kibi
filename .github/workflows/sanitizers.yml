@@ -25,24 +25,24 @@ jobs:
           - thread
         target:
           - x86_64-unknown-linux-gnu
-          - x86_64-apple-darwin
+          - aarch64-apple-darwin
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-          - target: x86_64-apple-darwin
+          - target: aarch64-apple-darwin
             os: macos-latest
           - sanitizer: memory
             extra_flags: -Zsanitizer-memory-track-origins
         exclude:
           # LeakSanitizer is not supported on MacOS
           - sanitizer: leak
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
           # MemorySanitizer is not supported on MacOS
           - sanitizer: memory
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
           # Safestack is not supported on MacOS
           - sanitizer: safestack
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
 
     runs-on: ${{ matrix.os }}
 
@@ -62,8 +62,10 @@ jobs:
           rustup toolchain install nightly --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
           rustup default nightly
           rustc +nightly --version --verbose
+      - name: Setup cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
       - name: Run tests with sanitizer
-        run: cargo test -Zbuild-std --verbose --all-features --no-fail-fast --target ${{ matrix.target }}
+        run: cargo test --all-targets -Zbuild-std --verbose --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
           RUSTFLAGS: -D warnings -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
           RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
