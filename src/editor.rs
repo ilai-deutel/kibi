@@ -316,18 +316,6 @@ impl Editor {
         self.screen_cols = self.window_width.saturating_sub(self.ln_pad);
     }
 
-    /// Given a file path, try to find a syntax highlighting configuration that
-    /// matches the path extension in one of the config directories
-    /// (`/etc/kibi/syntax.d`, etc.). If such a configuration is found, set
-    /// the `syntax` attribute of the editor.
-    fn select_syntax_highlight(&mut self, path: &Path) -> Result<(), Error> {
-        let extension = path.extension().and_then(std::ffi::OsStr::to_str);
-        if let Some(s) = extension.and_then(|e| SyntaxConf::get(e).transpose()) {
-            self.syntax = s?;
-        }
-        Ok(())
-    }
-
     /// Update a row, given its index. If `ignore_following_rows` is `false` and
     /// the highlight state has changed during the update (for instance, it
     /// is now in "multi-line comment" state, keep updating the next rows
@@ -521,15 +509,13 @@ impl Editor {
     /// Save to a file after obtaining the file path from the prompt. If
     /// successful, the `file_name` attribute of the editor will be set and
     /// syntax highlighting will be updated.
-    fn save_as(&mut self, file_name: String) -> Result<(), Error> {
-        // TODO: What if file_name already exists?
+    fn save_as(&mut self, file_name: String) {
         if self.save_and_handle_io_errors(&file_name) {
             // If save was successful
-            self.select_syntax_highlight(Path::new(&file_name))?;
+            self.syntax = SyntaxConf::find(&file_name, &sys::data_dirs());
             self.file_name = Some(file_name);
             self.update_all_rows();
         }
-        Ok(())
     }
 
     /// Draw the left part of the screen: line numbers and vertical bar.
@@ -713,7 +699,7 @@ impl Editor {
     /// Will Return `Err` if any error occur.
     pub fn run(&mut self, file_name: &Option<String>) -> Result<(), Error> {
         if let Some(path) = file_name.as_ref().map(|p| sys::path(p.as_str())) {
-            self.select_syntax_highlight(path.as_path())?;
+            self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
             self.load(path.as_path())?;
             self.file_name = Some(path.to_string_lossy().to_string());
         } else {
@@ -733,7 +719,7 @@ impl Editor {
                     (true, _) => return Ok(()),
                     (false, prompt_mode) => prompt_mode,
                 },
-                Some(prompt_mode) => prompt_mode.process_keypress(self, &key)?,
+                Some(prompt_mode) => prompt_mode.process_keypress(self, &key),
             }
         }
     }
@@ -779,13 +765,13 @@ impl PromptMode {
     }
 
     /// Process a keypress event for the selected `PromptMode`.
-    fn process_keypress(self, ed: &mut Editor, key: &Key) -> Result<Option<Self>, Error> {
+    fn process_keypress(self, ed: &mut Editor, key: &Key) -> Option<Self> {
         ed.status_msg = None;
         match self {
             Self::Save(b) => match process_prompt_keypress(b, key) {
-                PromptState::Active(b) => return Ok(Some(Self::Save(b))),
+                PromptState::Active(b) => return Some(Self::Save(b)),
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
-                PromptState::Completed(file_name) => ed.save_as(file_name)?,
+                PromptState::Completed(file_name) => ed.save_as(file_name),
             },
             Self::Find(b, saved_cursor, last_match) => {
                 if let Some(row_idx) = last_match {
@@ -801,7 +787,7 @@ impl PromptMode {
                             _ => (None, true),
                         };
                         let curr_match = ed.find(&query, last_match, forward);
-                        return Ok(Some(Self::Find(query, saved_cursor, curr_match)));
+                        return Some(Self::Find(query, saved_cursor, curr_match));
                     }
                     // The prompt was cancelled. Restore the previous position.
                     PromptState::Cancelled => ed.cursor = saved_cursor,
@@ -810,7 +796,7 @@ impl PromptMode {
                 }
             }
             Self::GoTo(b) => match process_prompt_keypress(b, key) {
-                PromptState::Active(b) => return Ok(Some(Self::GoTo(b))),
+                PromptState::Active(b) => return Some(Self::GoTo(b)),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
                     let mut split = b.splitn(2, ':')
@@ -831,7 +817,7 @@ impl PromptMode {
                 }
             },
             Self::Execute(b) => match process_prompt_keypress(b, key) {
-                PromptState::Active(b) => return Ok(Some(Self::Execute(b))),
+                PromptState::Active(b) => return Some(Self::Execute(b)),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
@@ -847,7 +833,7 @@ impl PromptMode {
                 }
             },
         }
-        Ok(None)
+        None
     }
 }
 

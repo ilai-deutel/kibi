@@ -12,9 +12,6 @@ pub enum Error {
     InvalidWindowSize,
     /// Error setting or retrieving the cursor position.
     CursorPosition,
-    /// Configuration error. The three attributes correspond the file path, the
-    /// line number and the error message.
-    Config(std::path::PathBuf, usize, String),
     /// Too many arguments given to kibi. The attribute corresponds to the total
     /// number of command line arguments.
     TooManyArguments(usize),
