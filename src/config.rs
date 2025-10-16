@@ -2,11 +2,10 @@
 //!
 //! Utilities to configure the text editor.
 
-use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::{fmt::Display, fs::File, str::FromStr, time::Duration};
+use std::{fmt::Display, fs::read_to_string, str::FromStr, time::Duration};
 
-use crate::{Error, Error::Config as ConfErr, sys::conf_dirs as cdirs};
+use crate::sys::conf_dirs as cdirs;
 
 /// The global Kibi configuration.
 #[derive(Debug, PartialEq, Eq)]
@@ -40,11 +39,9 @@ impl Config {
     ///   - On Windows:
     ///     - `%APPDATA%\Kibi`
     ///
-    /// # Errors
-    ///
-    /// Will return `Err` if one of the configuration file cannot be parsed
+    /// Will print warnings to stderr if a file or line cannot be parsed
     /// properly.
-    pub fn load() -> Result<Self, Error> {
+    pub fn load() -> Self {
         let mut conf = Self::default();
 
         let paths: Vec<_> = cdirs().iter().map(|d| PathBuf::from(d).join("config.ini")).collect();
@@ -62,10 +59,10 @@ impl Config {
                     _ => return Err(format!("Invalid key: {key}")),
                 }
                 Ok(())
-            })?;
+            });
         }
 
-        Ok(conf)
+        conf
     }
 }
 
@@ -73,31 +70,34 @@ impl Config {
 ///
 /// The `kv_fn` function will be called for each key-value pair in the file.
 /// Typically, this function will update a configuration instance.
-pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F) -> Result<(), Error>
+///
+/// Will print warnings to stderr for invalid lines
+pub fn process_ini_file<F>(path: &Path, kv_fn: &mut F)
 where F: FnMut(&str, &str) -> Result<(), String> {
-    let file = File::open(path).map_err(|e| ConfErr(path.into(), 0, e.to_string()))?;
-    for (i, line) in BufReader::new(file).lines().enumerate() {
-        let (i, line) = (i + 1, line?);
-        let mut parts = line.trim_start().splitn(2, '=');
-        match (parts.next(), parts.next()) {
-            (Some(comment_line), _) if comment_line.starts_with(&['#', ';'][..]) => (),
-            (Some(k), Some(v)) => kv_fn(k.trim_end(), v).map_err(|r| ConfErr(path.into(), i, r))?,
-            (Some(""), None) | (None, _) => (), // Empty line
-            (Some(_), None) => return Err(ConfErr(path.into(), i, String::from("No '='"))),
-        }
-    }
-    Ok(())
+    read_to_string(path).map_or_else(
+        |e| eprintln!("Could not read {}: {}", path.to_string_lossy(), e),
+        |config| {
+            for (i, line) in config.lines().enumerate().map(|(i, line)| (i, line.trim_start())) {
+                let warn = |msg: &str| eprintln!("{}:{}: {}", path.to_string_lossy(), i + 1, msg);
+                match (line.chars().next(), line.split_once('=')) {
+                    (Some('#' | ';') | None, _) => (), // Comment or empty line
+                    (_, Some((k, v))) => kv_fn(k.trim_end(), v.trim()).unwrap_or_else(|r| warn(&format!("{k}: {r}"))),
+                    (_, None) => warn("missing '='"),
+                }
+            }
+        },
+    );
 }
 
 /// Trim a value (right-hand side of a key=value INI line) and parses it.
 pub fn parse_value<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<T, String> {
-    value.trim().parse().map_err(|e| format!("Parser error: {e}"))
+    value.parse().map_err(|e: E| e.to_string())
 }
 
 /// Split a comma-separated list of values (right-hand side of a
 /// key=value1,value2,... INI line) and parse it as a Vec.
-pub fn parse_values<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<Vec<T>, String> {
-    value.split(',').map(parse_value).collect()
+pub fn parse_values<T: FromStr<Err=E>, E: Display>(values: &str) -> Result<Vec<T>, String> {
+    values.split(',').map(|value| parse_value(value.trim())).collect()
 }
 
 #[cfg(test)]
@@ -112,12 +112,12 @@ mod tests {
 
     use super::*;
 
-    fn ini_processing_helper<F>(ini_content: &str, kv_fn: &mut F) -> Result<(), Error>
+    fn ini_processing_helper<F>(ini_content: &str, kv_fn: &mut F)
     where F: FnMut(&str, &str) -> Result<(), String> {
         let tmp_dir = TempDir::new().expect("Could not create temporary directory");
         let file_path = tmp_dir.path().join("test_config.ini");
         fs::write(&file_path, ini_content).expect("Could not write INI file");
-        process_ini_file(&file_path, kv_fn)
+        process_ini_file(&file_path, kv_fn);
     }
 
     #[test]
@@ -131,10 +131,10 @@ mod tests {
         a = d5
         u = v = w ";
         let expected = vec![
-            (String::from("a"), String::from(" c")),
-            (String::from("variable"), String::from(" 4")),
-            (String::from("a"), String::from(" d5")),
-            (String::from("u"), String::from(" v = w ")),
+            (String::from("a"), String::from("c")),
+            (String::from("variable"), String::from("4")),
+            (String::from("a"), String::from("d5")),
+            (String::from("u"), String::from("v = w")),
         ];
 
         let mut kvs = Vec::new();
@@ -143,13 +143,13 @@ mod tests {
             Ok(())
         };
 
-        ini_processing_helper(ini_content, kv_fn).unwrap();
+        ini_processing_helper(ini_content, kv_fn);
 
         assert_eq!(kvs, expected);
     }
 
     #[test]
-    fn invalid_ini_processing() {
+    fn ini_processing_with_invalid_line() {
         let ini_content = "# Comment A
         ; Comment B
         a = c
@@ -158,42 +158,24 @@ mod tests {
            Invalid line
         a = d5
         u = v = w ";
-        let kv_fn = &mut |_: &str, _: &str| Ok(());
-        match ini_processing_helper(ini_content, kv_fn) {
-            Ok(()) => panic!("process_ini_file should return an error"),
-            Err(Error::Config(_, 6, s)) if s == "No '='" => (),
-            Err(e) => panic!("Unexpected error {e:?}"),
-        }
+        let mut parsed: Vec<(String, String)> = vec![];
+        let kv_fn = &mut |key: &str, value: &str| {
+            parsed.push((key.into(), value.into()));
+            Ok(())
+        };
+        ini_processing_helper(ini_content, kv_fn);
+        assert_eq!(parsed, vec![
+            (String::from("a"), String::from("c")),
+            (String::from("a"), String::from("d5")),
+            (String::from("u"), String::from("v = w"))
+        ]);
     }
-
-    #[test]
-    fn ini_processing_error_propagation() {
-        let ini_content = "# Comment A
-        ; Comment B
-        a = c
-            # Below is an empty line
-
-           variable    = 4
-        a = d5
-        u = v = w ";
-        let kv_fn = &mut |_: &str, _: &str| Err(String::from("test error"));
-        match ini_processing_helper(ini_content, kv_fn) {
-            Ok(()) => panic!("process_ini_file should return an error"),
-            Err(Error::Config(_, 3, s)) if s == "test error" => (),
-            Err(e) => panic!("Unexpected error {e:?}"),
-        }
-    }
-
     #[test]
     fn ini_processing_invalid_path() {
-        let kv_fn = &mut |_: &str, _: &str| Ok(());
+        let kv_fn = &mut |_: &str, _: &str| panic!("Should not be called");
         let tmp_dir = TempDir::new().expect("Could not create temporary directory");
         let tmp_path = tmp_dir.path().join("path_does_not_exist.ini");
-        match process_ini_file(&tmp_path, kv_fn) {
-            Ok(()) => panic!("process_ini_file should return an error"),
-            Err(Error::Config(path, 0, _)) if path == tmp_path => (),
-            Err(e) => panic!("Unexpected error {e:?}"),
-        }
+        process_ini_file(&tmp_path, kv_fn);
     }
 
     /// Lock for modifying environment variables.
@@ -259,11 +241,11 @@ mod tests {
         fs::write(kibi_config_home.join("config.ini"), ini_content)
             .expect("Could not write INI file");
 
-        let config = Config::load().expect("Could not load configuration.");
+        let config = Config::load();
         assert_ne!(config, custom_config);
 
         vars.set(env_key, Some(env_val));
-        let config = Config::load().expect("Could not load configuration.");
+        let config = Config::load();
 
         assert_eq!(config, custom_config);
     }

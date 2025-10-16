@@ -72,8 +72,8 @@ pedantic = { level = "deny", priority = -1 }
 cargo = { level = "deny", priority = -1 }
 suspicious = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
-
 restriction = { level = "allow", priority = -1 }
+
 allow_attributes = "deny"
 as_underscore = "deny"
 assertions_on_result_states = "deny"
@@ -100,6 +100,7 @@ mixed_read_write_in_expression = "deny"
 mod_module_files = "deny"
 module_name_repetitions = "deny"
 multiple_inherent_impl = "deny"
+must_use_candidate = "allow"
 mutex_atomic = "deny"
 needless_raw_strings = "deny"
 panic = "deny"
