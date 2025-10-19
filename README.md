@@ -297,7 +297,7 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * Compatibility with Windows
 * Command to jump to a given row/column
 * Handle window resize (UNIX only)
-* Parsing configuration files: global editor configuration, language-specific
+* Parsing configuration files: global editor configuration with validation, language-specific
   syntax highlighting configuration (38 languages and counting)
 * Display line numbers on the left of the screen; display file size in the status
   bar
@@ -305,8 +305,8 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * *Save as* prompt when no file name has been provided
 * Command to duplicate the current row, to quickly move between words
 * Ability to execute an external command from the editor and paste its output
-* Memory safety, thanks to Rust!
-* Many bug fixes
+* Guaranteed memory safety, thanks to Rust!
+* Bug fixes
 
 ## Contributing
 

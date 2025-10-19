@@ -29,8 +29,7 @@ const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicat
                             ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
-/// Example usage: `set_status!(editor, "{} written to {}", file_size,
-/// file_name)`
+/// Example usage: `set_status!(editor, "{file_size} written to {file_name}")`
 macro_rules! set_status { ($editor:expr, $($arg:expr),*) => ($editor.status_msg = Some(StatusMessage::new(format!($($arg),*)))) }
 
 /// Enum of input keys
@@ -186,7 +185,7 @@ impl Editor {
         print!("{USE_ALTERNATE_SCREEN}");
 
         editor.update_window_size()?;
-        set_status!(editor, "{}", HELP_MESSAGE);
+        set_status!(editor, "{HELP_MESSAGE}");
 
         Ok(editor)
     }
@@ -499,7 +498,7 @@ impl Editor {
         // Print error or success message to the status bar
         match saved.as_ref() {
             Ok(w) => set_status!(self, "{} written to {}", format_size(*w as u64), file_name),
-            Err(err) => set_status!(self, "Can't save! I/O error: {}", err),
+            Err(err) => set_status!(self, "Can't save! I/O error: {err}"),
         }
         // If save was successful, set dirty to false.
         self.dirty &= saved.is_err();
@@ -641,7 +640,7 @@ impl Editor {
                     return (true, None);
                 }
                 let times = if quit_times > 1 { "times" } else { "time" };
-                set_status!(self, "Press Ctrl+Q {} more {} to quit.", quit_times, times);
+                set_status!(self, "Press Ctrl+Q {quit_times} more {times} to quit.");
             }
             Key::Char(SAVE) => match self.file_name.take() {
                 // TODO: Can we avoid using take() then reassigning the value to file_name?
@@ -811,7 +810,7 @@ impl PromptMode {
                                 ed.update_cursor_x_position();
                             }
                         }
-                        (Err(e), _) | (_, Err(e)) => set_status!(ed, "Parsing error: {}", e),
+                        (Err(e), _) | (_, Err(e)) => set_status!(ed, "Parsing error: {e}"),
                         (Ok(None), _) => (),
                     }
                 }
@@ -828,7 +827,7 @@ impl PromptMode {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
                         }),
-                        Err(e) => set_status!(ed, "{}", e),
+                        Err(e) => set_status!(ed, "{e}"),
                     }
                 }
             },

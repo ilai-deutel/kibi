@@ -3,7 +3,7 @@
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered
 //! string and the syntax highlighting information.
 
-use std::{fmt::Write, iter::repeat_n};
+use std::{fmt::Write, iter::repeat_n, num::NonZeroUsize};
 
 use unicode_width::UnicodeWidthChar;
 
@@ -57,12 +57,13 @@ impl Row {
     // TODO: Combine update and update_syntax
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
-    pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: usize) -> HlState {
+    pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: NonZeroUsize) -> HlState {
         let (..) = (self.render.clear(), self.cx2rx.clear(), self.rx2cx.clear());
         let (mut cx, mut rx) = (0, 0);
         for c in String::from_utf8_lossy(&self.chars).chars() {
             // The number of rendered characters
-            let n_rend_chars = if c == '\t' { tab - (rx % tab) } else { c.width().unwrap_or(1) };
+            let n_rend_chars =
+                if c == '\t' { tab.get() - (rx % tab) } else { c.width().unwrap_or(1) };
             self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
             self.cx2rx.extend(repeat_n(rx, c.len_utf8()));
             self.rx2cx.extend(repeat_n(cx, n_rend_chars));

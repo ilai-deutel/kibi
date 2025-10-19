@@ -3,7 +3,7 @@
 //! Utilities to configure the text editor.
 
 use std::path::{Path, PathBuf};
-use std::{fmt::Display, fs::read_to_string, str::FromStr, time::Duration};
+use std::{fmt::Display, fs::read_to_string, num::NonZeroUsize, str::FromStr, time::Duration};
 
 use crate::sys::conf_dirs as cdirs;
 
@@ -11,7 +11,7 @@ use crate::sys::conf_dirs as cdirs;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     /// The size of a tab. Must be > 0.
-    pub tab_stop: usize,
+    pub tab_stop: NonZeroUsize,
     /// The number of confirmations needed before quitting, when changes have
     /// been made since the file was last changed.
     pub quit_times: usize,
@@ -24,7 +24,13 @@ pub struct Config {
 impl Default for Config {
     /// Default configuration.
     fn default() -> Self {
-        Self { tab_stop: 4, quit_times: 2, message_dur: Duration::new(3, 0), show_line_num: true }
+        Self {
+            #[expect(clippy::unwrap_used)]
+            tab_stop: NonZeroUsize::new(4).unwrap(),
+            quit_times: 2,
+            message_dur: Duration::new(3, 0),
+            show_line_num: true,
+        }
     }
 }
 
@@ -49,8 +55,7 @@ impl Config {
         for path in paths.iter().filter(|p| p.is_file()).rev() {
             process_ini_file(path, &mut |key, value| {
                 match key {
-                    "tab_stop" =>
-                        conf.tab_stop = parse_value(value).map_err(|_| "tab_stop must be > 0")?,
+                    "tab_stop" => conf.tab_stop = parse_value(value)?,
                     "quit_times" => conf.quit_times = parse_value(value)?,
                     "message_duration" =>
                         conf.message_dur = Duration::try_from_secs_f32(parse_value(value)?)
@@ -225,10 +230,32 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn invalid_tab_stop() {
+        let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
+
+        let mut vars = TempEnvVars::new();
+        vars.set(OsStr::new("XDG_CONFIG_HOME"), Some(tmp_config_home.path().as_os_str()));
+
+        let kibi_config_home = tmp_config_home.path().join("kibi");
+        fs::create_dir_all(&kibi_config_home).unwrap();
+        fs::write(kibi_config_home.join("config.ini"), "tab_stop=0")
+            .expect("Could not write INI file");
+
+        let config = Config::load();
+        // Tab stop value is still the default
+        assert_eq!(config.tab_stop.get(), 4);
+    }
+
     fn test_config_dir(
         env_key: &'static OsStr, env_val: &OsStr, kibi_config_home: &Path, vars: &mut TempEnvVars,
     ) {
-        let custom_config = Config { tab_stop: 99, quit_times: 50, ..Config::default() };
+        let custom_config = Config {
+            tab_stop: NonZeroUsize::new(99).unwrap(),
+            quit_times: 50,
+            ..Config::default()
+        };
         let ini_content = format!(
             "# Configuration file
              tab_stop  = {}
@@ -263,7 +290,7 @@ mod tests {
         );
     }
 
-    #[expect(clippy::significant_drop_tightening)] // Lock is needed until the end
+    #[expect(clippy::significant_drop_tightening, reason = "Lock is needed until the end")]
     #[cfg(unix)]
     #[test]
     fn config_home() {
