@@ -22,9 +22,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
-      - name: Install reuse
-        run: |
-          sudo apt-get update
-          sudo apt-get install reuse
-      - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+      - name: Setup cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/uv
+      - name: Run reuse compliance check
+        run: uv run --locked --verbose reuse lint

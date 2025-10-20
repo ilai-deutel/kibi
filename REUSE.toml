@@ -11,6 +11,9 @@ path = [
     ".github/**.yml",
     ".vscode/settings.json",
     "assets/*",
+    "ci/.python-version",
+    "ci/pyproject.toml",
+    "ci/uv.lock",
     "syntax.d/*.ini",
     ".all-contributorsrc",
     ".markdownlint.json",
@@ -25,12 +28,12 @@ path = [
     "kibi.metainfo.xml",
     "rustfmt.toml",
 ]
-SPDX-FileCopyrightText = "2020 Ilaï Deutel & Kibi Contributors"
+SPDX-FileCopyrightText = "© 2020 Ilaï Deutel"
 SPDX-License-Identifier = "MIT or Apache-2.0"
 
 [[annotations]]
 path = [
     "CODE_OF_CONDUCT.md",
 ]
-SPDX-FileCopyrightText = "Organization for Ethical Source"
+SPDX-FileCopyrightText = "© 2025 Organization for Ethical Source"
 SPDX-License-Identifier = "CC-BY-SA-4.0"

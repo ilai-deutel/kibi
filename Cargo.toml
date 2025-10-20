@@ -25,16 +25,20 @@ edition.workspace = true
 repository.workspace = true
 
 [dependencies]
-unicode-width = "0.2.2"
+unicode-width = { version = "0.2.2", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.176"
+libc = { version = "0.2.176", default-features = false, features = ["std"] }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
-winapi-util = "0.1.11"
+winapi-util = { version = "0.1.11", default-features = false }
 
 [dev-dependencies]
+cargo-deny = "0.18.5"
+tempfile.workspace = true
+
+[workspace.dependencies]
 tempfile = "3.23.0"
 
 [badges]
