@@ -12,7 +12,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 )<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-38-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-39-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -404,6 +404,7 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/kianmeng"><img src="https://avatars.githubusercontent.com/u/134518?v=4" width="100px;" alt=""/><br /><sub><b>Kian-Meng Ang</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=kianmeng" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/iamdhakrey"><img src="https://avatars.githubusercontent.com/u/35266081?v=4" width="100px;" alt=""/><br /><sub><b>Hrithik Dhakrey</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=iamdhakrey" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/kenderipa"><img src="https://avatars.githubusercontent.com/u/52325831?v=4" width="100px;" alt=""/><br /><sub><b>kenderipa</b></sub></a><br /><a href="#ideas-kenderipa" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ahaoboy"><img src="https://avatars.githubusercontent.com/u/19884146?v=4" width="100px;" alt=""/><br /><sub><b>阿豪</b></sub></a><br /><a href="#infra-ahaoboy" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>
