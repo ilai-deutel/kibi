@@ -368,6 +368,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "luizvbo",
+      "name": "Luiz Otavio Vilas Boas Oliveira",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15856439?v=4",
+      "profile": "https://luizvbo.github.io/",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "commitType": "docs"
