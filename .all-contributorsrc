@@ -359,6 +359,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "ahaoboy",
+      "name": "阿豪",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19884146?v=4",
+      "profile": "https://github.com/ahaoboy",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "commitType": "docs"
