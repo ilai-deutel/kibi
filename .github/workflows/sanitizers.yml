@@ -57,13 +57,13 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
+      - name: Setup cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
       - name: Install Rust nightly with rust-src
         run: |
           rustup toolchain install nightly --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
           rustup default nightly
           rustc +nightly --version --verbose
-      - name: Setup cache
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
       - name: Run tests with sanitizer
         run: cargo test --all-targets -Zbuild-std --verbose --all-features --no-fail-fast --target ${{ matrix.target }}
         env:
