@@ -41,54 +41,62 @@ jobs:
       matrix: &MATRIX
         target:
           # Tier 1 platforms
-          - aarch64-apple-darwin        # ARM64 macOS (11.0+, Big Sur+)
-          - aarch64-pc-windows-msvc     # ARM64 Windows MSVC
-          - aarch64-unknown-linux-gnu   # ARM64 Linux (kernel 4.1+, glibc 2.17+)
-          - i686-pc-windows-msvc        # 32-bit MSVC (Windows 10+, Windows Server 2016+, Pentium 4) 1 2
-          - i686-unknown-linux-gnu      # 32-bit Linux (kernel 3.2+, glibc 2.17+, Pentium 4) 1
-          - x86_64-pc-windows-gnu       # 64-bit MinGW (Windows 10+, Windows Server 2016+)
-          - x86_64-pc-windows-msvc      # 64-bit MSVC (Windows 10+, Windows Server 2016+)
-          - x86_64-unknown-linux-gnu    # 64-bit Linux (kernel 3.2+, glibc 2.17+)
+          # - aarch64-apple-darwin        # ARM64 macOS (11.0+, Big Sur+)
+          # - aarch64-pc-windows-msvc     # ARM64 Windows MSVC
+          # - aarch64-unknown-linux-gnu   # ARM64 Linux (kernel 4.1+, glibc 2.17+)
+          # - i686-pc-windows-msvc        # 32-bit MSVC (Windows 10+, Windows Server 2016+, Pentium 4) 1 2
+          # - i686-unknown-linux-gnu      # 32-bit Linux (kernel 3.2+, glibc 2.17+, Pentium 4) 1
+          # - x86_64-pc-windows-gnu       # 64-bit MinGW (Windows 10+, Windows Server 2016+)
+          # - x86_64-pc-windows-msvc      # 64-bit MSVC (Windows 10+, Windows Server 2016+)
+          # - x86_64-unknown-linux-gnu    # 64-bit Linux (kernel 3.2+, glibc 2.17+)
           # Tier 2 platforms
-          - x86_64-unknown-linux-musl   # 64-bit Linux with musl 1.2.3
-          - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
-          - wasm32-wasip1               # WebAssembly with WASIp1
-        include:
+          - aarch64-linux-android       # ARM64 Android
+          # - aarch64-unknown-linux-musl  # ARM64 Linux with musl 1.2.3
+          # - x86_64-unknown-linux-musl   # 64-bit Linux with musl 1.2.3
+          # - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
+          # - wasm32-wasip1               # WebAssembly with WASIp1
+        # include:
           # Runner image configuration. Defaults to ubuntu-latest.
 
-          # MacOS
-          - target: aarch64-apple-darwin
-            os: macos-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
+          # # MacOS
+          # - target: aarch64-apple-darwin
+          #   os: macos-latest
+          # - target: x86_64-apple-darwin
+          #   os: macos-latest
 
-          # Windows, x86
-          - target: i686-pc-windows-msvc
-            os: windows-latest
-          - target: x86_64-pc-windows-gnu
-            os: windows-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
+          # # Windows, x86
+          # - target: i686-pc-windows-msvc
+          #   os: windows-latest
+          # - target: x86_64-pc-windows-gnu
+          #   os: windows-latest
+          # - target: x86_64-pc-windows-msvc
+          #   os: windows-latest
 
-          # Windows, ARM64
-          - target: aarch64-pc-windows-msvc
-            os: windows-11-arm
+          # # Windows, ARM64
+          # - target: aarch64-pc-windows-msvc
+          #   os: windows-11-arm
 
           # Linux, ARM64
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm
+          # - target: aarch64-linux-android
+          #   os: ubuntu-24.04-arm
+          # - target: aarch64-unknown-linux-gnu
+          #   os: ubuntu-24.04-arm
+          # - target: aarch64-unknown-linux-musl
+          #   os: ubuntu-24.04-arm
     outputs:
-      hash-aarch64-apple-darwin: ${{ steps.hash-macos.outputs.hash-aarch64-apple-darwin}}
-      hash-aarch64-pc-windows-msvc: ${{ steps.hash.outputs.hash-aarch64-pc-windows-msvc}}
-      hash-aarch64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-aarch64-unknown-linux-gnu}}
-      hash-i686-pc-windows-msvc: ${{ steps.hash.outputs.hash-i686-pc-windows-msvc}}
-      hash-i686-unknown-linux-gnu: ${{ steps.hash.outputs.hash-i686-unknown-linux-gnu}}
-      hash-x86_64-pc-windows-gnu: ${{ steps.hash.outputs.hash-x86_64-pc-windows-gnu}}
-      hash-x86_64-pc-windows-msvc: ${{ steps.hash.outputs.hash-x86_64-pc-windows-msvc}}
-      hash-x86_64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-gnu}}
-      hash-x86_64-unknown-linux-musl: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-musl}}
-      hash-x86_64-apple-darwin: ${{ steps.hash-macos.outputs.hash-x86_64-apple-darwin}}
-      hash-wasm32-wasip1: ${{ steps.hash.outputs.hash-wasm32-wasip1}}
+      # hash-aarch64-apple-darwin: ${{ steps.hash-macos.outputs.hash-aarch64-apple-darwin}}
+      hash-aarch64-linux-android: ${{ steps.hash.outputs.hash-aarch64-linux-android}}
+      # hash-aarch64-pc-windows-msvc: ${{ steps.hash.outputs.hash-aarch64-pc-windows-msvc}}
+      # hash-aarch64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-aarch64-unknown-linux-gnu}}
+      # hash-aarch64-unknown-linux-musl: ${{ steps.hash.outputs.hash-aarch64-unknown-linux-musl}}
+      # hash-i686-pc-windows-msvc: ${{ steps.hash.outputs.hash-i686-pc-windows-msvc}}
+      # hash-i686-unknown-linux-gnu: ${{ steps.hash.outputs.hash-i686-unknown-linux-gnu}}
+      # hash-x86_64-pc-windows-gnu: ${{ steps.hash.outputs.hash-x86_64-pc-windows-gnu}}
+      # hash-x86_64-pc-windows-msvc: ${{ steps.hash.outputs.hash-x86_64-pc-windows-msvc}}
+      # hash-x86_64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-gnu}}
+      # hash-x86_64-unknown-linux-musl: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-musl}}
+      # hash-x86_64-apple-darwin: ${{ steps.hash-macos.outputs.hash-x86_64-apple-darwin}}
+      # hash-wasm32-wasip1: ${{ steps.hash.outputs.hash-wasm32-wasip1}}
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -98,8 +106,13 @@ jobs:
       - name: Auto-convert CRLF line endings
         run: git config --global core.autocrlf input
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
-      - name: Setup cache
+      - name: Setup Rust cache
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
+        with:
+          prefix-key: rust-stable
+      - name: Setup Android cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
+        if: matrix.target == 'aarch64-linux-android'
         with:
           prefix-key: rust-stable
 
@@ -115,6 +128,24 @@ jobs:
       - name: Install upx (Windows)
         if: matrix.os == 'windows-latest'
         run: choco install upx
+      - name: Cache NDK
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        with:
+          path: ~/ndk
+          key: android-ndk-r27d-linux
+      - name: Install depdendencies (Android)
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          # sudo apt-get install gcc-multilib libclang-dev
+          if [[ ! -d ~/ndk ]]; then
+              mkdir ~/android
+              ci/install_android_ndk.sh ~/ndk
+          fi
+          TOOLCHAIN="$HOME/ndk/toolchains/llvm/prebuilt/linux-x86_64"
+          ANDROID_API_LEVEL=$(jq .max ~/ndk/meta/platforms.json)
+          echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+          TARGET_UPPERCASE=$(sed -e 's/.*/\U&/' -e 's/-/_/g' <<< ${{ matrix.target }})
+          echo "CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${TOOLCHAIN}/bin/${{ matrix.target }}${ANDROID_API_LEVEL}-clang" >> "$GITHUB_ENV"
       - name: Install Rust stable toolchain
         run: |
           rustup toolchain install stable --target ${{ matrix.target }} --profile minimal
