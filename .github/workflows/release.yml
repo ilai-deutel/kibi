@@ -4,7 +4,6 @@ on:
   push:
     tags:
     - 'v[0-9]+.[0-9]+.[0-9]+'
-    - release-test
 
 defaults:
   run:
@@ -23,13 +22,13 @@ jobs:
         with:
           egress-policy: audit
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
-      # - name: Check that tag version and Cargo.toml version are the same
-      #   run: |
-      #     CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
-      #     if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
-      #       echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
-      #       exit 1
-      #     fi
+      - name: Check that tag version and Cargo.toml version are the same
+        run: |
+          CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
+          if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
+            echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
+            exit 1
+          fi
   build:
     name: Build
     needs:
@@ -50,6 +49,8 @@ jobs:
           - x86_64-pc-windows-msvc      # 64-bit MSVC (Windows 10+, Windows Server 2016+)
           - x86_64-unknown-linux-gnu    # 64-bit Linux (kernel 3.2+, glibc 2.17+)
           # Tier 2 platforms
+          - aarch64-linux-android       # ARM64 Android
+          - aarch64-unknown-linux-musl  # ARM64 Linux with musl 1.2.3
           - x86_64-unknown-linux-musl   # 64-bit Linux with musl 1.2.3
           - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
           - wasm32-wasip1               # WebAssembly with WASIp1
@@ -75,12 +76,18 @@ jobs:
             os: windows-11-arm
 
           # Linux, ARM64
+          - target: aarch64-linux-android
+            os: ubuntu-24.04-arm
           - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+          - target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
     outputs:
       hash-aarch64-apple-darwin: ${{ steps.hash-macos.outputs.hash-aarch64-apple-darwin}}
+      hash-aarch64-linux-android: ${{ steps.hash.outputs.hash-aarch64-linux-android}}
       hash-aarch64-pc-windows-msvc: ${{ steps.hash.outputs.hash-aarch64-pc-windows-msvc}}
       hash-aarch64-unknown-linux-gnu: ${{ steps.hash.outputs.hash-aarch64-unknown-linux-gnu}}
+      hash-aarch64-unknown-linux-musl: ${{ steps.hash.outputs.hash-aarch64-unknown-linux-musl}}
       hash-i686-pc-windows-msvc: ${{ steps.hash.outputs.hash-i686-pc-windows-msvc}}
       hash-i686-unknown-linux-gnu: ${{ steps.hash.outputs.hash-i686-unknown-linux-gnu}}
       hash-x86_64-pc-windows-gnu: ${{ steps.hash.outputs.hash-x86_64-pc-windows-gnu}}
@@ -102,6 +109,8 @@ jobs:
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
         with:
           prefix-key: rust-stable
+          # Android-only
+          cache-directories: ~/ndk
 
       - name: Install upx (Linux)
         if: ((matrix.os == '') || startsWith(matrix.os, 'ubuntu-')) && matrix.target != 'wasm32-wasip1'
@@ -115,6 +124,19 @@ jobs:
       - name: Install upx (Windows)
         if: matrix.os == 'windows-latest'
         run: choco install upx
+      - name: Install depdendencies (Android)
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          # sudo apt-get install gcc-multilib libclang-dev
+          if [[ ! -d ~/ndk ]]; then
+              mkdir ~/android
+              ci/install_android_ndk.sh ~/ndk
+          fi
+          TOOLCHAIN="$HOME/ndk/toolchains/llvm/prebuilt/linux-x86_64"
+          ANDROID_API_LEVEL=$(jq .max ~/ndk/meta/platforms.json)
+          echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+          TARGET_UPPERCASE=$(sed -e 's/.*/\U&/' -e 's/-/_/g' <<< ${{ matrix.target }})
+          echo "CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${TOOLCHAIN}/bin/${{ matrix.target }}${ANDROID_API_LEVEL}-clang" >> "$GITHUB_ENV"
       - name: Install Rust stable toolchain
         run: |
           rustup toolchain install stable --target ${{ matrix.target }} --profile minimal
