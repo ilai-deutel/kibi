@@ -12,6 +12,7 @@ path = [
     ".github/**.yml",
     ".vscode/settings.json",
     "assets/*",
+    "ci/*",
     "syntax.d/*.ini",
     ".all-contributorsrc",
     ".markdownlint.json",
