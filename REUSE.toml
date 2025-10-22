@@ -25,6 +25,7 @@ path = [
     "kibi.desktop",
     "kibi.metainfo.xml",
     "rustfmt.toml",
+    "SECURITY.md"
 ]
 SPDX-FileCopyrightText = "2020 Ilaï Deutel & Kibi Contributors"
 SPDX-License-Identifier = "MIT or Apache-2.0"
