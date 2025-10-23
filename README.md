@@ -1,7 +1,8 @@
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/ci.yml?branch=master&logo=github-actions)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml?query=branch%3Amaster)
-[![Lines of code](https://img.shields.io/github/actions/workflow/status/ilai-deutel/kibi/loc.yml?label=LOC%E2%89%A41024)](#)
+[![Build Status](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml/badge.svg)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml)
+[![Lines of code](https://github.com/ilai-deutel/kibi/actions/workflows/loc.yml/badge.svg)](https://github.com/ilai-deutel/kibi/actions/workflows/loc.yml)
+[![CodeQL](https://github.com/ilai-deutel/kibi/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ilai-deutel/kibi/actions/workflows/github-code-scanning/codeql)
 [![Crate](https://img.shields.io/crates/v/kibi.svg)](https://crates.io/crates/kibi)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.85+-blue.svg?logo=rust)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20|%20macOS%20|%20Windows%2010%20|%20WASI-blue)](#)
@@ -9,9 +10,11 @@
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 [![REUSE status](https://api.reuse.software/badge/github.com/ilai-deutel/kibi)](https://api.reuse.software/info/github.com/ilai-deutel/kibi)
+[![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/ilai-deutel/kibi)](https://rust-reportcard.xuri.me/report/github.com/ilai-deutel/kibi)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ilai-deutel/kibi/badge)](https://scorecard.dev/viewer/?uri=github.com/ilai-deutel/kibi)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
-)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-40-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
