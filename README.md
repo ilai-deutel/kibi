@@ -13,8 +13,7 @@
 [![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/ilai-deutel/kibi)](https://rust-reportcard.xuri.me/report/github.com/ilai-deutel/kibi)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ilai-deutel/kibi/badge)](https://scorecard.dev/viewer/?uri=github.com/ilai-deutel/kibi)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-40-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
@@ -22,24 +21,20 @@
 
 A configurable text editor with UTF-8 support, incremental search, syntax
 highlighting, line numbers and more, written in less than 1024
-lines<sup>[1](#counted-with)</sup> of Rust with minimal dependencies.
+lines[^1] of Rust with minimal dependencies.
+
+[^1]: Counted per platform, excluding tests and Clippy directives, see [`count_loc`](./xtask/src/count_loc.rs)
 
 Kibi is compatible with Linux, macOS, Windows
-10<sup>[2](#windows-version)</sup>, and WASI.
+10[^2], and WASI.
+
+[^2]: Kibi requires the terminal to support ANSI escape sequences. Windows 10 version 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console), April 2017) and above are supported.</sub>
 
 This project is inspired by [`kilo`](https://github.com/antirez/kilo), a text
 editor written in C.
 See [comparison](#comparison-with-kilo) below for a list of additional features.
 
 Contributions are welcome! Be careful to stay below the 1024-line limit...
-
-<!-- markdownlint-disable MD033 -->
-<sub><a name="counted-with">1.</a>: Counted per platform, excluding tests and
-Clippy directives, see [`count_loc`](./xtask/src/count_loc.rs)</sub> \
-<sub><a name="windows-version">2.</a>: Kibi requires the terminal to support
-ANSI escape sequences. Windows 10 version 1703 ([Creators Update](https://devblogs.microsoft.com/commandline/windows-10-creators-update-whats-new-in-bashwsl-windows-console),
-April 2017) and above are supported.</sub>
-<!-- markdownlint-enable MD033 -->
 
 ## Table of contents
 
@@ -168,7 +163,7 @@ make install
 
 ### Flatpak
 
-Kibi is available [on Flathub](https://flathub.org/ca/apps/com.github.ilai_deutel.kibi).
+Kibi is available [on Flathub](https://flathub.org/en/apps/com.github.ilai_deutel.kibi).
 
 <details><summary>Command line instructions</summary>
  The flatpak can be installed using:
@@ -195,20 +190,20 @@ kibi --version    # Print version information and exit
 
 ### Keyboard shortcuts
 
-| Keyboard shortcut | Description                                                   |
-| ----------------- | ------------------------------------------------------------- |
-| Ctrl-F            | Incremental search; use arrows to navigate                    |
-| Ctrl-S            | Save the buffer to the current file, or specify the file path |
-| Ctrl-G            | Go to `<line number>[:<column number>]` position              |
-| Ctrl-Q            | Quit                                                          |
-| Ctrl-D            | Duplicate the current row                                     |
-| Ctrl-E            | Execute an external command and paste its output              |
-| Ctrl-R            | Remove an entire line                                         |
-| Ctrl-C            | Copies the entire line                                        |
-| Ctrl-X            | Cuts the entire line                                          |
-| Ctrl-V            | Will paste the copied line                                    |
-| Ctrl-LeftArrow    | Moves cursor to previous word                                 |
-| Ctrl-RightArrow   | Moves cursor to next word                                     |
+| Keyboard shortcut              | Description                                                   |
+| ------------------------------ | ------------------------------------------------------------- |
+| <kbd>Ctrl</kbd> + <kbd>F</kbd> | Incremental search; use arrows to navigate                    |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> | Save the buffer to the current file, or specify the file path |
+| <kbd>Ctrl</kbd> + <kbd>G</kbd> | Go to `<line number>[:<column number>]` position              |
+| <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Quit                                                          |
+| <kbd>Ctrl</kbd> + <kbd>D</kbd> | Duplicate the current row                                     |
+| <kbd>Ctrl</kbd> + <kbd>E</kbd> | Execute an external command and paste its output              |
+| <kbd>Ctrl</kbd> + <kbd>R</kbd> | Remove an entire line                                         |
+| <kbd>Ctrl</kbd> + <kbd>C</kbd> | Copies the entire line                                        |
+| <kbd>Ctrl</kbd> + <kbd>X</kbd> | Cuts the entire line                                          |
+| <kbd>Ctrl</kbd> + <kbd>V</kbd> | Will paste the copied line                                    |
+| <kbd>Ctrl</kbd> + <kbd>←</kbd> | Moves cursor to previous word                                 |
+| <kbd>Ctrl</kbd> + <kbd>→</kbd> | Moves cursor to next word                                     |
 
 ### Configuration
 
