@@ -1,27 +1,52 @@
 # Changelog
 
-## [0.2.3] - 2021-09-30
+All notable changes to this project will be documented in this file.
+
+_The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
+
+## [0.3.0] - 2025-10-26
 
 ### Added
-- Add syntax highlighting configuration for C ([#98](https://github.com/ilai-deutel/kibi/pull/98))
-- Add syntax highlighting configuration for Nim ([#106](https://github.com/ilai-deutel/kibi/pull/106))
-- Add syntax highlighting configuration for Lua ([#108](https://github.com/ilai-deutel/kibi/pull/108))
-- Add syntax highlighting configuration for Javascript ([#108](https://github.com/ilai-deutel/kibi/pull/108))
 
-### Updated
-- Updated syntax highlighting configuration for V ([#108](https://github.com/ilai-deutel/kibi/pull/108))
+- Delete line with Ctrl-R ([#114](https://github.com/ilai-deutel/kibi/pull/114))
+- Copy, cut and paste lines with Ctrl-C, Ctrl-X, Ctrl-V ([#207](https://github.com/ilai-deutel/kibi/pull/207))
+- Ctrl+arrows moves to the previous/next word ([#214](https://github.com/ilai-deutel/kibi/pull/214))
+- Syntax highlighting configurations for C ([#98](https://github.com/ilai-deutel/kibi/pull/98), [#181](https://github.com/ilai-deutel/kibi/pull/181)), Nim ([#106](https://github.com/ilai-deutel/kibi/pull/106)), C# ([#211](https://github.com/ilai-deutel/kibi/pull/211)), C++ ([#211](https://github.com/ilai-deutel/kibi/pull/211)), CoffeeScript ([#262](https://github.com/ilai-deutel/kibi/pull/262)), CSS ([#211](https://github.com/ilai-deutel/kibi/pull/211)), D ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Dart ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Elixir ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Fish ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Go ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Groovy ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Haskell ([#211](https://github.com/ilai-deutel/kibi/pull/211)), HTNL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Java ([#211](https://github.com/ilai-deutel/kibi/pull/211)), JavaScript ([#108](https://github.com/ilai-deutel/kibi/pull/108)), Julia ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Kotlin ([#211](https://github.com/ilai-deutel/kibi/pull/211)), LRC [#433](https://github.com/ilai-deutel/kibi/pull/433), Lua ([#108](https://github.com/ilai-deutel/kibi/pull/108), [#277](https://github.com/ilai-deutel/kibi/pull/277)), Markdown ([#152](https://github.com/ilai-deutel/kibi/pull/152)), MATLAB ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Nix ([#262](https://github.com/ilai-deutel/kibi/pull/262)), NoSQL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Nushell ([#262](https://github.com/ilai-deutel/kibi/pull/262), [#433](https://github.com/ilai-deutel/kibi/pull/433)), OCaml ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Perl ([#211](https://github.com/ilai-deutel/kibi/pull/211)), PHP ([#211](https://github.com/ilai-deutel/kibi/pull/211)), PowerShell ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Processing ([#262](https://github.com/ilai-deutel/kibi/pull/262)), PRQL ([#369](https://github.com/ilai-deutel/kibi/pull/369)), R ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Racket ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Ruby ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Raku ([#262](https://github.com/ilai-deutel/kibi/pull/262)), RSS [#433](https://github.com/ilai-deutel/kibi/pull/433), Scala ([#211](https://github.com/ilai-deutel/kibi/pull/211)), SQL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Swift ([#211](https://github.com/ilai-deutel/kibi/pull/211)), TypeScript ([#211](https://github.com/ilai-deutel/kibi/pull/211)), XML ([#211](https://github.com/ilai-deutel/kibi/pull/211), [#449](https://github.com/ilai-deutel/kibi/pull/449)), YAML ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Zig ([#262](https://github.com/ilai-deutel/kibi/pull/262), [#400](https://github.com/ilai-deutel/kibi/pull/400)), ZSH ([#211](https://github.com/ilai-deutel/kibi/pull/211))
+- Support for WebAssembly ([#159](https://github.com/ilai-deutel/kibi/pull/159))
+- Binary optimization for release: enable LTO ([#346](https://github.com/ilai-deutel/kibi/pull/346)); single codegen unit, abort on panic, strip symbols ([#464](https://github.com/ilai-deutel/kibi/pull/464))
+- `kibi --version` includes git revision when available ([#176](https://github.com/ilai-deutel/kibi/pull/176))
+- Extension-less dotfiles can now have a syntax highlight configuration ([#449](https://github.com/ilai-deutel/kibi/pull/449))
+- Minimum Supported Rust Version (MSRV) in `Cargo.toml` ([#122](https://github.com/ilai-deutel/kibi/pull/122), [#133](https://github.com/ilai-deutel/kibi/pull/133), [#175](https://github.com/ilai-deutel/kibi/pull/175), [#191](https://github.com/ilai-deutel/kibi/pull/191), [#306](https://github.com/ilai-deutel/kibi/pull/306), [#307](https://github.com/ilai-deutel/kibi/pull/307), [#343](https://github.com/ilai-deutel/kibi/pull/343), [#442](https://github.com/ilai-deutel/kibi/pull/442))
+
+### Changed
+
+- Syntax highlighting configuration for V ([#108](https://github.com/ilai-deutel/kibi/pull/108))
+- Use alternate screen buffer to avoid flicking, restore the terminal content on exit ([#310](https://github.com/ilai-deutel/kibi/pull/310))
+- Various no-op code changes to reduce line count ([#127](https://github.com/ilai-deutel/kibi/pull/127), [#151](https://github.com/ilai-deutel/kibi/pull/151), [#154](https://github.com/ilai-deutel/kibi/pull/154), [#191](https://github.com/ilai-deutel/kibi/pull/191), [#229](https://github.com/ilai-deutel/kibi/pull/229), [#280](https://github.com/ilai-deutel/kibi/pull/280), [#335](https://github.com/ilai-deutel/kibi/pull/335), [#331](https://github.com/ilai-deutel/kibi/pull/331), [#330](https://github.com/ilai-deutel/kibi/pull/330), [#422](https://github.com/ilai-deutel/kibi/pull/422)) and to fix Clippy warnings ([#175](https://github.com/ilai-deutel/kibi/pull/175), [#188](https://github.com/ilai-deutel/kibi/pull/188), [#190](https://github.com/ilai-deutel/kibi/pull/190), [#206](https://github.com/ilai-deutel/kibi/pull/206), [#241](https://github.com/ilai-deutel/kibi/pull/241), [#249](https://github.com/ilai-deutel/kibi/pull/249), [#321](https://github.com/ilai-deutel/kibi/pull/321), [#334](https://github.com/ilai-deutel/kibi/pull/334), [#345](https://github.com/ilai-deutel/kibi/pull/345), [#385](https://github.com/ilai-deutel/kibi/pull/385))
+- Rust edition: 2024 ([#442](https://github.com/ilai-deutel/kibi/pull/442))
+
+### Fixed
+
+- Crash when opening a new file ([#287](https://github.com/ilai-deutel/kibi/pull/287))
+- Error message when an invalid option is provided ([#150](https://github.com/ilai-deutel/kibi/pull/150))
+- Error message when trying to open a special file, e.g. UNIX devices or directories ([#159](https://github.com/ilai-deutel/kibi/pull/159))
+- Config parsing with invalid durations ([#340](https://github.com/ilai-deutel/kibi/pull/340)), invalid tab size ([#450](https://github.com/ilai-deutel/kibi/pull/450))
+- Emit warnings instead of panicking for invalid configurations ([#449](https://github.com/ilai-deutel/kibi/pull/449))
 
 ## [0.2.2] - 2021-02-12
 
 ### Added
-- Add syntax highlighting configuration for V ([#78](https://github.com/ilai-deutel/kibi/pull/78))
+
+- Syntax highlighting configuration for V ([#78](https://github.com/ilai-deutel/kibi/pull/78))
 - Add the ability to execute external commands from the editor ([#83](https://github.com/ilai-deutel/kibi/pull/83))
 - Improve file opening error messages for config files ([#91](https://github.com/ilai-deutel/kibi/pull/91))
 
 ### Fixed
+
 - Android: fix a bug ([#87](https://github.com/ilai-deutel/kibi/issues/87)) related to a SELinux policy that would cause
   Kibi to crash on certain Android versions when setting the termios
-  ([#92](https://github.com/ilai-deutel/kibi/pull/92)). 
+  ([#92](https://github.com/ilai-deutel/kibi/pull/92)).
 
 ## [0.2.1] - 2020-10-05
 
@@ -83,7 +108,7 @@
 
 - Add support for UTF-8 characters ([#1](https://github.com/ilai-deutel/kibi/issues/1))
 - Add a command to duplicate the current row (`Ctrl-D`)
-- Add syntax highlighting configuration for `bash`
+- Syntax highlighting configuration for `bash`
 
 ### Fixed
 
@@ -105,12 +130,11 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 - Fix `Cargo.toml` metadata, in particular incorrect categories
 
-## [0.1.0] - 2020-02-11 [YANKED]
+## [0.1.0] - 2020-02-11 _\[YANKED\]_
 
 Initial release
 
-[Next release]: https://github.com/ilai-deutel/kibi/compare/v0.2.3...HEAD
-[0.2.3]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.3
+[0.3.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.0
 [0.2.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2
 [0.2.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1
 [0.2.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.0

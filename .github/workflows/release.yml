@@ -76,8 +76,6 @@ jobs:
             os: windows-11-arm
 
           # Linux, ARM64
-          - target: aarch64-linux-android
-            os: ubuntu-24.04-arm
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
           - target: aarch64-unknown-linux-musl
@@ -124,10 +122,9 @@ jobs:
       - name: Install upx (Windows)
         if: matrix.os == 'windows-latest'
         run: choco install upx
-      - name: Install depdendencies (Android)
+      - name: Install dependencies (Android)
         if: matrix.target == 'aarch64-linux-android'
         run: |
-          # sudo apt-get install gcc-multilib libclang-dev
           if [[ ! -d ~/ndk ]]; then
               mkdir ~/android
               ci/install_android_ndk.sh ~/ndk

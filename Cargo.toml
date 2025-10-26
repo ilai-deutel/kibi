@@ -3,7 +3,7 @@ resolver = "3"
 members = ["fuzz", "xtask"]
 
 [workspace.package]
-version = "0.2.2"
+version = "0.3.0"
 rust-version = "1.85"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"
@@ -16,7 +16,7 @@ description = "A text editor in less than 1024 lines of code with syntax highlig
 readme = "README.md"
 keywords = ["editor", "terminal", "text-editor"]
 categories = ["text-editors", "development-tools"]
-include = ["src/**/*", "Cargo.toml", "LICENSE*", "COPYRIGHT"]
+include = ["build.rs", "src/**/*", "Cargo.toml", "Cargo.lock", "COPYRIGHT", "LICENSE-*"]
 version.workspace = true
 rust-version.workspace = true
 authors.workspace = true
