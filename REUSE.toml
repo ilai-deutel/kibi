@@ -24,7 +24,6 @@ path = [
     "config_example.ini",
     "deny.toml",
     "kibi.desktop",
-    "kibi.metainfo.xml",
     "rustfmt.toml",
     "SECURITY.md"
 ]
