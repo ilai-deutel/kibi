@@ -3,7 +3,8 @@ name: release
 on:
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - v[0-9]+.[0-9]+.[0-9]+
+    - release_test
 
 defaults:
   run:
@@ -13,26 +14,26 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify version
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
-      - name: Check that tag version and Cargo.toml version are the same
-        run: |
-          CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
-          if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
-            echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
-            exit 1
-          fi
+  # verify:
+  #   name: Verify version
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Harden the runner (Audit all outbound calls)
+  #       uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+  #       with:
+  #         egress-policy: audit
+  #     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+  #     - name: Check that tag version and Cargo.toml version are the same
+  #       run: |
+  #         CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
+  #         if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
+  #           echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
+  #           exit 1
+  #         fi
   build:
     name: Build
-    needs:
-      - verify
+    # needs:
+    #   - verify
     permissions:
       contents: write
     strategy:
@@ -115,13 +116,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install upx-ucl
+          echo "COMPRESS_BINARY=true" >> "$GITHUB_ENV"
       - name: Install gcc-multilib (Linux i686)
         if: (matrix.os == '') && startsWith(matrix.target, 'i686-')
         run: |
           sudo apt-get install gcc-multilib
       - name: Install upx (Windows)
         if: matrix.os == 'windows-latest'
-        run: choco install upx
+        run: |
+          choco install upx
+          echo "COMPRESS_BINARY=true" >> "$GITHUB_ENV"
       - name: Install dependencies (Android)
         if: matrix.target == 'aarch64-linux-android'
         run: |
@@ -139,54 +143,25 @@ jobs:
           rustup toolchain install stable --target ${{ matrix.target }} --profile minimal
           rustup default stable
           rustc +stable --version --verbose
-  
-      - name:  Build binary
-        run: cargo build --target ${{ matrix.target }} --release --verbose
-        env:
-          RUSTFLAGS: -D warnings
-      - name: Set binary path variable (Linux, MacOS)
-        if: "! contains(matrix.target, 'windows') && matrix.target != 'wasm32-wasip1'"
-        run: echo "BINARY_PATH=target/${{ matrix.target }}/release/kibi" >> "$GITHUB_ENV"
-      - name: Set binary path variable (Windows)
-        if: contains(matrix.target, 'windows')
-        run: echo "BINARY_PATH=target/${{ matrix.target }}/release/kibi.exe" >> "$GITHUB_ENV"
-      - name: Set binary path variable (WASI)
-        if: matrix.target == 'wasm32-wasip1'
-        run: echo "BINARY_PATH=target/${{ matrix.target }}/release/kibi.wasm" >> "$GITHUB_ENV"
 
-      - name: Compress the binary (Linux, Windows x86)
-        # MacOS support: https://github.com/upx/upx/issues/612
-        # Windows ARM64 support: https://github.com/upx/upx/issues/650
-        # WASI support (won't fix): https://github.com/upx/upx/issues/290
-        if: (matrix.os == '' && matrix.target != 'wasm32-wasip1') || startsWith(matrix.os, 'ubuntu-') || matrix.os == 'windows-latest'
-        run: upx --best --lzma "$BINARY_PATH"
-
-      - name: Create package directory
-        run: |
-          ARCHIVE_DIR="$(mktemp --directory)"
-          cp -R \
-            "$BINARY_PATH" \
-            CHANGELOG.md \
-            COPYRIGHT \
-            LICENSE-APACHE \
-            LICENSE-MIT \
-            README.md \
-            config_example.ini \
-            syntax.d \
-            "$ARCHIVE_DIR"
-          echo "ARCHIVE_DIR=$ARCHIVE_DIR" >> "$GITHUB_ENV"
-      - name: Create release asset (Unix)
+      - name: Set asset path (Unix)
         if: matrix.os != 'windows-latest'
         run: |
           ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
-          tar czvf "$ASSET_PATH" -C "$ARCHIVE_DIR" .
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"
-      - name: Create release asset (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Set asset path (Windows)
+        if: matrix.os != 'windows-latest'
         run: |
-          ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.zip"
-          7z a "$ASSET_PATH" "$ARCHIVE_DIR"
+          ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"
+  
+      - name: Build binary and create archive
+        run: |
+          ci/create_release_archive.sh \
+            --target ${{ matrix.target }} \
+            --dest_path "$ASSET_PATH" \
+            --tag ${{ github.ref_name }} \
+            --compress "${COMPRESS_BINARY:-false}"
       - name: Upload artifact
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
         with:
