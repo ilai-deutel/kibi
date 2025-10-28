@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - "master"
+    paths:
+      - ".github/workflows/ci.yml"
+      - "**.rs"
+      - "*cargo/config.toml"
+      - "*Cargo.toml"
+      - "*Cargo.lock"
   pull_request:
     branches:
       - master

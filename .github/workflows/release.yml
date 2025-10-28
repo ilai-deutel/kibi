@@ -4,7 +4,11 @@ on:
   push:
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
-    - release_test
+    - release-test
+  pull_request:
+    tags:
+      - release-test
+
 
 defaults:
   run:
@@ -14,22 +18,24 @@ permissions:
   contents: read
 
 jobs:
-  # verify:
-  #   name: Verify version
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Harden the runner (Audit all outbound calls)
-  #       uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-  #       with:
-  #         egress-policy: audit
-  #     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
-  #     - name: Check that tag version and Cargo.toml version are the same
-  #       run: |
-  #         CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
-  #         if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
-  #           echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
-  #           exit 1
-  #         fi
+  verify:
+    name: Verify version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5
+      - name: Check that tag version and Cargo.toml version are the same
+        run: |
+          CRATE_VERSION=$(cargo pkgid | cut -d '#' -f2)
+          if [[ ${{ github.ref_name }} != "v$CRATE_VERSION" ]]; then
+            echo "Tag ${{ github.ref_name }} does not match crate version $CRATE_VERSION" >&2
+            if [[ ${{ github.ref_name }} != 'release-test' ]]; then
+              exit 1
+            fi
+          fi
   build:
     name: Build
     # needs:
@@ -150,9 +156,9 @@ jobs:
           ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"
       - name: Set asset path (Windows)
-        if: matrix.os != 'windows-latest'
+        if: matrix.os == 'windows-latest'
         run: |
-          ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
+          ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.zip"
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"
   
       - name: Build binary and create archive

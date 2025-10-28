@@ -65,7 +65,8 @@ cp -R \
 if [[ "$dest_path" == *.tar.gz ]]; then
   tar czvf "$dest_path" -C "$tmp_dir" "$archive_dir"
 elif  [[ "$dest_path" == *.zip ]]; then
-  (cd "$tmp_dir"; 7z a "$dest_path" "$archive_dir")
+  (cd "$tmp_dir"; 7z a archive.zip "$archive_dir")
+  mv "$tmp_dir/archive.zip" "$dest_path"
 else
   echo >&2 "Invalid extension for $dest_path"
   exit 1

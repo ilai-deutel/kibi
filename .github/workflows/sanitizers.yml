@@ -6,6 +6,10 @@ on:
       - master
     paths:
       - ".github/workflows/sanitizers.yml"
+      - "**.rs"
+      - "*cargo/config.toml"
+      - "*Cargo.toml"
+      - "*Cargo.lock"
   schedule:
     - cron: "12 07 * * 2" # weekly on Tuesday
 
