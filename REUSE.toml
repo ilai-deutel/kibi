@@ -13,6 +13,7 @@ path = [
     ".vscode/settings.json",
     "assets/*",
     "ci/*",
+    "scripts/*",
     "syntax.d/*.ini",
     ".all-contributorsrc",
     ".markdownlint.json",
