@@ -232,6 +232,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    #[expect(clippy::significant_drop_tightening, reason = "False positive")]
     fn invalid_tab_stop() {
         let tmp_config_home = TempDir::new().expect("Could not create temporary directory");
 

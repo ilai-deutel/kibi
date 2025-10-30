@@ -14,7 +14,7 @@ pub enum Error {
     CursorPosition,
     /// Too many arguments given to kibi. The attribute corresponds to the total
     /// number of command line arguments.
-    TooManyArguments(usize),
+    TooManyArguments(Vec<String>),
     /// Unrecognized option given as a command line argument.
     UnrecognizedOption(String),
 }
