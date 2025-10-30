@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "wasi"))] // Not supported yet
+
 use log::info;
 
 struct Output {
@@ -9,11 +11,13 @@ struct Output {
 fn run_kibi(args: &[&str]) -> Result<Output, Box<dyn std::error::Error>> {
     let _ = env_logger::builder().is_test(true).try_init();
     let binary_path = std::env!("CARGO_BIN_EXE_kibi");
-    info!("Running {} {}", binary_path, args.join(" "));
+    let mut command = std::process::Command::new(binary_path);
+    command.args(args);
+    info!("Running {command:?}");
     let start = std::time::Instant::now();
-    let output = std::process::Command::new(binary_path).args(args).output()?;
+    let output = command.output()?;
     info!(
-        "{}Exited after {:?}. {:#?}",
+        "{}Exited after {:?} with {:#?}",
         if output.status.success() { "✔️" } else { "❌" },
         start.elapsed(),
         output
