@@ -5,10 +5,6 @@ on:
     tags:
     - v[0-9]+.[0-9]+.[0-9]+
     - release-test
-  pull_request:
-    tags:
-      - release-test
-
 
 defaults:
   run:
@@ -38,8 +34,8 @@ jobs:
           fi
   build:
     name: Build
-    # needs:
-    #   - verify
+    needs:
+      - verify
     permissions:
       contents: write
     strategy:
@@ -62,31 +58,32 @@ jobs:
           - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
           - wasm32-wasip1               # WebAssembly with WASIp1
         include:
-          # Runner image configuration. Defaults to ubuntu-latest.
-
-          # MacOS
           - target: aarch64-apple-darwin
             os: macos-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
-
-          # Windows, x86
+          - target: aarch64-pc-windows-msvc
+            os: windows-11-arm
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
           - target: i686-pc-windows-msvc
             os: windows-latest
+          - target: i686-unknown-linux-gnu
+            os: ubuntu-latest
           - target: x86_64-pc-windows-gnu
             os: windows-latest
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-
-          # Windows, ARM64
-          - target: aarch64-pc-windows-msvc
-            os: windows-11-arm
-
-          # Linux, ARM64
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-linux-android
+            os: ubuntu-latest
           - target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: wasm32-wasip1
+            os: ubuntu-latest
     outputs:
       hash-aarch64-apple-darwin: ${{ steps.hash-macos.outputs.hash-aarch64-apple-darwin}}
       hash-aarch64-linux-android: ${{ steps.hash.outputs.hash-aarch64-linux-android}}
@@ -101,7 +98,7 @@ jobs:
       hash-x86_64-unknown-linux-musl: ${{ steps.hash.outputs.hash-x86_64-unknown-linux-musl}}
       hash-x86_64-apple-darwin: ${{ steps.hash-macos.outputs.hash-x86_64-apple-darwin}}
       hash-wasm32-wasip1: ${{ steps.hash.outputs.hash-wasm32-wasip1}}
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -118,13 +115,13 @@ jobs:
           cache-directories: ~/ndk
 
       - name: Install upx (Linux)
-        if: ((matrix.os == '') || startsWith(matrix.os, 'ubuntu-')) && matrix.target != 'wasm32-wasip1'
+        if: startsWith(matrix.os, 'ubuntu-') && matrix.target != 'wasm32-wasip1'
         run: |
           sudo apt-get update
           sudo apt-get install upx-ucl
           echo "COMPRESS_BINARY=true" >> "$GITHUB_ENV"
       - name: Install gcc-multilib (Linux i686)
-        if: (matrix.os == '') && startsWith(matrix.target, 'i686-')
+        if: (matrix.os == 'ubuntu-latest') && startsWith(matrix.target, 'i686-')
         run: |
           sudo apt-get install gcc-multilib
       - name: Install upx (Windows)
@@ -136,7 +133,6 @@ jobs:
         if: matrix.target == 'aarch64-linux-android'
         run: |
           if [[ ! -d ~/ndk ]]; then
-              mkdir ~/android
               ci/install_android_ndk.sh ~/ndk
           fi
           TOOLCHAIN="$HOME/ndk/toolchains/llvm/prebuilt/linux-x86_64"

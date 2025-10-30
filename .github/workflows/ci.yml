@@ -17,12 +17,17 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+defaults:
+  run:
+    shell: bash
+
 permissions:
   contents: read
 
 jobs:
   build_and_test:
     strategy:
+      fail-fast: false
       matrix:
         toolchain:
           - stable
@@ -45,38 +50,50 @@ jobs:
           - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
           - wasm32-wasip1               # WebAssembly with WASIp1
         include:
-          # Runner image configuration. Defaults to ubuntu-latest.
+          # Only run coverage on nightly toolchain
+          - toolchain: stable
+            disable-coverage: true
+          - toolchain: "1.85"
+            disable-coverage: true
 
-          # MacOS
+          # # Target-specific config
           - target: aarch64-apple-darwin
             os: macos-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
-
-          # Windows, x86
-          - target: i686-pc-windows-msvc
-            os: windows-latest
-          - target: x86_64-pc-windows-gnu
-            os: windows-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-
-          # Windows, ARM64
           - target: aarch64-pc-windows-msvc
             os: windows-11-arm
-          
-          # Linux, ARM64
-          - target: aarch64-linux-android
-            os: ubuntu-24.04-arm
+            disable-coverage: true
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
+          - target: i686-pc-windows-msvc
+            os: windows-latest
+          - target: i686-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            disable-coverage: true # https://github.com/rust-lang/rust/issues/111098
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-linux-android
+            os: ubuntu-latest
+            disable-tests: true
+            disable-coverage: true
           - target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: wasm32-wasip1
+            os: ubuntu-latest
+            disable-coverage: true
 
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os }}
 
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -95,32 +112,75 @@ jobs:
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
         with:
           prefix-key: rust-${{ matrix.toolchain }}
-      - name: Install Rust ${{ matrix.toolchain }} toolchain
+          # Android-only
+          cache-directories: ~/ndk
+      - name: Install dependencies (Android)
+        if: matrix.target == 'aarch64-linux-android'
         run: |
+          set -euo pipefail
+          if [[ ! -d ~/ndk ]]; then
+              ci/install_android_ndk.sh ~/ndk
+          fi
+          TOOLCHAIN="$HOME/ndk/toolchains/llvm/prebuilt/linux-x86_64"
+          ANDROID_API_LEVEL=$(jq .max ~/ndk/meta/platforms.json)
+          echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+          TARGET_UPPERCASE=$(sed -e 's/.*/\U&/' -e 's/-/_/g' <<< ${{ matrix.target }})
+          echo "CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${TOOLCHAIN}/bin/${{ matrix.target }}${ANDROID_API_LEVEL}-clang" >> "$GITHUB_ENV"
+      - name: Install dependencies (WASI)
+        if: matrix.target == 'wasm32-wasip1'
+        run: cargo install --verbose wasmtime-cli
+      - name: Install Rust ${{ matrix.toolchain }} toolchain
+        if: matrix.disable-coverage == true
+        run: |
+          set -euo pipefail
           rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal
           rustup default ${{ matrix.toolchain }}
           rustc +${{ matrix.toolchain }} --version --verbose
-      - name: Build
-        run: cargo build
-        env:
-          RUSTFLAGS: -D warnings -C instrument-coverage
-      - name: Run tests
-        run: cargo test --verbose --all-features --no-fail-fast
-        env:
-          LLVM_PROFILE_FILE: kibi-%p-%m.profraw
-      - name: Collect code coverage results
+      - name: Install Rust ${{ matrix.toolchain }} toolchain, grcov
+        if: matrix.disable-coverage != true
         run: |
-          cargo install grcov --no-default-features
-          grcov . --binary-path ./target/debug/ --source-dir . --output-types lcov --branch --output-path lcov.info --keep-only 'src/*'
+          set -euo pipefail
+          rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal --component llvm-tools-preview
+          rustup default ${{ matrix.toolchain }}
+          rustc +${{ matrix.toolchain }} --version --verbose
+          cargo install grcov
+      - name: Build and test
+        run: |
+          set -euo pipefail
+          flags='--target ${{ matrix.target }}'
+          if [[ '${{ matrix.disable-tests || false }}' == 'true' ]]; then
+            flags="$flags --no-run-tests"
+          fi
+          if [[ '${{ matrix.disable-coverage || false }}' == 'true' ]]; then
+            flags="$flags --no-coverage"
+          else
+            flags="$flags --output-dir ./coverage"
+          fi
+          # shellcheck disable=SC2086
+          ci/build_and_test.sh $flags
+
+          if [[ '${{ matrix.disable-coverage || false }}' == 'false' ]]; then
+            ls -la coverage
+          fi
       - name: Upload code coverage results
-        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        if: matrix.disable-coverage != true
+        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
         with:
-          files: lcov.info
-          flags: ${{ matrix.target }}-${{ matrix.toolchain }}
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          file: coverage/lcov.info
+          format: lcov
+          flag-name: ${{ matrix.target }}
+          parallel: true
+
+  finish_coverage:
+    needs: build_and_test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
+      with:
+        parallel-finished: true
+        carryforward: aarch64-apple-darwin,aarch64-unknown-linux-gnu,i686-pc-windows-msvc,i686-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-unknown-linux-gnu,aarch64-unknown-linux-musl,x86_64-unknown-linux-musl,x86_64-apple-darwin
 
   static_checks:
     strategy:

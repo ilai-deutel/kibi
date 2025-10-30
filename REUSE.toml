@@ -21,7 +21,6 @@ path = [
     "CHANGELOG.md",
     "COPYRIGHT",
     "clippy.toml",
-    "codecov.yml",
     "config_example.ini",
     "deny.toml",
     "kibi.desktop",

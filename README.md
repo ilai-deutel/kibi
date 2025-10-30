@@ -8,6 +8,7 @@
 [![Platform](https://img.shields.io/badge/platform-Linux%20|%20macOS%20|%20Windows%2010%20|%20WASI-blue)](#)
 [![Packaging status](https://repology.org/badge/tiny-repos/kibi.svg)](https://repology.org/project/kibi/versions)
 [![Dependency Status](https://deps.rs/repo/github/ilai-deutel/kibi/status.svg)](https://deps.rs/repo/github/ilai-deutel/kibi)
+[![Coverage Status](https://coveralls.io/repos/github/ilai-deutel/kibi/badge.svg)](https://coveralls.io/github/ilai-deutel/kibi)
 [![License](https://img.shields.io/crates/l/kibi?color=blue)](#license)
 [![REUSE status](https://api.reuse.software/badge/github.com/ilai-deutel/kibi)](https://api.reuse.software/info/github.com/ilai-deutel/kibi)
 [![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/ilai-deutel/kibi)](https://rust-reportcard.xuri.me/report/github.com/ilai-deutel/kibi)
