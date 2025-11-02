@@ -696,8 +696,8 @@ impl Editor {
     /// # Errors
     ///
     /// Will Return `Err` if any error occur.
-    pub fn run(&mut self, file_name: &Option<String>) -> Result<(), Error> {
-        if let Some(path) = file_name.as_ref().map(|p| sys::path(p.as_str())) {
+    pub fn run(&mut self, file_name: Option<&str>) -> Result<(), Error> {
+        if let Some(path) = file_name.map(sys::path) {
             self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
             self.load(path.as_path())?;
             self.file_name = Some(path.to_string_lossy().to_string());

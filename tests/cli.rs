@@ -1,6 +1,7 @@
 #![cfg(not(target_os = "wasi"))] // Not supported yet
 
 use log::info;
+use rstest::rstest;
 
 struct Output {
     status: std::process::ExitStatus,
@@ -29,31 +30,48 @@ fn run_kibi(args: &[&str]) -> Result<Output, Box<dyn std::error::Error>> {
     })
 }
 
-#[test]
-fn version() -> Result<(), Box<dyn std::error::Error>> {
-    let output = run_kibi(&["--version"])?;
+#[rstest]
+#[case(&["--version"])]
+#[case(&["--version", "--"])]
+fn version(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+    let output = run_kibi(args)?;
     assert!(output.status.success());
     assert_eq!(output.stdout, format!("kibi {}\n", std::env!("KIBI_VERSION")));
     Ok(())
 }
 
-#[test]
-fn invalid_option() -> Result<(), Box<dyn std::error::Error>> {
-    let output = run_kibi(&["--invalid"])?;
+#[rstest]
+#[case(&["-i"])]
+#[case(&["-i", "--"])]
+#[case(&["--invalid"])]
+#[case(&["--invalid", "--"])]
+#[case(&["--version", "abc"])]
+#[case(&["--version", "--", "abc"])]
+#[case(&["--version", "abc", "--"])]
+fn invalid_option(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+    let output = run_kibi(args)?;
     assert!(!output.status.success());
-    assert_eq!(output.stderr, "Error: UnrecognizedOption(\"--invalid\")\n");
+    assert_eq!(output.stderr, format!("Error: UnrecognizedOption(\"{}\")\n", &args[0]));
     Ok(())
 }
 
-#[test]
-fn too_many_arguments() -> Result<(), Box<dyn std::error::Error>> {
-    let output = run_kibi(&["abc", "def"])?;
+#[rstest]
+#[case(&["abc", "def"])]
+#[case(&["abc", "--version"])]
+#[case(&["--", "abc", "def"])]
+#[case(&["--", "abc", "--version"])]
+#[case(&["abc", "--", "def"])]
+#[case(&["abc", "--", "--version"])]
+#[case(&["abc", "--", "--"])]
+fn too_many_arguments(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+    let output = run_kibi(args)?;
     assert!(!output.status.success());
     assert_eq!(
         output.stderr,
         format!(
-            "Error: TooManyArguments([\"{}\", \"abc\", \"def\"])\n",
-            std::env!("CARGO_BIN_EXE_kibi").escape_debug()
+            "Error: TooManyArguments([\"{}\", {}])\n",
+            std::env!("CARGO_BIN_EXE_kibi").escape_debug(),
+            args.iter().map(|arg| format!("{arg:?}")).collect::<Vec::<_>>().join(", ")
         )
     );
     Ok(())
@@ -68,10 +86,15 @@ fn no_argument() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[test]
-fn with_file_name() -> Result<(), Box<dyn std::error::Error>> {
+#[rstest]
+#[case(&["abc"])]
+#[case(&["--", "abc"])]
+#[case(&["--", "-not-an-option"])]
+#[case(&["abc", "--"])]
+#[case(&["--", "--"])]
+fn with_file_name(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     // Can't test without a terminal
-    let output = run_kibi(&["test.txt"])?;
+    let output = run_kibi(args)?;
     assert!(!output.status.success());
     assert!(output.stderr.contains("Error: Io"));
     Ok(())

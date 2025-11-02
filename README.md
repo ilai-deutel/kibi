@@ -305,6 +305,8 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 * *Save as* prompt when no file name has been provided
 * Command to duplicate the current row, to quickly move between words
 * Ability to execute an external command from the editor and paste its output
+* Support for end-of-options delimiter `--` (following [POSIX.1-2024 12. Utility Conventions](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html))
+* Can be used as the editor for the *`sudoers`* file via [`visudo`](https://www.man7.org/linux/man-pages/man8/visudo.8.html)
 * Guaranteed memory safety, thanks to Rust!
 * Bug fixes
 
