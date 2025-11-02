@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for end-of-options delimiter `--` (following [POSIX.1-2024 12. Utility Conventions](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html)), allowing Kibi to be used as the editor for the *`sudoers`* file with [`visudo`](https://www.man7.org/linux/man-pages/man8/visudo.8.html) ([#481](https://github.com/ilai-deutel/kibi/pull/481))
 
+### Fixed
+
+- Crash when backspace was pressed in find mode with empty search field ([#482](https://github.com/ilai-deutel/kibi/pull/482))
+
 ## [0.3.0] - 2025-10-26
 
 ### Added

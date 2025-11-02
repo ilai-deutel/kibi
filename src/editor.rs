@@ -56,7 +56,7 @@ enum AKey {
 }
 
 /// Describes the cursor position and the screen offset
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 struct CursorState {
     /// x position (indexing the characters, not the columns)
     x: usize,
@@ -672,7 +672,8 @@ impl Editor {
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
-        let num_rows = self.rows.len();
+        // Number of rows to search
+        let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
         let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
         // TODO: Handle multiple matches per line
         for _ in 0..num_rows {
@@ -739,6 +740,7 @@ impl Drop for Editor {
 }
 
 /// The prompt mode.
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
@@ -837,6 +839,7 @@ impl PromptMode {
 }
 
 /// The state of the prompt after processing a keypress event.
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum PromptState {
     // Active contains the current buffer
     Active(String),
@@ -863,28 +866,31 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 mod tests {
     use std::io::Cursor;
 
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn format_size_output() {
-        assert_eq!(format_size(0), "0B");
-        assert_eq!(format_size(1), "1B");
-        assert_eq!(format_size(1023), "1023B");
-        assert_eq!(format_size(1024), "1.00kB");
-        assert_eq!(format_size(1536), "1.50kB");
-        // round down!
-        assert_eq!(format_size(21 * 1024 - 11), "20.98kB");
-        assert_eq!(format_size(21 * 1024 - 10), "20.99kB");
-        assert_eq!(format_size(21 * 1024 - 3), "20.99kB");
-        assert_eq!(format_size(21 * 1024), "21.00kB");
-        assert_eq!(format_size(21 * 1024 + 3), "21.00kB");
-        assert_eq!(format_size(21 * 1024 + 10), "21.00kB");
-        assert_eq!(format_size(21 * 1024 + 11), "21.01kB");
-        assert_eq!(format_size(1024 * 1024 - 1), "1023.99kB");
-        assert_eq!(format_size(1024 * 1024), "1.00MB");
-        assert_eq!(format_size(1024 * 1024 + 1), "1.00MB");
-        assert_eq!(format_size(100 * 1024 * 1024 * 1024), "100.00GB");
-        assert_eq!(format_size(313 * 1024 * 1024 * 1024 * 1024), "313.00TB");
+    #[rstest]
+    #[case(0, "0B")]
+    #[case(1, "1B")]
+    #[case(1023, "1023B")]
+    #[case(1024, "1.00kB")]
+    #[case(1536, "1.50kB")]
+    // round down!
+    #[case(21 * 1024 - 11, "20.98kB")]
+    #[case(21 * 1024 - 10, "20.99kB")]
+    #[case(21 * 1024 - 3, "20.99kB")]
+    #[case(21 * 1024, "21.00kB")]
+    #[case(21 * 1024 + 3, "21.00kB")]
+    #[case(21 * 1024 + 10, "21.00kB")]
+    #[case(21 * 1024 + 11, "21.01kB")]
+    #[case(1024 * 1024 - 1, "1023.99kB")]
+    #[case(1024 * 1024, "1.00MB")]
+    #[case(1024 * 1024 + 1, "1.00MB")]
+    #[case(100 * 1024 * 1024 * 1024, "100.00GB")]
+    #[case(313 * 1024 * 1024 * 1024 * 1024, "313.00TB")]
+    fn format_size_output(#[case] input: u64, #[case] expected_output: &str) {
+        assert_eq!(format_size(input), expected_output);
     }
 
     #[test]
@@ -1185,5 +1191,51 @@ mod tests {
             assert_eq!(editor.loop_until_keypress(&mut fake_stdin)?, expected_key);
         }
         Ok(())
+    }
+
+    #[rstest]
+    #[case::ascii_completed(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(b'\r')], &PromptState::Completed(String::from("Hi")))]
+    #[case::escape(&[Key::Char(b'H'), Key::Char(b'i'), Key::Escape], &PromptState::Cancelled)]
+    #[case::exit(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(EXIT)], &PromptState::Cancelled)]
+    #[case::skip_ascii_control(&[Key::Char(b'\x0A')], &PromptState::Active(String::new()))]
+    #[case::unsupported_non_ascii(&[Key::Char(b'\xEF')], &PromptState::Active(String::new()))]
+    #[case::backspace(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(BACKSPACE), Key::Char(BACKSPACE)], &PromptState::Active(String::new()))]
+    #[case::delete_bis(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(DELETE_BIS), Key::Char(DELETE_BIS), Key::Char(DELETE_BIS)], &PromptState::Active(String::new()))]
+    fn process_prompt_keypresses(#[case] keys: &[Key], #[case] expected_final_state: &PromptState) {
+        let mut prompt_state = PromptState::Active(String::new());
+        for key in keys {
+            if let PromptState::Active(buffer) = prompt_state {
+                prompt_state = process_prompt_keypress(buffer, key);
+            } else {
+                panic!("Prompt state: {prompt_state:?} is not active")
+            }
+        }
+        assert_eq!(prompt_state, *expected_final_state);
+    }
+
+    #[rstest]
+    #[case(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(BACKSPACE), Key::Char(b'e'), Key::Char(b'l'), Key::Char(b'l'), Key::Char(b'o')], "Hello")]
+    #[case(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(BACKSPACE), Key::Char(BACKSPACE), Key::Char(BACKSPACE)], "")]
+    fn process_find_keypress_completed(#[case] keys: &[Key], #[case] expected_final_value: &str) {
+        let mut ed: Editor = Editor::default();
+        ed.insert_new_line();
+        let mut prompt_mode = Some(PromptMode::Find(String::new(), CursorState::default(), None));
+        for key in keys {
+            prompt_mode = prompt_mode
+                .take()
+                .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, key));
+        }
+        assert_eq!(
+            prompt_mode,
+            Some(PromptMode::Find(
+                String::from(expected_final_value),
+                CursorState::default(),
+                None
+            ))
+        );
+        prompt_mode = prompt_mode
+            .take()
+            .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, &Key::Char(b'\r')));
+        assert_eq!(prompt_mode, None);
     }
 }
