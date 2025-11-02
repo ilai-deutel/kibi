@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 _The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
 
+## [Unreleased]
+
+### Added
+
+- Support for end-of-options delimiter `--` (following [POSIX.1-2024 12. Utility Conventions](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html)), allowing Kibi to be used as the editor for the *`sudoers`* file with [`visudo`](https://www.man7.org/linux/man-pages/man8/visudo.8.html) ([#480](https://github.com/ilai-deutel/kibi/pull/480))
+
 ## [0.3.0] - 2025-10-26
 
 ### Added
@@ -134,6 +140,7 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 Initial release
 
+[unreleased]: https://github.com/olivierlacan/ilai-deutel/kibi/v0.3.0...HEAD
 [0.3.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.0
 [0.2.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2
 [0.2.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.1

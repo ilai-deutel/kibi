@@ -11,10 +11,11 @@ use kibi::{Config, Editor, Error};
 /// this function.
 fn main() -> Result<(), Error> {
     let mut args = std::env::args();
-    match (args.nth(1), /* remaining_args= */ args.len()) {
-        (Some(arg), 0) if arg == "--version" => println!("kibi {}", env!("KIBI_VERSION")),
-        (Some(arg), 0) if arg.starts_with('-') => return Err(Error::UnrecognizedOption(arg)),
-        (file_name, 0) => Editor::new(Config::load())?.run(&file_name)?,
+    match (args.nth(1).as_deref(), args.next().as_deref(), /* remaining_args= */ args.len()) {
+        (Some("--version"), None | Some("--"), 0) => println!("kibi {}", env!("KIBI_VERSION")),
+        (Some(o), ..) if o.starts_with('-') && o != "--" =>
+            return Err(Error::UnrecognizedOption(o.into())),
+        (Some("--"), p, 0) | (p, Some("--") | None, 0) => Editor::new(Config::load())?.run(p)?,
         _ => return Err(Error::TooManyArguments(std::env::args().collect())),
     }
     Ok(())
