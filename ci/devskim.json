@@ -1,4 +1,7 @@
 {
+  "Globs": [
+    "scripts/**"
+  ],
   "IgnoreRuleIds": [
     "DS176209"
   ]

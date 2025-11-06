@@ -147,12 +147,12 @@ jobs:
           rustc +stable --version --verbose
 
       - name: Set asset path (Unix)
-        if: matrix.os != 'windows-latest'
+        if: "! startsWith(matrix.os, 'windows-')"
         run: |
           ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"
       - name: Set asset path (Windows)
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows-')
         run: |
           ASSET_PATH="kibi-${{ github.ref_name }}-${{ matrix.target }}.zip"
           echo "ASSET_PATH=$ASSET_PATH" >> "$GITHUB_ENV"

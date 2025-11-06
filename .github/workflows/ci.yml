@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "master"
-    paths:
+    paths: &TRIGGER_PATHS
       - ".github/workflows/ci.yml"
       - "**.rs"
       - "*cargo/config.toml"
@@ -13,6 +13,7 @@ on:
   pull_request:
     branches:
       - master
+    paths: *TRIGGER_PATHS
 
 env:
   CARGO_TERM_COLOR: always
