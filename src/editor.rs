@@ -154,7 +154,7 @@ fn format_size(n: u64) -> String {
     format!("{}.{:02}{}B", q / 100, q % 100, b" kMGTPEZ"[i as usize] as char)
 }
 
-/// Return an Arrow Key given and ANSI code.
+/// Return an Arrow Key given an ANSI code.
 ///
 /// The argument must be a valide arrow key ANSI code (`a`, `b`, `c` or `d`),
 /// case-insensitive).
@@ -201,26 +201,27 @@ impl Editor {
 
     /// Move the cursor following an arrow key (← → ↑ ↓).
     fn move_cursor(&mut self, key: &AKey, ctrl: bool) {
-        let mut cursor_x = self.cursor.x;
         match (key, self.current_row()) {
             (AKey::Left, Some(row)) if self.cursor.x > 0 => {
-                cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
+                let mut cursor_x = self.cursor.x - row.get_char_size(row.cx2rx[self.cursor.x] - 1);
                 // ← moving to previous word
                 while ctrl && cursor_x > 0 && row.chars[cursor_x - 1] != b' ' {
                     cursor_x -= row.get_char_size(row.cx2rx[cursor_x] - 1);
                 }
+                self.cursor.x = cursor_x;
             }
             // ← at the beginning of the line: move to the end of the previous line. The x
             // position will be adjusted after this `match` to accommodate the current row
             // length, so we can just set here to the maximum possible value here.
             (AKey::Left, _) if self.cursor.y > 0 =>
-                (self.cursor.y, cursor_x) = (self.cursor.y - 1, usize::MAX),
+                (self.cursor.y, self.cursor.x) = (self.cursor.y - 1, usize::MAX),
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
-                cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
+                let mut cursor_x = self.cursor.x + row.get_char_size(row.cx2rx[self.cursor.x]);
                 // → moving to next word
                 while ctrl && cursor_x < row.chars.len() && row.chars[cursor_x] != b' ' {
                     cursor_x += row.get_char_size(row.cx2rx[cursor_x]);
                 }
+                self.cursor.x = cursor_x;
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
@@ -229,7 +230,6 @@ impl Editor {
             (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
         }
-        self.cursor.x = cursor_x;
         self.update_cursor_x_position();
     }
 
@@ -870,6 +870,20 @@ mod tests {
 
     use super::*;
 
+    fn assert_row_chars_equal(editor: &Editor, expected: &[&[u8]]) {
+        assert_eq!(editor.rows.len(), expected.len());
+        for (i, (row, expected)) in editor.rows.iter().zip(expected).enumerate() {
+            assert_eq!(
+                row.chars,
+                *expected,
+                "comparing characters for row {}\n  left: {}\n  right: {})",
+                i,
+                String::from_utf8_lossy(&row.chars),
+                String::from_utf8_lossy(expected)
+            );
+        }
+    }
+
     #[rstest]
     #[case(0, "0B")]
     #[case(1, "1B")]
@@ -925,6 +939,7 @@ mod tests {
             assert_eq!(row.chars, []);
         }
     }
+
     #[test]
     fn editor_delete_char() {
         let mut editor = Editor::default();
@@ -932,23 +947,37 @@ mod tests {
             editor.insert_byte(*b);
         }
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, b"Hello world");
+        assert_row_chars_equal(&editor, &[b"Hello world"]);
         editor.move_cursor(&AKey::Left, true);
         editor.move_cursor(&AKey::Left, false);
         editor.move_cursor(&AKey::Left, false);
         editor.delete_char();
-        assert_eq!(editor.rows[0].chars, b"Helo world");
+        assert_row_chars_equal(&editor, &[b"Helo world"]);
+    }
+
+    #[test]
+    fn editor_delete_next_char() {
+        let mut editor = Editor::default();
+        for &b in b"Hello world!\nHappy New Year!" {
+            editor.process_keypress(&Key::Char(b));
+        }
+        editor.process_keypress(&Key::Delete);
+        assert_row_chars_equal(&editor, &[b"Hello world!", b"Happy New Year!"]);
+        editor.move_cursor(&AKey::Left, true);
+        editor.process_keypress(&Key::Delete);
+        assert_row_chars_equal(&editor, &[b"Hello world!", b"Happy New ear!"]);
+        editor.move_cursor(&AKey::Left, true);
+        editor.move_cursor(&AKey::Left, true);
+        editor.move_cursor(&AKey::Left, true);
+        editor.process_keypress(&Key::Delete);
+        assert_row_chars_equal(&editor, &[b"Hello world!Happy New ear!"]);
     }
 
     #[test]
     fn editor_move_cursor_left() {
         let mut editor = Editor::default();
-        for b in b"Hello world!\nHappy New Year!" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"Hello world!\nHappy New Year!" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
@@ -991,12 +1020,8 @@ mod tests {
     #[test]
     fn editor_move_cursor_up() {
         let mut editor = Editor::default();
-        for b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
@@ -1019,12 +1044,8 @@ mod tests {
     #[test]
     fn editor_move_cursor_right() {
         let mut editor = Editor::default();
-        for b in b"Hello world\nHappy New Year" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"Hello world\nHappy New Year" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
@@ -1051,17 +1072,17 @@ mod tests {
         editor.move_cursor(&AKey::Right, true);
         assert_eq!(editor.cursor.x, 11);
         assert_eq!(editor.cursor.y, 0);
+
+        editor.move_cursor(&AKey::Right, false);
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 1);
     }
 
     #[test]
     fn editor_move_cursor_down() {
         let mut editor = Editor::default();
-        for b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"abcdefgh\nij\nklmnopqrstuvwxyz" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
@@ -1103,12 +1124,8 @@ mod tests {
     #[test]
     fn editor_press_home_key() {
         let mut editor = Editor::default();
-        for b in b"Hello\nWorld\nand\nFerris!" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"Hello\nWorld\nand\nFerris!" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
@@ -1138,12 +1155,8 @@ mod tests {
     #[test]
     fn editor_press_end_key() {
         let mut editor = Editor::default();
-        for b in b"Hello\nWorld\nand\nFerris!" {
-            if *b == b'\n' {
-                editor.insert_new_line();
-            } else {
-                editor.insert_byte(*b);
-            }
+        for &b in b"Hello\nWorld\nand\nFerris!" {
+            editor.process_keypress(&Key::Char(b));
         }
 
         // check current position
