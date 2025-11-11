@@ -32,6 +32,11 @@ pub const fn set_term_mode(_term: &TermMode) -> Result<(), Error> { Ok(()) }
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
 pub const fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
 
+/// Construct a new handle to the standard input of the current process.
+///
+/// # Errors
+///
+/// This function will return an error if /dev/tty cannot be open.
 pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::BufReader::new(File::open("/dev/tty")?)) }
 
 pub fn path(filename: &str) -> std::path::PathBuf {

@@ -1,11 +1,7 @@
-// "False positive, see https://github.com/rust-lang/rust-clippy/issues/13358#issuecomment-2767079754"
-#![allow(unfulfilled_lint_expectations)]
-#![expect(clippy::wildcard_imports)]
-
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors};
-use std::{fs::File, path::Path, process::Command, thread, time::Instant};
+use std::{fs::File, path::Path, process::Command, time::Instant};
 
 use crate::row::{HlState, Row};
 use crate::{Config, Error, ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal};
@@ -107,8 +103,8 @@ pub struct Editor {
     dirty: bool,
     /// The configuration for the editor.
     config: Config,
-    /// The number of warnings remaining before we can quit without saving.
-    /// Defaults to `config.quit_times`, then decreases to 0.
+    /// The number of consecutive times the user has tried to quit without
+    /// saving. After `config.quit_times`, the program will exit.
     quit_times: usize,
     /// The file name. If None, the user will be prompted for a file name the
     /// first time they try to save.
@@ -120,9 +116,6 @@ pub struct Editor {
     syntax: SyntaxConf,
     /// The number of bytes contained in `rows`. This excludes new lines.
     n_bytes: u64,
-    /// The original terminal mode. It will be restored when the `Editor`
-    /// instance is dropped.
-    orig_term_mode: Option<sys::TermMode>,
     /// The copied buffer of a row
     copied_row: Vec<u8>,
 }
@@ -169,27 +162,6 @@ fn get_akey(c: u8) -> AKey {
 }
 
 impl Editor {
-    /// Initialize the text editor.
-    ///
-    /// # Errors
-    ///
-    /// Will return `Err` if an error occurs when enabling termios raw mode,
-    /// creating the signal hook or when obtaining the terminal window size.
-    pub fn new(config: Config) -> Result<Self, Error> {
-        sys::register_winsize_change_signal_handler()?;
-        let mut editor = Self::default();
-        (editor.quit_times, editor.config) = (config.quit_times, config);
-
-        // Enable raw mode and store the original (non-raw) terminal mode.
-        editor.orig_term_mode = Some(sys::enable_raw_mode()?);
-        print!("{USE_ALTERNATE_SCREEN}");
-
-        editor.update_window_size()?;
-        set_status!(editor, "{HELP_MESSAGE}");
-
-        Ok(editor)
-    }
-
     /// Return the current row if the cursor points to an existing row, `None`
     /// otherwise.
     fn current_row(&self) -> Option<&Row> { self.rows.get(self.cursor.y) }
@@ -610,7 +582,7 @@ impl Editor {
     /// switch to.
     fn process_keypress(&mut self, key: &Key) -> (bool, Option<PromptMode>) {
         // This won't be mutated, unless key is Key::Character(EXIT)
-        let mut quit_times = self.config.quit_times;
+        let mut reset_quit_times = true;
         let mut prompt_mode = None;
 
         match key {
@@ -635,12 +607,12 @@ impl Editor {
             }
             Key::Escape | Key::Char(REFRESH_SCREEN) => (),
             Key::Char(EXIT) => {
-                quit_times = self.quit_times - 1;
-                if !self.dirty || quit_times == 0 {
+                if !self.dirty || self.quit_times + 1 >= self.config.quit_times {
                     return (true, None);
                 }
-                let times = if quit_times > 1 { "times" } else { "time" };
-                set_status!(self, "Press Ctrl+Q {quit_times} more {times} to quit.");
+                let r = self.config.quit_times - self.quit_times - 1;
+                set_status!(self, "Press Ctrl+Q {0} more time{1:.2$} to quit.", r, "s", r - 1);
+                reset_quit_times = false;
             }
             Key::Char(SAVE) => match self.file_name.take() {
                 // TODO: Can we avoid using take() then reassigning the value to file_name?
@@ -663,7 +635,7 @@ impl Editor {
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
             Key::Char(c) => self.insert_byte(*c),
         }
-        self.quit_times = quit_times;
+        self.quit_times = if reset_quit_times { 0 } else { self.quit_times + 1 };
         (false, prompt_mode)
     }
 
@@ -697,7 +669,11 @@ impl Editor {
     /// # Errors
     ///
     /// Will Return `Err` if any error occur.
-    pub fn run(&mut self, file_name: Option<&str>) -> Result<(), Error> {
+    pub fn run<I: BufRead>(&mut self, file_name: Option<&str>, input: &mut I) -> Result<(), Error> {
+        self.update_window_size()?;
+        set_status!(self, "{HELP_MESSAGE}");
+        self.refresh_screen()?;
+
         if let Some(path) = file_name.map(sys::path) {
             self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
             self.load(path.as_path())?;
@@ -711,7 +687,7 @@ impl Editor {
                 set_status!(self, "{}", mode.status_msg());
             }
             self.refresh_screen()?;
-            let key = self.loop_until_keypress(&mut sys::stdin()?)?;
+            let key = self.loop_until_keypress(input)?;
             // TODO: Can we avoid using take()?
             self.prompt_mode = match self.prompt_mode.take() {
                 // process_keypress returns (should_quit, prompt_mode)
@@ -725,18 +701,27 @@ impl Editor {
     }
 }
 
-impl Drop for Editor {
-    #[expect(clippy::expect_used)]
-    /// When the editor is dropped, restore the original terminal mode.
-    fn drop(&mut self) {
-        if let Some(orig_term_mode) = self.orig_term_mode.take() {
-            sys::set_term_mode(&orig_term_mode).expect("Could not restore original terminal mode.");
-        }
-        if !thread::panicking() {
-            print!("{USE_MAIN_SCREEN}");
-            io::stdout().flush().expect("Could not flush stdout");
-        }
-    }
+/// Set up the terminal and run the text editor. If `file_name` is not None,
+/// load the file.
+///
+/// # Errors
+///
+/// Will Return `Err` if any error occur when registering the window size signal
+/// handler, enabling raw mode, or running the editor.
+pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Error> {
+    sys::register_winsize_change_signal_handler()?;
+    let orig_term_mode = sys::enable_raw_mode()?;
+    print!("{USE_ALTERNATE_SCREEN}");
+
+    let mut editor = Editor { config: Config::load(), ..Default::default() };
+    let result = editor.run(file_name, input);
+
+    // Restore the original terminal mode.
+    sys::set_term_mode(&orig_term_mode)?;
+    print!("{USE_MAIN_SCREEN}");
+    io::stdout().flush()?;
+
+    result
 }
 
 /// The prompt mode.

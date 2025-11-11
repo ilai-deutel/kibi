@@ -2,7 +2,7 @@
 //!
 //! Kibi is a text editor in ≤1024 lines of code.
 
-pub use crate::{config::Config, editor::Editor, error::Error};
+pub use crate::{config::Config, editor::run, error::Error, sys::stdin};
 
 pub mod ansi_escape;
 mod config;

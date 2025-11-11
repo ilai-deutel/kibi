@@ -1,6 +1,6 @@
 //! # Kibi
 
-use kibi::{Config, Editor, Error};
+use kibi::{Error, run, stdin};
 
 /// Load the configuration, initialize the editor and run the program,
 /// optionally opening a file if an argument is given.
@@ -15,7 +15,7 @@ fn main() -> Result<(), Error> {
         (Some("--version"), None | Some("--"), 0) => println!("kibi {}", env!("KIBI_VERSION")),
         (Some(o), ..) if o.starts_with('-') && o != "--" =>
             return Err(Error::UnrecognizedOption(o.into())),
-        (Some("--"), p, 0) | (p, Some("--") | None, 0) => Editor::new(Config::load())?.run(p)?,
+        (Some("--"), p, 0) | (p, Some("--") | None, 0) => run(p, &mut stdin()?)?,
         _ => return Err(Error::TooManyArguments(std::env::args().collect())),
     }
     Ok(())

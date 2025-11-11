@@ -3,8 +3,6 @@
 //! Windows-specific structs and functions. Will be imported as `sys` on Windows
 //! systems.
 
-#![expect(clippy::wildcard_imports)]
-
 use std::{env::var, io};
 
 use winapi::um::wincon::*;
@@ -32,9 +30,9 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
 }
 
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
-pub fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
+pub const fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
 
-pub fn has_window_size_changed() -> bool { false }
+pub const fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode.
 #[expect(clippy::trivially_copy_pass_by_ref)]
@@ -61,7 +59,13 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok((mode_in0, mode_out0))
 }
 
-#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
+/// Construct and lock a new handle to the standard input of the current
+/// process.
+///
+/// # Errors
+///
+/// This function always returns Ok(...). The return type is a Result for
+/// compatibility with other platforms.
 pub fn stdin() -> io::Result<impl io::BufRead> { Ok(io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

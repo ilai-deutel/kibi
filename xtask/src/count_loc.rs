@@ -7,7 +7,7 @@ use crate::{BOLD, GREEN, RED, RESET, Result};
 
 const INNER_ATTRIBUTE_PREFIX: &str = "#![";
 const OUTER_ATTRIBUTE_PREFIX: &str = "#[";
-const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 5] = [
+const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 6] = [
     // Lint directives
     "allow(",
     "warn(",
@@ -15,6 +15,7 @@ const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 5] = [
     "expect(",
     // Test-only attributes
     "cfg_attr(test,",
+    "cfg_attr(fuzzing,",
 ];
 
 pub fn count_loc() -> Result<()> {

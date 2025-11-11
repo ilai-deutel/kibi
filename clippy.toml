@@ -1,3 +1,10 @@
 allow-expect-in-tests = true
 allow-panic-in-tests = true
 allow-unwrap-in-tests = true
+allowed-wildcard-imports = [
+  "ansi_escape",
+  # Allow wildcard imports from winapi::um::wincon.
+  # Several path segments cannot be specified yet
+  # https://github.com/rust-lang/rust-clippy/issues/15246
+  "winapi",
+]

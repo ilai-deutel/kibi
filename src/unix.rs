@@ -84,7 +84,13 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
     Ok(orig_term)
 }
 
-#[expect(clippy::unnecessary_wraps)] // Result required on other platforms
+/// Construct and lock a new handle to the standard input of the current
+/// process.
+///
+/// # Errors
+///
+/// This function always returns Ok(...). The return type is a Result for
+/// compatibility with other platforms.
 pub fn stdin() -> std::io::Result<impl BufRead> { Ok(std::io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }
