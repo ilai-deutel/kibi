@@ -4,7 +4,7 @@ members = ["fuzz", "xtask"]
 
 [workspace.package]
 version = "0.3.1"
-rust-version = "1.85"
+rust-version = "1.91"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"
 edition = "2024"

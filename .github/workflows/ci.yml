@@ -31,8 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - stable
-          - "1.85" # MSRV
+          - "1.91" # MSRV
           - nightly
         target:
           # Tier 1 platforms
@@ -52,9 +51,7 @@ jobs:
           - wasm32-wasip1               # WebAssembly with WASIp1
         include:
           # Only run coverage on nightly toolchain
-          - toolchain: stable
-            disable-coverage: true
-          - toolchain: "1.85"
+          - toolchain: "1.91"
             disable-coverage: true
 
           # # Target-specific config

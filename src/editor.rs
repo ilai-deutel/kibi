@@ -501,7 +501,7 @@ impl Editor {
     /// Return whether the file being edited is empty or not. If there is more
     /// than one row, even if all the rows are empty, `is_empty` returns
     /// `false`, since the text contains new lines.
-    fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
+    const fn is_empty(&self) -> bool { self.rows.len() <= 1 && self.n_bytes == 0 }
 
     /// Draw rows of text and empty rows on the terminal, by adding characters
     /// to the buffer.

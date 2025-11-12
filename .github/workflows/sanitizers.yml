@@ -64,7 +64,7 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1  # v2.8.1
         with:
-          prefix-key: rust-stable
+          prefix-key: rust-nightly
       - name: Install Rust nightly with rust-src
         run: |
           rustup toolchain install nightly --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
