@@ -4,7 +4,7 @@
 //! systems.
 #![expect(unsafe_code)]
 
-use std::io::BufRead;
+use std::io::{self, BufRead};
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 // On UNIX systems, termios represents the terminal mode.
@@ -15,11 +15,8 @@ use libc::{c_int, c_void, sigaction, sighandler_t, siginfo_t, winsize};
 use crate::Error;
 pub use crate::xdg::*;
 
-fn cerr(err: c_int) -> Result<(), Error> {
-    match err {
-        0..=c_int::MAX => Ok(()),
-        _ => Err(std::io::Error::last_os_error().into()),
-    }
+fn cerr(err: c_int) -> io::Result<()> {
+    if err < 0 { Err(io::Error::last_os_error()) } else { Ok(()) }
 }
 
 /// Return the current window size as (rows, columns).
@@ -46,14 +43,14 @@ extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.st
 /// Register a signal handler that sets a global variable when the window size
 /// changes. After calling this function, use `has_window_size_changed` to query
 /// the global variable.
-pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
+pub fn register_winsize_change_signal_handler() -> io::Result<()> {
     unsafe {
         let mut maybe_sa = std::mem::MaybeUninit::<sigaction>::uninit();
         cerr(libc::sigemptyset(&raw mut (*maybe_sa.as_mut_ptr()).sa_mask))?;
         // We could use sa_handler here, however, sigaction defined in libc does not
         // have sa_handler field, so we use sa_sigaction instead.
         (*maybe_sa.as_mut_ptr()).sa_flags = SA_SIGINFO;
-        (*maybe_sa.as_mut_ptr()).sa_sigaction = handle_wsize as sighandler_t;
+        (*maybe_sa.as_mut_ptr()).sa_sigaction = handle_wsize as *const () as sighandler_t;
         cerr(sigaction(libc::SIGWINCH, maybe_sa.as_ptr(), std::ptr::null_mut()))
     }
 }
@@ -64,14 +61,14 @@ pub fn register_winsize_change_signal_handler() -> Result<(), Error> {
 pub fn has_window_size_changed() -> bool { WSC.swap(false, Relaxed) }
 
 /// Set the terminal mode.
-pub fn set_term_mode(term: &TermMode) -> Result<(), Error> {
+pub fn set_term_mode(term: &TermMode) -> io::Result<()> {
     cerr(unsafe { libc::tcsetattr(STDIN_FILENO, TCSADRAIN, term) })
 }
 
 /// Setup the termios to enable raw mode, and return the original termios.
 ///
 /// termios manual is available at: <http://man7.org/linux/man-pages/man3/termios.3.html>
-pub fn enable_raw_mode() -> Result<TermMode, Error> {
+pub fn enable_raw_mode() -> io::Result<TermMode> {
     let mut maybe_term = std::mem::MaybeUninit::<TermMode>::uninit();
     cerr(unsafe { libc::tcgetattr(STDIN_FILENO, maybe_term.as_mut_ptr()) })?;
     let orig_term = unsafe { maybe_term.assume_init() };
@@ -91,6 +88,6 @@ pub fn enable_raw_mode() -> Result<TermMode, Error> {
 ///
 /// This function always returns Ok(...). The return type is a Result for
 /// compatibility with other platforms.
-pub fn stdin() -> std::io::Result<impl BufRead> { Ok(std::io::stdin().lock()) }
+pub fn stdin() -> io::Result<impl BufRead> { Ok(io::stdin().lock()) }
 
 pub fn path(filename: &str) -> std::path::PathBuf { std::path::PathBuf::from(filename) }

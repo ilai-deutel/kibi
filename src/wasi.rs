@@ -8,6 +8,7 @@ use std::{fs::File, io};
 use crate::Error;
 pub use crate::xdg::*;
 
+#[derive(Copy, Clone)]
 pub struct TermMode;
 
 /// Return the current window size as (rows, columns).
@@ -18,7 +19,7 @@ pub const fn get_window_size() -> Result<(usize, usize), Error> { Err(Error::Inv
 /// Register a signal handler that sets a global variable when the window size
 /// changes. On WASI platforms, this does nothing.
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
-pub const fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
+pub const fn register_winsize_change_signal_handler() -> io::Result<()> { Ok(()) }
 
 /// Check if the windows size has changed since the last call to this function.
 /// On WASI platforms, this always return false.
@@ -26,11 +27,12 @@ pub const fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode. On WASI platforms, this does nothing.
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
-pub const fn set_term_mode(_term: &TermMode) -> Result<(), Error> { Ok(()) }
+#[expect(clippy::trivially_copy_pass_by_ref)]
+pub const fn set_term_mode(_term: &TermMode) -> io::Result<()> { Ok(()) }
 
 // Opening the file /dev/tty is effectively the same as `raw_mode`
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
-pub const fn enable_raw_mode() -> Result<TermMode, Error> { Ok(TermMode {}) }
+pub const fn enable_raw_mode() -> io::Result<TermMode> { Ok(TermMode {}) }
 
 /// Construct a new handle to the standard input of the current process.
 ///

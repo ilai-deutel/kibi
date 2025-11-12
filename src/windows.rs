@@ -30,13 +30,13 @@ pub fn get_window_size() -> Result<(usize, usize), Error> {
 }
 
 #[expect(clippy::unnecessary_wraps)] // Result required on other platforms
-pub const fn register_winsize_change_signal_handler() -> Result<(), Error> { Ok(()) }
+pub const fn register_winsize_change_signal_handler() -> io::Result<()> { Ok(()) }
 
 pub const fn has_window_size_changed() -> bool { false }
 
 /// Set the terminal mode.
 #[expect(clippy::trivially_copy_pass_by_ref)]
-pub fn set_term_mode((stdin_mode, stdout_mode): &TermMode) -> Result<(), io::Error> {
+pub fn set_term_mode((stdin_mode, stdout_mode): &TermMode) -> io::Result<()> {
     cons::set_mode(HandleRef::stdin(), *stdin_mode)?;
     cons::set_mode(HandleRef::stdout(), *stdout_mode)
 }
@@ -45,7 +45,7 @@ pub fn set_term_mode((stdin_mode, stdout_mode): &TermMode) -> Result<(), io::Err
 ///
 /// Documentation for console modes is available at:
 /// <https://docs.microsoft.com/en-us/windows/console/setconsolemode>
-pub fn enable_raw_mode() -> Result<TermMode, Error> {
+pub fn enable_raw_mode() -> io::Result<TermMode> {
     // (mode_in0, mode_out0) are the original terminal modes
     let (mode_in0, mode_out0) = (cons::mode(HandleRef::stdin())?, cons::mode(HandleRef::stdout())?);
 

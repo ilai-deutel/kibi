@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, Read, Write};
 
-use crate::{Error, ansi_escape::DEVICE_STATUS_REPORT, ansi_escape::REPOSITION_CURSOR_END, sys};
+use crate::{Error, ansi_escape::*, sys};
 
 /// Obtain the window size using the cursor position.
 ///
@@ -30,4 +30,12 @@ fn read_value_until<T: std::str::FromStr>(stop_byte: u8) -> Result<T, Error> {
     // Check that we have reached `stop_byte`, not EOF.
     buf.pop().filter(|u| *u == stop_byte).ok_or(Error::CursorPosition)?;
     std::str::from_utf8(&buf).or(Err(Error::CursorPosition))?.parse().or(Err(Error::CursorPosition))
+}
+
+#[cfg_attr(any(windows, target_os = "wasi"), expect(clippy::trivially_copy_pass_by_ref))]
+pub fn restore_terminal(orig_term_mode: &sys::TermMode) -> io::Result<()> {
+    // Restore the original terminal mode.
+    sys::set_term_mode(orig_term_mode)?;
+    print!("{USE_MAIN_SCREEN}");
+    io::stdout().flush()
 }

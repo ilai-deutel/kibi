@@ -704,6 +704,8 @@ impl Editor {
 /// Set up the terminal and run the text editor. If `file_name` is not None,
 /// load the file.
 ///
+/// Update the panic hook to restore the terminal on panic.
+///
 /// # Errors
 ///
 /// Will Return `Err` if any error occur when registering the window size signal
@@ -713,13 +715,17 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
     let orig_term_mode = sys::enable_raw_mode()?;
     print!("{USE_ALTERNATE_SCREEN}");
 
+    let prev_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        terminal::restore_terminal(&orig_term_mode).unwrap_or_else(|e| eprintln!("{e}"));
+        prev_hook(info);
+    }));
+
     let mut editor = Editor { config: Config::load(), ..Default::default() };
     let result = editor.run(file_name, input);
 
     // Restore the original terminal mode.
-    sys::set_term_mode(&orig_term_mode)?;
-    print!("{USE_MAIN_SCREEN}");
-    io::stdout().flush()?;
+    terminal::restore_terminal(&orig_term_mode)?;
 
     result
 }

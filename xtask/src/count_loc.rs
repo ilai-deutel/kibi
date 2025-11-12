@@ -7,12 +7,13 @@ use crate::{BOLD, GREEN, RED, RESET, Result};
 
 const INNER_ATTRIBUTE_PREFIX: &str = "#![";
 const OUTER_ATTRIBUTE_PREFIX: &str = "#[";
-const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 6] = [
+const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 7] = [
     // Lint directives
     "allow(",
     "warn(",
     "deny(",
     "expect(",
+    "#[cfg_attr(any(windows, target_os = \"wasi\"), expect(",
     // Test-only attributes
     "cfg_attr(test,",
     "cfg_attr(fuzzing,",
