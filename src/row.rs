@@ -42,7 +42,7 @@ pub struct Row {
     /// `self.chars`.
     pub rx2cx: Vec<usize>,
     /// The vector of `HLType` for each rendered character.
-    hl: Vec<HlType>,
+    pub hl: Vec<HlType>,
     /// The final state of the row.
     pub hl_state: HlState,
     /// If not `None`, the range that is currently matched during a FIND

@@ -370,7 +370,7 @@ impl Editor {
             self.update_row(self.cursor.y, false);
             // The number of rows has changed. The left padding may need to be updated.
             self.update_screen_cols();
-            (self.dirty, self.cursor.y) = (self.dirty, self.cursor.y - 1);
+            (self.dirty, self.cursor.y) = (true, self.cursor.y - 1);
         } else if self.cursor.y == self.rows.len() {
             // If the cursor is located after the last row, pressing backspace is equivalent
             // to pressing the left arrow key.
@@ -381,9 +381,10 @@ impl Editor {
     fn delete_current_row(&mut self) {
         if self.cursor.y < self.rows.len() {
             self.rows[self.cursor.y].chars.clear();
-            self.update_row(self.cursor.y, false);
-            self.cursor.move_to_next_line();
+            self.cursor.x = 0;
+            self.cursor.y = std::cmp::min(self.cursor.y + 1, self.rows.len() - 1);
             self.delete_char();
+            self.cursor.x = 0;
         }
     }
 
@@ -860,18 +861,38 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::syntax::HlType;
 
     fn assert_row_chars_equal(editor: &Editor, expected: &[&[u8]]) {
-        assert_eq!(editor.rows.len(), expected.len());
+        assert_eq!(
+            editor.rows.len(),
+            expected.len(),
+            "editor has {} rows, expected {}",
+            editor.rows.len(),
+            expected.len()
+        );
         for (i, (row, expected)) in editor.rows.iter().zip(expected).enumerate() {
             assert_eq!(
                 row.chars,
                 *expected,
-                "comparing characters for row {}\n  left: {}\n  right: {})",
+                "comparing characters for row {}\n  left: {}\n  right: {}",
                 i,
                 String::from_utf8_lossy(&row.chars),
                 String::from_utf8_lossy(expected)
             );
+        }
+    }
+
+    fn assert_row_synthax_highlighting_types_equal(editor: &Editor, expected: &[&[HlType]]) {
+        assert_eq!(
+            editor.rows.len(),
+            expected.len(),
+            "editor has {} rows, expected {}",
+            editor.rows.len(),
+            expected.len()
+        );
+        for (i, (row, expected)) in editor.rows.iter().zip(expected).enumerate() {
+            assert_eq!(row.hl, *expected, "comparing HlTypes for row {i}",);
         }
     }
 
@@ -1168,6 +1189,112 @@ mod tests {
         editor.process_keypress(&Key::End);
         assert_eq!(editor.cursor.x, 5);
         assert_eq!(editor.cursor.y, 0);
+    }
+
+    #[rstest]
+    #[case::beginning_of_first_row(b"Hello\nWorld!\n", (0, 0), &[&b"World!"[..], &b""[..]], 0)]
+    #[case::middle_of_first_row(b"Hello\nWorld!\n", (3, 0), &[&b"World!"[..], &b""[..]], 0)]
+    #[case::end_of_first_row(b"Hello\nWorld!\n", (5, 0), &[&b"World!"[..], &b""[..]], 0)]
+    #[case::empty_first_row(b"\nHello", (0, 0), &[&b"Hello"[..]], 0)]
+    #[case::beginning_of_only_row(b"Hello", (0, 0), &[&b""[..]], 0)]
+    #[case::middle_of_only_row(b"Hello", (3, 0), &[&b""[..]], 0)]
+    #[case::end_of_only_row(b"Hello", (5, 0), &[&b""[..]], 0)]
+    #[case::beginning_of_middle_row(b"Hello\nWorld!\n", (0, 1), &[&b"Hello"[..], &b""[..]], 1)]
+    #[case::middle_of_middle_row(b"Hello\nWorld!\n", (3, 1), &[&b"Hello"[..], &b""[..]], 1)]
+    #[case::end_of_middle_row(b"Hello\nWorld!\n", (6, 1), &[&b"Hello"[..], &b""[..]], 1)]
+    #[case::empty_middle_row(b"Hello\n\nWorld!", (0, 1), &[&b"Hello"[..], &b"World!"[..]], 1)]
+    #[case::beginning_of_last_row(b"Hello\nWorld!", (0, 1), &[&b"Hello"[..]], 0)]
+    #[case::middle_of_last_row(b"Hello\nWorld!", (3, 1), &[&b"Hello"[..]], 0)]
+    #[case::end_of_last_row(b"Hello\nWorld!", (6, 1), &[&b"Hello"[..]], 0)]
+    #[case::empty_last_row(b"Hello\n", (0, 1), &[&b"Hello"[..]], 0)]
+    #[case::after_last_row(b"Hello\nWorld!", (0, 2), &[&b"Hello"[..], &b"World!"[..]], 2)]
+    fn delete_current_row_updates_buffer_and_position(
+        #[case] initial_buffer: &[u8], #[case] cursor_position: (usize, usize),
+        #[case] expected_rows: &[&[u8]], #[case] expected_cursor_row: usize,
+    ) {
+        let mut editor = Editor::default();
+        for &b in initial_buffer {
+            editor.process_keypress(&Key::Char(b));
+        }
+        (editor.cursor.x, editor.cursor.y) = cursor_position;
+
+        editor.delete_current_row();
+
+        assert_row_chars_equal(&editor, expected_rows);
+        assert_eq!(
+            (editor.cursor.x, editor.cursor.y),
+            (0, expected_cursor_row),
+            "cursor is at {}:{}, expected {}:0",
+            editor.cursor.y,
+            editor.cursor.x,
+            expected_cursor_row
+        );
+    }
+
+    #[rstest]
+    #[case::first_row(0)]
+    #[case::middle_row(5)]
+    #[case::last_row(9)]
+    fn delete_current_row_updates_screen_cols_and_ln_pad(#[case] current_row: usize) {
+        let mut editor = Editor { window_width: 100, ..Default::default() };
+        for _ in 0..10 {
+            editor.insert_new_line();
+        }
+        assert_eq!(editor.screen_cols, 96);
+        assert_eq!(editor.ln_pad, 4);
+
+        editor.cursor.y = current_row;
+        editor.delete_current_row();
+
+        assert_eq!(editor.screen_cols, 97);
+        assert_eq!(editor.ln_pad, 3);
+    }
+
+    #[test]
+    fn delete_current_row_updates_syntax_highlighting() {
+        let mut editor = Editor {
+            syntax: SyntaxConf {
+                ml_comment_delims: Some(("/*".to_owned(), "*/".to_owned())),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        for &b in b"A\nb/*c\nd\ne\nf*/g\nh" {
+            editor.process_keypress(&Key::Char(b));
+        }
+
+        assert_row_chars_equal(&editor, &[b"A", b"b/*c", b"d", b"e", b"f*/g", b"h"]);
+        assert_row_synthax_highlighting_types_equal(&editor, &[
+            &[HlType::Normal],
+            &[HlType::Normal, HlType::MlComment, HlType::MlComment, HlType::MlComment],
+            &[HlType::MlComment],
+            &[HlType::MlComment],
+            &[HlType::MlComment, HlType::MlComment, HlType::MlComment, HlType::Normal],
+            &[HlType::Normal],
+        ]);
+
+        (editor.cursor.x, editor.cursor.y) = (0, 4);
+        editor.delete_current_row();
+
+        assert_row_chars_equal(&editor, &[b"A", b"b/*c", b"d", b"e", b"h"]);
+        assert_row_synthax_highlighting_types_equal(&editor, &[
+            &[HlType::Normal],
+            &[HlType::Normal, HlType::MlComment, HlType::MlComment, HlType::MlComment],
+            &[HlType::MlComment],
+            &[HlType::MlComment],
+            &[HlType::MlComment],
+        ]);
+
+        (editor.cursor.x, editor.cursor.y) = (0, 1);
+        editor.delete_current_row();
+
+        assert_row_chars_equal(&editor, &[b"A", b"d", b"e", b"h"]);
+        assert_row_synthax_highlighting_types_equal(&editor, &[
+            &[HlType::Normal],
+            &[HlType::Normal],
+            &[HlType::Normal],
+            &[HlType::Normal],
+        ]);
     }
 
     #[test]
