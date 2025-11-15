@@ -721,7 +721,7 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
     sys::register_winsize_change_signal_handler()?;
     let orig_term_mode = sys::enable_raw_mode()?;
     let mut editor = Editor { config: Config::load(), ..Default::default() };
-    editor.use_color = !std::env::var("NO_COLOR").map_or(false, |val| !val.is_empty());
+    editor.use_color = !std::env::var("NO_COLOR").is_ok_and(|val| !val.is_empty());
 
     print!("{USE_ALTERNATE_SCREEN}");
 
@@ -824,7 +824,7 @@ impl PromptMode {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
                         Ok(out) if !out.status.success() => {
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end());
                         }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
