@@ -118,6 +118,8 @@ pub struct Editor {
     n_bytes: u64,
     /// The copied buffer of a row
     copied_row: Vec<u8>,
+    /// Whether to use ANSI color escape codes for rendering
+    use_color: bool,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -494,7 +496,11 @@ impl Editor {
     fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) -> Result<(), Error> {
         if self.ln_pad >= 2 {
             // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
-            write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
+            if self.use_color {
+                write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
+            } else {
+                write!(buffer, "{:>width$} |", val, width = self.ln_pad - 2)?;
+            }
         }
         Ok(())
     }
@@ -513,7 +519,7 @@ impl Editor {
             if let Some(row) = row {
                 // Draw a row of text
                 self.draw_left_padding(buffer, i + 1)?;
-                row.draw(self.cursor.coff, self.screen_cols, buffer)?;
+                row.draw(self.cursor.coff, self.screen_cols, buffer, self.use_color)?;
             } else {
                 // Draw an empty row
                 self.draw_left_padding(buffer, '~')?;
@@ -542,7 +548,11 @@ impl Editor {
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
-        write!(buffer, "{REVERSE_VIDEO}{left}{right:>rw$.rw$}{RESET_FMT}\r\n")?;
+        if self.use_color {
+            write!(buffer, "{REVERSE_VIDEO}{left}{right:>rw$.rw$}{RESET_FMT}\r\n")?;
+        } else {
+            write!(buffer, "{left}{right:>rw$.rw$}\r\n")?;
+        }
         Ok(())
     }
 
@@ -714,7 +724,10 @@ impl Editor {
 pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Error> {
     sys::register_winsize_change_signal_handler()?;
     let orig_term_mode = sys::enable_raw_mode()?;
-    print!("{USE_ALTERNATE_SCREEN}");
+    let mut editor = Editor { config: Config::load(), ..Default::default() };
+    let no_color = std::env::var("NO_COLOR").map_or(false, |val| !val.is_empty());
+    editor.use_color = !no_color;
+        print!("{USE_ALTERNATE_SCREEN}");
 
     let prev_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -722,7 +735,6 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
         prev_hook(info);
     }));
 
-    let mut editor = Editor { config: Config::load(), ..Default::default() };
     let result = editor.run(file_name, input);
 
     // Restore the original terminal mode.
