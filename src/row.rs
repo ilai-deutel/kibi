@@ -177,37 +177,45 @@ impl Row {
     /// as well as a limit on the length of the row (`max_len`). After
     /// writing the characters, clear the rest of the line and move the
     /// cursor to the start of the next line.
-    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) -> Result<(), Error> {
+    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String, use_color: bool) -> Result<(), Error> {
         let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
-                write!(buffer, "{REVERSE_VIDEO}{rendered_char}{RESET_FMT}")?;
-                // Restore previous color
-                if current_hl_type != HlType::Normal {
-                    buffer.push_str(&current_hl_type.to_string());
+                if use_color {
+                    write!(buffer, "{REVERSE_VIDEO}{rendered_char}{RESET_FMT}")?;
+                    // Restore previous color
+                    if current_hl_type != HlType::Normal {
+                        buffer.push_str(&current_hl_type.to_string());
+                    }
+                } else {
+                    buffer.push(rendered_char);
                 }
             } else {
-                if let Some(match_segment) = &self.match_segment {
-                    if match_segment.contains(&rx) {
-                        // Set the highlight type to Match, i.e. set the background to cyan
-                        hl_type = &HlType::Match;
-                    } else if rx == match_segment.end {
-                        // Reset the formatting, in particular the background
-                        buffer.push_str(RESET_FMT);
+                if use_color {
+                    if let Some(match_segment) = &self.match_segment {
+                        if match_segment.contains(&rx) {
+                            // Set the highlight type to Match, i.e. set the background to cyan
+                            hl_type = &HlType::Match;
+                        } else if rx == match_segment.end {
+                            // Reset the formatting, in particular the background
+                            buffer.push_str(RESET_FMT);
+                        }
                     }
-                }
-                if current_hl_type != *hl_type {
-                    buffer.push_str(&hl_type.to_string());
-                    current_hl_type = *hl_type;
+                    if current_hl_type != *hl_type {
+                        buffer.push_str(&hl_type.to_string());
+                        current_hl_type = *hl_type;
+                    }
                 }
                 buffer.push(c);
             }
             rx += c.width().unwrap_or(1);
         }
-        buffer.push_str(RESET_FMT);
+        if use_color {
+            buffer.push_str(RESET_FMT);
+        }
         Ok(())
     }
 }
