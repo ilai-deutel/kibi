@@ -177,7 +177,9 @@ impl Row {
     /// as well as a limit on the length of the row (`max_len`). After
     /// writing the characters, clear the rest of the line and move the
     /// cursor to the start of the next line.
-    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String, use_color: bool) -> Result<(), Error> {
+    pub fn draw(
+        &self, offset: usize, max_len: usize, buffer: &mut String, use_color: bool,
+    ) -> Result<(), Error> {
         let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();

@@ -86,7 +86,9 @@ where F: FnMut(&str, &str) -> Result<(), String> {
                 let warn = |msg: &str| eprintln!("{}:{}: {}", path.to_string_lossy(), i + 1, msg);
                 match (line.chars().next(), line.split_once('=')) {
                     (Some('#' | ';') | None, _) => (), // Comment or empty line
-                    (_, Some((k, v))) => kv_fn(k.trim_end(), v.trim()).unwrap_or_else(|r| warn(&format!("{k}: {r}"))),
+                    (_, Some((k, v))) => {
+                        kv_fn(k.trim_end(), v.trim()).unwrap_or_else(|r| warn(&format!("{k}: {r}")))
+                    }
                     (_, None) => warn("missing '='"),
                 }
             }

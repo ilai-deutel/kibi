@@ -227,9 +227,9 @@ impl Editor {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
+            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
+            // the next few bytes.
             if let Some(a) = bytes.next().transpose()? {
-                // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
-                // the next few bytes.
                 if a != b'\x1b' {
                     return Ok(Key::Char(a));
                 }
@@ -406,14 +406,10 @@ impl Editor {
             return;
         }
         self.n_bytes += self.copied_row.len() as u64;
-        if self.cursor.y == self.rows.len() {
-            self.rows.push(Row::new(self.copied_row.clone()));
-        } else {
-            self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
-        }
-        self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()), false);
-        (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
-        // The line number has changed
+        let y = (self.cursor.y + 1).min(self.rows.len());
+        self.rows.insert(y, Row::new(self.copied_row.clone()));
+        self.update_row(y, false);
+        (self.cursor.y, self.dirty) = (y, true);
         self.update_screen_cols();
     }
 
@@ -725,9 +721,9 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
     sys::register_winsize_change_signal_handler()?;
     let orig_term_mode = sys::enable_raw_mode()?;
     let mut editor = Editor { config: Config::load(), ..Default::default() };
-    let no_color = std::env::var("NO_COLOR").map_or(false, |val| !val.is_empty());
-    editor.use_color = !no_color;
-        print!("{USE_ALTERNATE_SCREEN}");
+    editor.use_color = !std::env::var("NO_COLOR").map_or(false, |val| !val.is_empty());
+
+    print!("{USE_ALTERNATE_SCREEN}");
 
     let prev_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -827,8 +823,9 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() =>
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
+                        Ok(out) if !out.status.success() => {
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end())
+                        }
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
