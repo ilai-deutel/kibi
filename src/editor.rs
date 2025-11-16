@@ -1191,6 +1191,55 @@ mod tests {
         assert_eq!(editor.cursor.y, 0);
     }
 
+    #[test]
+    fn editor_page_up_moves_cursor_to_viewport_top() {
+        let mut editor = Editor::default();
+        editor.screen_rows = 4;
+        for _ in 0..10 {
+            editor.insert_new_line();
+        }
+
+        (editor.cursor.y, editor.cursor.x) = (3, 0);
+        editor.insert_byte(b'a');
+        editor.insert_byte(b'b');
+
+        (editor.cursor.y, editor.cursor.x, editor.cursor.roff) = (9, 5, 7);
+        let (should_quit, prompt_mode) = editor.process_keypress(&Key::PageUp);
+
+        assert!(!should_quit);
+        assert!(prompt_mode.is_none());
+        assert_eq!(editor.cursor.y, 3);
+        assert_eq!(editor.cursor.x, 2);
+    }
+
+    #[test]
+    fn editor_page_down_moves_cursor_to_viewport_bottom() {
+        let mut editor = Editor::default();
+        editor.screen_rows = 4;
+        for _ in 0..12 {
+            editor.insert_new_line();
+        }
+
+        (editor.cursor.y, editor.cursor.x) = (11, 0);
+        editor.insert_byte(b'x');
+        editor.insert_byte(b'y');
+        editor.insert_byte(b'z');
+
+        (editor.cursor.x, editor.cursor.roff) = (6, 4);
+        let (should_quit, prompt_mode) = editor.process_keypress(&Key::PageDown);
+        assert!(!should_quit);
+        assert!(prompt_mode.is_none());
+        assert_eq!(editor.cursor.y, 11);
+        assert_eq!(editor.cursor.x, 3);
+
+        (editor.cursor.x, editor.cursor.roff) = (9, 11);
+        let (should_quit, prompt_mode_again) = editor.process_keypress(&Key::PageDown);
+        assert!(!should_quit);
+        assert!(prompt_mode_again.is_none());
+        assert_eq!(editor.cursor.y, editor.rows.len());
+        assert_eq!(editor.cursor.x, 0);
+    }
+
     #[rstest]
     #[case::beginning_of_first_row(b"Hello\nWorld!\n", (0, 0), &[&b"World!"[..], &b""[..]], 0)]
     #[case::middle_of_first_row(b"Hello\nWorld!\n", (3, 0), &[&b"World!"[..], &b""[..]], 0)]
