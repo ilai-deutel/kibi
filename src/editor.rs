@@ -491,8 +491,8 @@ impl Editor {
     /// Draw the left part of the screen: line numbers and vertical bar.
     fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) -> Result<(), Error> {
         if self.ln_pad >= 2 {
-            // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
             if self.use_color {
+                // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
                 write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
             } else {
                 write!(buffer, "{:>width$} |", val, width = self.ln_pad - 2)?;
@@ -823,9 +823,8 @@ impl PromptMode {
                 PromptState::Completed(b) => {
                     let mut args = b.split_whitespace();
                     match Command::new(args.next().unwrap_or_default()).args(args).output() {
-                        Ok(out) if !out.status.success() => {
-                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end());
-                        }
+                        Ok(out) if !out.status.success() =>
+                            set_status!(ed, "{}", String::from_utf8_lossy(&out.stderr).trim_end()),
                         Ok(out) => out.stdout.into_iter().for_each(|c| match c {
                             b'\n' => ed.insert_new_line(),
                             c => ed.insert_byte(c),
