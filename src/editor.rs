@@ -1251,6 +1251,30 @@ mod tests {
     }
 
     #[test]
+    fn editor_save_and_load() -> Result<(), Error>{
+        let mut editor = Editor::default();
+        let content = b"first line\nsecond line\nthird line\nfourth line";
+        for &b in content{
+            editor.process_keypress(&Key::Char(b));
+        }
+        let temp_dir = std::env::temp_dir();
+        let file_path = temp_dir.join("kibi_test.tmp");
+        let file_name = file_path.to_str().unwrap();
+
+        let bytes_written = editor.save(file_name)?;
+        assert_eq!(bytes_written, content.len());
+
+        let mut new_editor = Editor::default();
+        new_editor.load(&file_path)?;
+
+        assert_row_chars_equal(&new_editor, &[b"first line",b"second line",b"third line",b"fourth line",b""]);
+
+        std::fs::remove_file(file_path)?;
+
+        Ok(())
+    }
+    
+    #[test]
     fn delete_current_row_updates_syntax_highlighting() {
         let mut editor = Editor {
             syntax: SyntaxConf {
