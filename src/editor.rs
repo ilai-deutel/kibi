@@ -644,10 +644,24 @@ impl Editor {
     /// key that is pressed. `last_match` is the last row that was matched,
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
-    fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
+    fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool, check_current: bool) -> Option<usize> {
         // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
+        // Start from last_match if available, otherwise start from current cursor position
+        let mut current = last_match.unwrap_or(self.cursor.y);
+        
+        // If check_current is true, first check if the current position still matches
+        if check_current && last_match.is_some() {
+            let row = &mut self.rows[current];
+            if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
+                // Current position still matches, update the highlighting
+                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
+                let rx = row.cx2rx[cx];
+                row.match_segment = Some(rx..rx + query.len());
+                return Some(current);
+            }
+        }
+        
         // TODO: Handle multiple matches per line
         for _ in 0..num_rows {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
@@ -773,13 +787,15 @@ impl PromptMode {
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         #[expect(clippy::wildcard_enum_match_arm)]
-                        let (last_match, forward) = match key {
+                        let (last_match, forward, check_current) = match key {
+                            // Arrow keys or Ctrl-F: move to next/previous match
                             Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true),
-                            Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
-                            _ => (None, true),
+                                (last_match, true, false),
+                            Key::Arrow(AKey::Left | AKey::Up) => (last_match, false, false),
+                            // Typing characters: check if current match is still valid
+                            _ => (last_match, true, true),
                         };
-                        let curr_match = ed.find(&query, last_match, forward);
+                        let curr_match = ed.find(&query, last_match, forward, check_current);
                         return Some(Self::Find(query, saved_cursor, curr_match));
                     }
                     // The prompt was cancelled. Restore the previous position.
