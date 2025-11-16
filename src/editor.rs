@@ -1257,7 +1257,11 @@ mod tests {
         for &b in content {
             editor.process_keypress(&Key::Char(b));
         }
-        let temp_dir = std::env::temp_dir();
+        let temp_dir = if cfg!(target_arch = "wasm32") {
+            std::path::PathBuf::from("/")
+        } else {
+            std::env::temp_dir()
+        };
         let file_path = temp_dir.join("kibi_test.tmp");
         let file_name = file_path.to_str().unwrap();
 
