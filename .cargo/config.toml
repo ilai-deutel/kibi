@@ -11,4 +11,4 @@ rustflags = ["-C", "target-feature=+crt-static"]
 rustflags = ["-C", "target-feature=+crt-static"]
 
 [target.wasm32-wasip1]
-runner = "wasmtime run --wasi cli=y"
+runner = "wasmtime run --dir=. --wasi cli=y"

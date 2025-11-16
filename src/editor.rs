@@ -857,11 +857,26 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+    #[cfg(target_arch = "wasm32")]
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     use rstest::rstest;
 
     use super::*;
     use crate::syntax::HlType;
+
+    #[cfg(target_arch = "wasm32")]
+    fn test_file_path() -> io::Result<(std::path::PathBuf, Option<tempfile::TempDir>)> {
+        static COUNTER: AtomicUsize = AtomicUsize::new(0);
+        let suffix = COUNTER.fetch_add(1, Ordering::Relaxed);
+        Ok((std::path::PathBuf::from(format!("kibi_test_{suffix}.tmp")), None))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn test_file_path() -> io::Result<(std::path::PathBuf, Option<tempfile::TempDir>)> {
+        let temp_dir = tempfile::tempdir()?;
+        Ok((temp_dir.path().join("kibi_test.tmp"), Some(temp_dir)))
+    }
 
     fn assert_row_chars_equal(editor: &Editor, expected: &[&[u8]]) {
         assert_eq!(
@@ -1248,6 +1263,35 @@ mod tests {
 
         assert_eq!(editor.screen_cols, 97);
         assert_eq!(editor.ln_pad, 3);
+    }
+
+    #[test]
+    fn editor_save_and_load() -> Result<(), Error> {
+        let mut editor = Editor::default();
+        let content = b"first line\nsecond line\nthird line\nfourth line";
+        for &b in content {
+            editor.process_keypress(&Key::Char(b));
+        }
+        let (file_path, _guard) = test_file_path()?;
+        let file_name = file_path.to_string_lossy().into_owned();
+
+        let bytes_written = editor.save(&file_name)?;
+        assert_eq!(bytes_written, content.len());
+
+        let mut new_editor = Editor::default();
+        new_editor.load(&file_path)?;
+
+        assert_row_chars_equal(&new_editor, &[
+            b"first line",
+            b"second line",
+            b"third line",
+            b"fourth line",
+            b"",
+        ]);
+
+        std::fs::remove_file(&file_path)?;
+
+        Ok(())
     }
 
     #[test]
