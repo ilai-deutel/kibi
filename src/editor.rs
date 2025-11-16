@@ -19,10 +19,11 @@ const PASTE: u8 = ctrl_key(b'V');
 const DUPLICATE: u8 = ctrl_key(b'D');
 const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
+const REPLACE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
-const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
-                            ^C copy | ^X cut | ^V paste";
+const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find + ^R replace) | ^G go to | ^D duplicate | \
+                            ^E execute | ^C copy | ^X cut | ^V paste";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{file_size} written to {file_name}")`
@@ -315,11 +316,10 @@ impl Editor {
     /// Insert a byte at the current cursor position. If there is no row at the
     /// current cursor position, add a new row and insert the byte.
     fn insert_byte(&mut self, c: u8) {
-        if let Some(row) = self.rows.get_mut(self.cursor.y) {
-            row.chars.insert(self.cursor.x, c);
-        } else {
-            self.rows.push(Row::new(vec![c]));
+        if let Some(row) = self.rows.get_mut(self.cursor.y) { row.chars.insert(self.cursor.x, c); }
+        else {
             // The number of rows has changed. The left padding may need to be updated.
+            self.rows.push(Row::new(vec![c]));
             self.update_screen_cols();
         }
         self.update_row(self.cursor.y, false);
@@ -381,34 +381,21 @@ impl Editor {
     fn delete_current_row(&mut self) {
         if self.cursor.y < self.rows.len() {
             self.rows[self.cursor.y].chars.clear();
-            self.cursor.x = 0;
-            self.cursor.y = std::cmp::min(self.cursor.y + 1, self.rows.len() - 1);
+            (self.cursor.x, self.cursor.y) = (0, std::cmp::min(self.cursor.y + 1, self.rows.len() - 1));
             self.delete_char();
             self.cursor.x = 0;
         }
     }
 
-    fn duplicate_current_row(&mut self) {
-        self.copy_current_row();
-        self.paste_current_row();
-    }
+    fn duplicate_current_row(&mut self) { self.copy_current_row(); self.paste_current_row(); }
 
-    fn copy_current_row(&mut self) {
-        if let Some(row) = self.current_row() {
-            self.copied_row = row.chars.clone();
-        }
-    }
+    fn copy_current_row(&mut self) { if let Some(row) = self.current_row() { self.copied_row = row.chars.clone(); } }
 
     fn paste_current_row(&mut self) {
-        if self.copied_row.is_empty() {
-            return;
-        }
+        if self.copied_row.is_empty() { return; }
         self.n_bytes += self.copied_row.len() as u64;
-        if self.cursor.y == self.rows.len() {
-            self.rows.push(Row::new(self.copied_row.clone()));
-        } else {
-            self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
-        }
+        if self.cursor.y == self.rows.len() { self.rows.push(Row::new(self.copied_row.clone())); }
+        else { self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone())); }
         self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()), false);
         (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
         // The line number has changed
@@ -585,52 +572,33 @@ impl Editor {
         // This won't be mutated, unless key is Key::Character(EXIT)
         let mut reset_quit_times = true;
         let mut prompt_mode = None;
-
         match key {
             Key::Arrow(arrow) => self.move_cursor(arrow, false),
             Key::CtrlArrow(arrow) => self.move_cursor(arrow, true),
-            Key::PageUp => {
-                self.cursor.y = self.cursor.roff.saturating_sub(self.screen_rows);
-                self.update_cursor_x_position();
-            }
-            Key::PageDown => {
-                self.cursor.y = (self.cursor.roff + 2 * self.screen_rows - 1).min(self.rows.len());
-                self.update_cursor_x_position();
-            }
+            Key::PageUp => { self.cursor.y = self.cursor.roff.saturating_sub(self.screen_rows); self.update_cursor_x_position(); }
+            Key::PageDown => { self.cursor.y = (self.cursor.roff + 2 * self.screen_rows - 1).min(self.rows.len()); self.update_cursor_x_position(); }
             Key::Home => self.cursor.x = 0,
             Key::End => self.cursor.x = self.current_row().map_or(0, |row| row.chars.len()),
-            Key::Char(b'\r' | b'\n') => self.insert_new_line(), // Enter
-            Key::Char(BACKSPACE | DELETE_BIS) => self.delete_char(), // Backspace or Ctrl + H
+            Key::Char(b'\r' | b'\n') => self.insert_new_line(),
+            Key::Char(BACKSPACE | DELETE_BIS) => self.delete_char(),
             Key::Char(REMOVE_LINE) => self.delete_current_row(),
-            Key::Delete => {
-                self.move_cursor(&AKey::Right, false);
-                self.delete_char();
-            }
+            Key::Delete => { self.move_cursor(&AKey::Right, false); self.delete_char(); }
             Key::Escape | Key::Char(REFRESH_SCREEN) => (),
             Key::Char(EXIT) => {
-                if !self.dirty || self.quit_times + 1 >= self.config.quit_times {
-                    return (true, None);
-                }
+                if !self.dirty || self.quit_times + 1 >= self.config.quit_times { return (true, None); }
                 let r = self.config.quit_times - self.quit_times - 1;
                 set_status!(self, "Press Ctrl+Q {0} more time{1:.2$} to quit.", r, "s", r - 1);
                 reset_quit_times = false;
             }
+            // TODO: Can we avoid using take() then reassigning the value to file_name?
             Key::Char(SAVE) => match self.file_name.take() {
-                // TODO: Can we avoid using take() then reassigning the value to file_name?
-                Some(file_name) => {
-                    self.save_and_handle_io_errors(&file_name);
-                    self.file_name = Some(file_name);
-                }
+                Some(file_name) => { self.save_and_handle_io_errors(&file_name); self.file_name = Some(file_name); }
                 None => prompt_mode = Some(PromptMode::Save(String::new())),
             },
-            Key::Char(FIND) =>
-                prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
+            Key::Char(FIND) => prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
-            Key::Char(CUT) => {
-                self.copy_current_row();
-                self.delete_current_row();
-            }
+            Key::Char(CUT) => { self.copy_current_row(); self.delete_current_row(); }
             Key::Char(COPY) => self.copy_current_row(),
             Key::Char(PASTE) => self.paste_current_row(),
             Key::Char(EXECUTE) => prompt_mode = Some(PromptMode::Execute(String::new())),
@@ -665,6 +633,19 @@ impl Editor {
         None
     }
 
+    fn replace_current_match(&mut self, search_query: &str, replace_text: &str) {
+        let row = &mut self.rows[self.cursor.y];
+        let (search_bytes, replace_bytes) = (search_query.as_bytes(), replace_text.as_bytes());
+        if self.cursor.x + search_bytes.len() <= row.chars.len()
+            && &row.chars[self.cursor.x..self.cursor.x + search_bytes.len()] == search_bytes
+        {
+            row.chars.splice(self.cursor.x..self.cursor.x + search_bytes.len(), replace_bytes.iter().copied());
+            self.update_row(self.cursor.y, false);
+            self.dirty = true;
+            self.n_bytes = self.n_bytes.saturating_add_signed(replace_bytes.len() as i64 - search_bytes.len() as i64);
+        }
+    }
+
     /// If `file_name` is not None, load the file. Then run the text editor.
     ///
     /// # Errors
@@ -674,7 +655,6 @@ impl Editor {
         self.update_window_size()?;
         set_status!(self, "{HELP_MESSAGE}");
         self.refresh_screen()?;
-
         if let Some(path) = file_name.map(sys::path) {
             self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
             self.load(path.as_path())?;
@@ -684,18 +664,13 @@ impl Editor {
             self.file_name = None;
         }
         loop {
-            if let Some(mode) = &self.prompt_mode {
-                set_status!(self, "{}", mode.status_msg());
-            }
+            if let Some(mode) = &self.prompt_mode { set_status!(self, "{}", mode.status_msg()); }
             self.refresh_screen()?;
             let key = self.loop_until_keypress(input)?;
             // TODO: Can we avoid using take()?
             self.prompt_mode = match self.prompt_mode.take() {
                 // process_keypress returns (should_quit, prompt_mode)
-                None => match self.process_keypress(&key) {
-                    (true, _) => return Ok(()),
-                    (false, prompt_mode) => prompt_mode,
-                },
+                None => match self.process_keypress(&key) { (true, _) => return Ok(()), (false, prompt_mode) => prompt_mode, },
                 Some(prompt_mode) => prompt_mode.process_keypress(self, &key),
             }
         }
@@ -738,10 +713,22 @@ enum PromptMode {
     Save(String),
     /// Find(prompt buffer, saved cursor state, last match)
     Find(String, CursorState, Option<usize>),
+    /// Replace(search query, replace buffer, saved cursor state, last match, replace mode)
+    Replace(String, String, CursorState, Option<usize>, ReplaceMode),
     /// GoTo(prompt buffer)
     GoTo(String),
     /// Execute(prompt buffer)
     Execute(String),
+}
+
+/// The mode for the Replace prompt
+#[cfg_attr(test, derive(Debug, PartialEq))]
+#[derive(Clone)]
+enum ReplaceMode {
+    /// Asking for the replacement text
+    ReplaceText,
+    /// Interactive replacement (y=yes, n=no, a=all, q=quit)
+    Interactive,
 }
 
 // TODO: Use trait with mode_status_msg and process_keypress, implement the
@@ -752,6 +739,10 @@ impl PromptMode {
         match self {
             Self::Save(buffer) => format!("Save as: {buffer}"),
             Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {buffer}"),
+            Self::Replace(search, replace, _, _, mode) => match mode {
+                ReplaceMode::ReplaceText => format!("Replace '{search}' with: {replace}"),
+                ReplaceMode::Interactive => format!("Replace this occurrence? (y/n/a=all/q=quit)"),
+            },
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {buffer}"),
             Self::Execute(buffer) => format!("Command to execute: {buffer}"),
         }
@@ -767,15 +758,16 @@ impl PromptMode {
                 PromptState::Completed(file_name) => ed.save_as(file_name),
             },
             Self::Find(b, saved_cursor, last_match) => {
-                if let Some(row_idx) = last_match {
-                    ed.rows[row_idx].match_segment = None;
+                if let Some(row_idx) = last_match { ed.rows[row_idx].match_segment = None; }
+                // Check if user wants to switch to Replace mode
+                if let Key::Char(REPLACE) = key {
+                    return Some(Self::Replace(b, String::new(), saved_cursor, last_match, ReplaceMode::ReplaceText));
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         #[expect(clippy::wildcard_enum_match_arm)]
                         let (last_match, forward) = match key {
-                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
-                                (last_match, true),
+                            Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) => (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
@@ -788,21 +780,46 @@ impl PromptMode {
                     PromptState::Completed(_) => (),
                 }
             }
+            Self::Replace(search_query, replace_text, saved_cursor, last_match, mode) => {
+                if let Some(row_idx) = last_match { ed.rows[row_idx].match_segment = None; }
+                return match mode {
+                    ReplaceMode::ReplaceText => match process_prompt_keypress(replace_text, key) {
+                        PromptState::Active(text) => Some(Self::Replace(search_query, text, saved_cursor, None, ReplaceMode::ReplaceText)),
+                        PromptState::Cancelled => { ed.cursor = saved_cursor.clone(); set_status!(ed, "Replace cancelled"); None }
+                        PromptState::Completed(text) => match ed.find(&search_query, None, true) {
+                            Some(m) => Some(Self::Replace(search_query, text, saved_cursor, Some(m), ReplaceMode::Interactive)),
+                            None => { ed.cursor = saved_cursor; set_status!(ed, "No matches found"); None }
+                        }
+                    }
+                    ReplaceMode::Interactive => match key {
+                        Key::Char(b'y' | b'Y') => { ed.replace_current_match(&search_query, &replace_text);
+                            match ed.find(&search_query, last_match, true) {
+                                Some(m) => Some(Self::Replace(search_query, replace_text, saved_cursor, Some(m), ReplaceMode::Interactive)),
+                                None => { set_status!(ed, "Replace complete"); None }
+                            }}
+                        Key::Char(b'n' | b'N') => match ed.find(&search_query, last_match, true) {
+                            Some(m) => Some(Self::Replace(search_query, replace_text, saved_cursor, Some(m), ReplaceMode::Interactive)),
+                            None => { set_status!(ed, "No more matches"); None }
+                        },
+                        Key::Char(b'a' | b'A') => { let mut count = 0;
+                            while ed.find(&search_query, last_match, true).is_some() { ed.replace_current_match(&search_query, &replace_text); count += 1; }
+                            set_status!(ed, "Replaced {count} occurrence(s)"); None }
+                        Key::Char(b'q' | b'Q') | Key::Escape => { set_status!(ed, "Replace cancelled"); None }
+                        _ => Some(Self::Replace(search_query, replace_text, saved_cursor, last_match, ReplaceMode::Interactive)),
+                    }
+                }
+            }
             Self::GoTo(b) => match process_prompt_keypress(b, key) {
                 PromptState::Active(b) => return Some(Self::GoTo(b)),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
-                    let mut split = b.splitn(2, ':')
-                        // saturating_sub: Lines and cols are 1-indexed
-                        .map(|u| u.trim().parse().map(|s: usize| s.saturating_sub(1)));
+                    // saturating_sub: Lines and cols are 1-indexed
+                    let mut split = b.splitn(2, ':').map(|u| u.trim().parse().map(|s: usize| s.saturating_sub(1)));
                     match (split.next().transpose(), split.next().transpose()) {
                         (Ok(Some(y)), Ok(x)) => {
                             ed.cursor.y = y.min(ed.rows.len());
-                            if let Some(rx) = x {
-                                ed.cursor.x = ed.current_row().map_or(0, |r| r.rx2cx[rx]);
-                            } else {
-                                ed.update_cursor_x_position();
-                            }
+                            if let Some(rx) = x { ed.cursor.x = ed.current_row().map_or(0, |r| r.rx2cx[rx]); }
+                            else { ed.update_cursor_x_position(); }
                         }
                         (Err(e), _) | (_, Err(e)) => set_status!(ed, "Parsing error: {e}"),
                         (Ok(None), _) => (),
