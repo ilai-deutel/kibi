@@ -801,8 +801,9 @@ impl PromptMode {
                             Some(m) => Some(Self::Replace(search_query, replace_text, saved_cursor, Some(m), ReplaceMode::Interactive)),
                             None => { set_status!(ed, "No more matches"); None }
                         },
-                        Key::Char(b'a' | b'A') => { let mut count = 0;
-                            while ed.find(&search_query, last_match, true).is_some() { ed.replace_current_match(&search_query, &replace_text); count += 1; }
+                        Key::Char(b'a' | b'A') => { let mut count = 0; let mut last = last_match;
+                            while let Some(m) = ed.find(&search_query, last, true) { ed.replace_current_match(&search_query, &replace_text); count += 1; last = Some(m); }
+                            if let Some(row_idx) = last { ed.rows[row_idx].match_segment = None; }
                             set_status!(ed, "Replaced {count} occurrence(s)"); None }
                         Key::Char(b'q' | b'Q') | Key::Escape => { set_status!(ed, "Replace cancelled"); None }
                         _ => Some(Self::Replace(search_query, replace_text, saved_cursor, last_match, ReplaceMode::Interactive)),
