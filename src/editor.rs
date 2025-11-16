@@ -648,7 +648,7 @@ impl Editor {
         // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
         let mut current = last_match.unwrap_or(self.cursor.y);
-        // Some edge cases fail without this, as seen from the tests
+        // Some edge cases fail without this, as seen from the tests.
         current = current.min(self.rows.len().saturating_sub(1));
         // Without this it would go downwards with each character unless we just copy
         // paste directly the pattern.
