@@ -1193,8 +1193,7 @@ mod tests {
 
     #[test]
     fn editor_page_up_moves_cursor_to_viewport_top() {
-        let mut editor = Editor::default();
-        editor.screen_rows = 4;
+        let mut editor = Editor { screen_rows: 4, ..Default::default() };
         for _ in 0..10 {
             editor.insert_new_line();
         }
@@ -1214,8 +1213,7 @@ mod tests {
 
     #[test]
     fn editor_page_down_moves_cursor_to_viewport_bottom() {
-        let mut editor = Editor::default();
-        editor.screen_rows = 4;
+        let mut editor = Editor { screen_rows: 4, ..Default::default() };
         for _ in 0..12 {
             editor.insert_new_line();
         }
