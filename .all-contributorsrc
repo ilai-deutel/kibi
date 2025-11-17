@@ -414,6 +414,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "CalinCodes",
+      "name": "Călin Fota",
+      "avatar_url": "https://avatars.githubusercontent.com/u/168958070?v=4",
+      "profile": "https://github.com/CalinCodes",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
