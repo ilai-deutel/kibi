@@ -6,6 +6,7 @@ path = [
     "**/.gitignore",
     "**/Cargo.toml",
     "**/README.md",
+    ".allstar/*.yaml",
     ".cargo/config.toml",
     ".github/CODEOWNERS",
     ".github/**.md",
