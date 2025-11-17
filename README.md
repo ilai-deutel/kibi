@@ -15,7 +15,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-5E0D73.svg?logo=contributorcovenant)](CODE_OF_CONDUCT.md)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-43-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-44-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -412,6 +412,7 @@ any kind welcome!
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/CristianPreda1609"><img src="https://avatars.githubusercontent.com/u/120663023?v=4" width="100px;" alt=""/><br /><sub><b>CristianPreda1609</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=CristianPreda1609" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Cristian-Andrei-Pomenea"><img src="https://avatars.githubusercontent.com/u/189586799?v=4" width="100px;" alt=""/><br /><sub><b>Pomenea Cristian-Andrei</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=Cristian-Andrei-Pomenea" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

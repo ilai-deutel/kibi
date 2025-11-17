@@ -405,6 +405,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "Cristian-Andrei-Pomenea",
+      "name": "Pomenea Cristian-Andrei",
+      "avatar_url": "https://avatars.githubusercontent.com/u/189586799?v=4",
+      "profile": "https://github.com/Cristian-Andrei-Pomenea",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
