@@ -378,6 +378,33 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "mihai1923",
+      "name": "Mihai-Laurențiu Țucă",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40871834?v=4",
+      "profile": "https://github.com/mihai1923",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "cosmincalinov",
+      "name": "Cosmin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/137818916?v=4",
+      "profile": "https://github.com/cosmincalinov",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "CristianPreda1609",
+      "name": "CristianPreda1609",
+      "avatar_url": "https://avatars.githubusercontent.com/u/120663023?v=4",
+      "profile": "https://github.com/CristianPreda1609",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "commitType": "docs"

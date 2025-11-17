@@ -3,12 +3,11 @@
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered
 //! string and the syntax highlighting information.
 
-use std::{fmt::Write, iter::repeat_n, num::NonZeroUsize};
+use std::{iter::repeat_n, num::NonZeroUsize};
 
 use unicode_width::UnicodeWidthChar;
 
-use crate::ansi_escape::{RESET_FMT, REVERSE_VIDEO};
-use crate::error::Error;
+use crate::ansi_escape::{RESET, WBG, push_colored};
 use crate::syntax::{Conf as SyntaxConf, HlType};
 
 /// The "Highlight State" of the row
@@ -177,16 +176,16 @@ impl Row {
     /// as well as a limit on the length of the row (`max_len`). After
     /// writing the characters, clear the rest of the line and move the
     /// cursor to the start of the next line.
-    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String) -> Result<(), Error> {
+    pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String, use_color: bool) {
         let mut current_hl_type = HlType::Normal;
         let chars = self.render.chars().skip(offset).take(max_len);
         let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
         for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
-                write!(buffer, "{REVERSE_VIDEO}{rendered_char}{RESET_FMT}")?;
+                push_colored(buffer, WBG, &rendered_char.to_string(), use_color);
                 // Restore previous color
-                if current_hl_type != HlType::Normal {
+                if use_color && current_hl_type != HlType::Normal {
                     buffer.push_str(&current_hl_type.to_string());
                 }
             } else {
@@ -194,21 +193,20 @@ impl Row {
                     if match_segment.contains(&rx) {
                         // Set the highlight type to Match, i.e. set the background to cyan
                         hl_type = &HlType::Match;
-                    } else if rx == match_segment.end {
+                    } else if use_color && rx == match_segment.end {
                         // Reset the formatting, in particular the background
-                        buffer.push_str(RESET_FMT);
+                        buffer.push_str(RESET);
                     }
                 }
-                if current_hl_type != *hl_type {
+                if use_color && current_hl_type != *hl_type {
                     buffer.push_str(&hl_type.to_string());
-                    current_hl_type = *hl_type;
                 }
+                current_hl_type = *hl_type;
                 buffer.push(c);
             }
             rx += c.width().unwrap_or(1);
         }
-        buffer.push_str(RESET_FMT);
-        Ok(())
+        buffer.push_str(if use_color { RESET } else { "" });
     }
 }
 

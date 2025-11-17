@@ -21,6 +21,7 @@ const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
+const WELCOME_MESSAGE: &str = concat!("Kibi ", env!("KIBI_VERSION"));
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
                             ^C copy | ^X cut | ^V paste";
 
@@ -118,6 +119,8 @@ pub struct Editor {
     n_bytes: u64,
     /// The copied buffer of a row
     copied_row: Vec<u8>,
+    /// Whether to use ANSI color escape codes for rendering
+    use_color: bool,
 }
 
 /// Describes a status message, shown at the bottom at the screen.
@@ -225,9 +228,9 @@ impl Editor {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
+            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
+            // the next few bytes.
             if let Some(a) = bytes.next().transpose()? {
-                // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
-                // the next few bytes.
                 if a != b'\x1b' {
                     return Ok(Key::Char(a));
                 }
@@ -404,14 +407,10 @@ impl Editor {
             return;
         }
         self.n_bytes += self.copied_row.len() as u64;
-        if self.cursor.y == self.rows.len() {
-            self.rows.push(Row::new(self.copied_row.clone()));
-        } else {
-            self.rows.insert(self.cursor.y + 1, Row::new(self.copied_row.clone()));
-        }
-        self.update_row(self.cursor.y + usize::from(self.cursor.y + 1 != self.rows.len()), false);
-        (self.cursor.y, self.dirty) = (self.cursor.y + 1, true);
-        // The line number has changed
+        let y = (self.cursor.y + 1).min(self.rows.len());
+        self.rows.insert(y, Row::new(self.copied_row.clone()));
+        self.update_row(y, false);
+        (self.cursor.y, self.dirty) = (y, true);
         self.update_screen_cols();
     }
 
@@ -491,12 +490,13 @@ impl Editor {
     }
 
     /// Draw the left part of the screen: line numbers and vertical bar.
-    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) -> Result<(), Error> {
+    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) {
         if self.ln_pad >= 2 {
-            // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
-            write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
+            // \u{2502}: pipe "│"
+            let s = format!("{:>1$} \u{2502}", val, self.ln_pad - 2);
+            // \x1b[38;5;240m: Dark grey color
+            push_colored(buffer, "\x1b[38;5;240m", &s, self.use_color);
         }
-        Ok(())
     }
 
     /// Return whether the file being edited is empty or not. If there is more
@@ -512,14 +512,13 @@ impl Editor {
             buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
             if let Some(row) = row {
                 // Draw a row of text
-                self.draw_left_padding(buffer, i + 1)?;
-                row.draw(self.cursor.coff, self.screen_cols, buffer)?;
+                self.draw_left_padding(buffer, i + 1);
+                row.draw(self.cursor.coff, self.screen_cols, buffer, self.use_color);
             } else {
                 // Draw an empty row
-                self.draw_left_padding(buffer, '~')?;
+                self.draw_left_padding(buffer, '~');
                 if self.is_empty() && i == self.screen_rows / 3 {
-                    let welcome_message = concat!("Kibi ", env!("KIBI_VERSION"));
-                    write!(buffer, "{:^1$.1$}", welcome_message, self.screen_cols)?;
+                    write!(buffer, "{:^1$.1$}", WELCOME_MESSAGE, self.screen_cols)?;
                 }
             }
             buffer.push_str("\r\n");
@@ -528,7 +527,7 @@ impl Editor {
     }
 
     /// Draw the status bar on the terminal, by adding characters to the buffer.
-    fn draw_status_bar(&self, buffer: &mut String) -> Result<(), Error> {
+    fn draw_status_bar(&self, buffer: &mut String) {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
         let mut left =
@@ -542,8 +541,7 @@ impl Editor {
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
-        write!(buffer, "{REVERSE_VIDEO}{left}{right:>rw$.rw$}{RESET_FMT}\r\n")?;
-        Ok(())
+        push_colored(buffer, WBG, &format!("{left}{right:>rw$.rw$}\r\n"), self.use_color);
     }
 
     /// Draw the message bar on the terminal, by adding characters to the
@@ -562,7 +560,7 @@ impl Editor {
         self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
         let mut buffer = format!("{HIDE_CURSOR}{MOVE_CURSOR_TO_START}");
         self.draw_rows(&mut buffer)?;
-        self.draw_status_bar(&mut buffer)?;
+        self.draw_status_bar(&mut buffer);
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
             // If not in prompt mode, position the cursor according to the `cursor`
@@ -723,6 +721,9 @@ impl Editor {
 pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Error> {
     sys::register_winsize_change_signal_handler()?;
     let orig_term_mode = sys::enable_raw_mode()?;
+    let mut editor = Editor { config: Config::load(), ..Default::default() };
+    editor.use_color = !std::env::var("NO_COLOR").is_ok_and(|val| !val.is_empty());
+
     print!("{USE_ALTERNATE_SCREEN}");
 
     let prev_hook = std::panic::take_hook();
@@ -731,7 +732,6 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
         prev_hook(info);
     }));
 
-    let mut editor = Editor { config: Config::load(), ..Default::default() };
     let result = editor.run(file_name, input);
 
     // Restore the original terminal mode.
@@ -1200,6 +1200,53 @@ mod tests {
         assert_eq!(editor.cursor.y, 0);
     }
 
+    #[test]
+    fn editor_page_up_moves_cursor_to_viewport_top() {
+        let mut editor = Editor { screen_rows: 4, ..Default::default() };
+        for _ in 0..10 {
+            editor.insert_new_line();
+        }
+
+        (editor.cursor.y, editor.cursor.x) = (3, 0);
+        editor.insert_byte(b'a');
+        editor.insert_byte(b'b');
+
+        (editor.cursor.y, editor.cursor.x, editor.cursor.roff) = (9, 5, 7);
+        let (should_quit, prompt_mode) = editor.process_keypress(&Key::PageUp);
+
+        assert!(!should_quit);
+        assert!(prompt_mode.is_none());
+        assert_eq!(editor.cursor.y, 3);
+        assert_eq!(editor.cursor.x, 2);
+    }
+
+    #[test]
+    fn editor_page_down_moves_cursor_to_viewport_bottom() {
+        let mut editor = Editor { screen_rows: 4, ..Default::default() };
+        for _ in 0..12 {
+            editor.insert_new_line();
+        }
+
+        (editor.cursor.y, editor.cursor.x) = (11, 0);
+        editor.insert_byte(b'x');
+        editor.insert_byte(b'y');
+        editor.insert_byte(b'z');
+
+        (editor.cursor.x, editor.cursor.roff) = (6, 4);
+        let (should_quit, prompt_mode) = editor.process_keypress(&Key::PageDown);
+        assert!(!should_quit);
+        assert!(prompt_mode.is_none());
+        assert_eq!(editor.cursor.y, 11);
+        assert_eq!(editor.cursor.x, 3);
+
+        (editor.cursor.x, editor.cursor.roff) = (9, 11);
+        let (should_quit, prompt_mode_again) = editor.process_keypress(&Key::PageDown);
+        assert!(!should_quit);
+        assert!(prompt_mode_again.is_none());
+        assert_eq!(editor.cursor.y, editor.rows.len());
+        assert_eq!(editor.cursor.x, 0);
+    }
+
     #[rstest]
     #[case::beginning_of_first_row(b"Hello\nWorld!\n", (0, 0), &[&b"World!"[..], &b""[..]], 0)]
     #[case::middle_of_first_row(b"Hello\nWorld!\n", (3, 0), &[&b"World!"[..], &b""[..]], 0)]
@@ -1377,5 +1424,26 @@ mod tests {
             .take()
             .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, &Key::Char(b'\r')));
         assert_eq!(prompt_mode, None);
+    }
+
+    #[rstest]
+    #[case(100, true, 12345, "\u{1b}[38;5;240m12345 │\u{1b}[m")]
+    #[case(100, true, "~", "\u{1b}[38;5;240m~ │\u{1b}[m")]
+    #[case(10, true, 12345, "")]
+    #[case(10, true, "~", "")]
+    #[case(100, false, 12345, "12345 │")]
+    #[case(100, false, "~", "~ │")]
+    #[case(10, false, 12345, "")]
+    #[case(10, false, "~", "")]
+    fn draw_left_padding<T: Display>(
+        #[case] window_width: usize, #[case] use_color: bool, #[case] value: T,
+        #[case] expected: &'static str,
+    ) {
+        let mut editor = Editor { window_width, use_color, ..Default::default() };
+        editor.update_screen_cols();
+
+        let mut buffer = String::new();
+        editor.draw_left_padding(&mut buffer, value);
+        assert_eq!(buffer, expected);
     }
 }
