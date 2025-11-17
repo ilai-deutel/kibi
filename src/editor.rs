@@ -21,6 +21,7 @@ const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
+const WELCOME_MESSAGE: &str = concat!("Kibi ", env!("KIBI_VERSION"));
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
                             ^C copy | ^X cut | ^V paste";
 
@@ -489,16 +490,13 @@ impl Editor {
     }
 
     /// Draw the left part of the screen: line numbers and vertical bar.
-    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) -> Result<(), Error> {
+    fn draw_left_padding<T: Display>(&self, buffer: &mut String, val: T) {
         if self.ln_pad >= 2 {
-            if self.use_color {
-                // \x1b[38;5;240m: Dark grey color; \u{2502}: pipe "│"
-                write!(buffer, "\x1b[38;5;240m{:>2$} \u{2502}{}", val, RESET_FMT, self.ln_pad - 2)?;
-            } else {
-                write!(buffer, "{:>width$} |", val, width = self.ln_pad - 2)?;
-            }
+            // \u{2502}: pipe "│"
+            let s = format!("{:>1$} \u{2502}", val, self.ln_pad - 2);
+            // \x1b[38;5;240m: Dark grey color
+            push_colored(buffer, "\x1b[38;5;240m", &s, self.use_color);
         }
-        Ok(())
     }
 
     /// Return whether the file being edited is empty or not. If there is more
@@ -514,14 +512,13 @@ impl Editor {
             buffer.push_str(CLEAR_LINE_RIGHT_OF_CURSOR);
             if let Some(row) = row {
                 // Draw a row of text
-                self.draw_left_padding(buffer, i + 1)?;
-                row.draw(self.cursor.coff, self.screen_cols, buffer, self.use_color)?;
+                self.draw_left_padding(buffer, i + 1);
+                row.draw(self.cursor.coff, self.screen_cols, buffer, self.use_color);
             } else {
                 // Draw an empty row
-                self.draw_left_padding(buffer, '~')?;
+                self.draw_left_padding(buffer, '~');
                 if self.is_empty() && i == self.screen_rows / 3 {
-                    let welcome_message = concat!("Kibi ", env!("KIBI_VERSION"));
-                    write!(buffer, "{:^1$.1$}", welcome_message, self.screen_cols)?;
+                    write!(buffer, "{:^1$.1$}", WELCOME_MESSAGE, self.screen_cols)?;
                 }
             }
             buffer.push_str("\r\n");
@@ -530,7 +527,7 @@ impl Editor {
     }
 
     /// Draw the status bar on the terminal, by adding characters to the buffer.
-    fn draw_status_bar(&self, buffer: &mut String) -> Result<(), Error> {
+    fn draw_status_bar(&self, buffer: &mut String) {
         // Left part of the status bar
         let modified = if self.dirty { " (modified)" } else { "" };
         let mut left =
@@ -544,12 +541,7 @@ impl Editor {
 
         // Draw
         let rw = self.window_width.saturating_sub(left.len());
-        if self.use_color {
-            write!(buffer, "{REVERSE_VIDEO}{left}{right:>rw$.rw$}{RESET_FMT}\r\n")?;
-        } else {
-            write!(buffer, "{left}{right:>rw$.rw$}\r\n")?;
-        }
-        Ok(())
+        push_colored(buffer, WBG, &format!("{left}{right:>rw$.rw$}\r\n"), self.use_color);
     }
 
     /// Draw the message bar on the terminal, by adding characters to the
@@ -568,7 +560,7 @@ impl Editor {
         self.cursor.scroll(self.rx(), self.screen_rows, self.screen_cols);
         let mut buffer = format!("{HIDE_CURSOR}{MOVE_CURSOR_TO_START}");
         self.draw_rows(&mut buffer)?;
-        self.draw_status_bar(&mut buffer)?;
+        self.draw_status_bar(&mut buffer);
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
             // If not in prompt mode, position the cursor according to the `cursor`
@@ -1423,5 +1415,26 @@ mod tests {
             .take()
             .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, &Key::Char(b'\r')));
         assert_eq!(prompt_mode, None);
+    }
+
+    #[rstest]
+    #[case(100, true, 12345, "\u{1b}[38;5;240m12345 │\u{1b}[m")]
+    #[case(100, true, "~", "\u{1b}[38;5;240m~ │\u{1b}[m")]
+    #[case(10, true, 12345, "")]
+    #[case(10, true, "~", "")]
+    #[case(100, false, 12345, "12345 │")]
+    #[case(100, false, "~", "~ │")]
+    #[case(10, false, 12345, "")]
+    #[case(10, false, "~", "")]
+    fn draw_left_padding<T: Display>(
+        #[case] window_width: usize, #[case] use_color: bool, #[case] value: T,
+        #[case] expected: &'static str,
+    ) {
+        let mut editor = Editor { window_width, use_color, ..Default::default() };
+        editor.update_screen_cols();
+
+        let mut buffer = String::new();
+        editor.draw_left_padding(&mut buffer, value);
+        assert_eq!(buffer, expected);
     }
 }
