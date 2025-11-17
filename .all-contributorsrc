@@ -18,7 +18,7 @@
       "description": "Contributing to syntax highlighting configuration files"
     }
   },
-  "skipCi": true,
+  "skipCi": false,
   "contributors": [
     {
       "login": "ilai-deutel",
