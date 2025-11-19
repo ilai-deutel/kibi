@@ -423,6 +423,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "stefanpeiculeasa",
+      "name": "Peiculeasa Sergiu-Ștefan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/176714001?v=4",
+      "profile": "https://github.com/stefanpeiculeasa",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
