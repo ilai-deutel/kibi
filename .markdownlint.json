@@ -8,10 +8,15 @@
     "MD033": {
         "allowed_elements": [
             "details",
+            "div",
             "kbd",
+            "img",
             "summary",
             "sup"
         ]
+    },
+    "MD041": {
+        "allow_preamble": true
     },
     "MD042": false
 }

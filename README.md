@@ -1,3 +1,7 @@
+<div align="center">
+    <img src="./assets/logo.svg" alt="Logo of Kibi. A dark gray square with rounded corners contains a large, light-orange, backward-pointing chevron and a bright green, vertical rectangle. To the left of the chevron is a column of ten light-orange, horizontal rectangles. These ten rectangles function as a 10-bit binary counter, with the bottom bar being the least significant bit and the top the most significant. The bars blink in a sequence that counts from 0 to 1023 in binary." width="256" />
+</div>
+
 # Kibi: A text editor in ≤1024 lines of code, written in Rust
 
 [![Build Status](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml/badge.svg)](https://github.com/ilai-deutel/kibi/actions/workflows/ci.yml)
@@ -18,7 +22,7 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-46-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-[![asciicast](assets/asciicast.gif)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
+[![Kibi in action: creating and editing a file, with syntax highlighting and search feature](assets/recording.svg)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
 
 A configurable text editor with UTF-8 support, incremental search, syntax
 highlighting, line numbers and more, written in less than 1024

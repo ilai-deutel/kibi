@@ -1,0 +1,66 @@
+#:schema https://raw.githubusercontent.com/pamburus/termframe/refs/heads/main/schema/json/window-style.schema.json
+# SPDX-License-Identifier: MIT or Apache-2.0
+# SPDX-FileCopyrightText: 2020 Ilaï Deutel
+
+[window.title.font]
+family = [
+    "Monaspace Neon",
+]
+size = 16
+weight = "normal"
+
+# SPDX-SnippetBegin
+# SPDX-SnippetCopyrightText: (c) 2025 Pavel Ivanov
+# SPDX-SnippetComment: Copied from https://github.com/pamburus/termframe/blob/684e5b3bc1cf60e611ce369ad001fb8f91bdd2c9/assets/window-styles/macos.toml
+# SPDX-License-Identifier: MIT
+[window.margin]
+left = 32
+right = 32
+top = 16
+bottom = 48
+
+[window.border]
+width = 0.5
+gap = 0.5
+radius = 10
+colors = { outer = { dark = "#000000", light = "#80808080" }, inner = { dark = "#f0f0f080", light = "#ffffff80" } }
+
+[window.header]
+height = 28
+color = { dark = "#383837", light = "#eef0f1" }
+border = { width = 0.5, color = { dark = "#000000c0", light = "#80808080" } }
+
+[window.title.color]
+dark = "#b3b3b3"
+light = "#474747"
+
+[window.buttons]
+position = "left"
+shape = "circle"
+size = 6
+
+[[window.buttons.items]]
+offset = 14
+fill = "#ff5f56"
+stroke-width = 0.5
+stroke = { dark = "#ff5f56", light = "#d85a51" }
+
+[[window.buttons.items]]
+offset = 34
+fill = "#ffbd2e"
+stroke-width = 0.5
+stroke = { dark = "#ffbd2e", light = "#d19d36" }
+
+[[window.buttons.items]]
+offset = 54
+fill = "#28c941"
+stroke-width = 0.5
+stroke = { dark = "#28c941", light = "#39ac42" }
+
+[window.shadow]
+enabled = true
+color = "#000000c0"
+blur = 12
+x = 4
+y = 12
+# SPDX-SnippetEnd

@@ -10,7 +10,7 @@
     }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      script =
+      bash_script =
         name:
         { ... }@args:
         pkgs.writeShellApplication (
@@ -23,21 +23,37 @@
         );
     in
     {
-      packages.x86_64-linux = builtins.mapAttrs script {
-        prepare_release = {
-          runtimeInputs = with pkgs; [
-            b2sum
-            b3sum
-            gh
-            jq
-            libxml2
-            slsa-verifier
-            rustup
-            python313Packages.ed25519-blake2b
-            python313Packages.mdformat
-            python313Packages.mdformat-gfm
-          ];
-        };
-      };
+      packages.x86_64-linux = (
+        builtins.mapAttrs bash_script {
+          prepare_release = {
+            runtimeInputs = with pkgs; [
+              b2sum
+              b3sum
+              gh
+              jq
+              libxml2
+              python3Packages.ed25519-blake2b
+              python3Packages.mdformat
+              python3Packages.mdformat-gfm
+              slsa-verifier
+              rustup
+            ];
+          };
+          generate_recording = {
+            runtimeInputs = with pkgs; [
+              nodePackages.svgo
+              (pkgs.rWrapper.override {
+                packages = with rPackages; [
+                  asciicast
+                  httr2
+                  openssl
+                  xml2
+                ];
+              })
+            ];
+            excludeShellChecks = [ "SC1091" ];
+          };
+        }
+      );
     };
 }

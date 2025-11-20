@@ -1,0 +1,31 @@
+#:schema https://raw.githubusercontent.com/pamburus/termframe/refs/heads/main/schema/json/config.schema.json
+# SPDX-License-Identifier: MIT or Apache-2.0
+# SPDX-FileCopyrightText: 2020 Ilaï Deutel
+
+[terminal]
+width = 120
+height = 30
+
+[theme]
+dark = "one-double"
+light = "one-double"
+
+[font]
+family = ["Monaspace Neon"]
+size=14
+
+[window]
+enabled = true
+shadow = true
+style = "custom"
+
+[rendering.svg]
+embed-fonts = true
+subset-fonts = true
+
+[[fonts]]
+family = "Monaspace Neon"
+license = { type = "SIL Open Font License 1.1 with Reserved Font Name", link = "https://raw.githubusercontent.com/githubnext/monaspace/refs/heads/main/LICENSE" }
+files = [
+  "https://raw.githubusercontent.com/githubnext/monaspace/refs/heads/main/fonts/Web%20Fonts/Static%20Web%20Fonts/Monaspace%20Neon/MonaspaceNeon-Regular.woff2"
+]
