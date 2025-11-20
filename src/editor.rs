@@ -671,7 +671,6 @@ impl Editor {
     pub fn run<I: BufRead>(&mut self, file_name: Option<&str>, input: &mut I) -> Result<(), Error> {
         self.update_window_size()?;
         set_status!(self, "{HELP_MESSAGE}");
-        self.refresh_screen()?;
 
         if let Some(path) = file_name.map(sys::path) {
             self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
