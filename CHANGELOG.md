@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 _The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
 
+## [0.3.2] - 2025-11-23
+
+### Added
+
+- Support for [`NO_COLOR` standard](https://no-color.org): all color output will be disabled if the `NO_COLOR` environment variable is set ([#499](https://github.com/ilai-deutel/kibi/pull/499))
+- <kbd>Ctrl</kbd> + <kbd>R</kbd> can now remove the very last line ([#498](https://github.com/ilai-deutel/kibi/pull/498))
+
+### Changed
+
+- Terminal mode is now restored on panic ([#496](https://github.com/ilai-deutel/kibi/pull/496))
+- No-op code re-organization to facilitate testing and reduce LOC ([#496](https://github.com/ilai-deutel/kibi/pull/496), [#510](https://github.com/ilai-deutel/kibi/pull/510))
+- Minimum supported Rust version bumped to v1.91 ([#497](https://github.com/ilai-deutel/kibi/pull/497))
+
+### Fixed
+
+- Regression: invalid behavior when pressing right/delete at end of line ([#491](https://github.com/ilai-deutel/kibi/pull/491))
+- Unnecessary screen refresh, blinking welcome message when opening existing file ([#520](https://github.com/ilai-deutel/kibi/pull/520))
+
 ## [0.3.1] - 2025-11-01
 
 ### Added
@@ -19,9 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Delete line with Ctrl-R ([#114](https://github.com/ilai-deutel/kibi/pull/114))
-- Copy, cut and paste lines with Ctrl-C, Ctrl-X, Ctrl-V ([#207](https://github.com/ilai-deutel/kibi/pull/207))
-- Ctrl+arrows moves to the previous/next word ([#214](https://github.com/ilai-deutel/kibi/pull/214))
+- Delete line with <kbd>Ctrl</kbd> + <kbd>R</kbd> ([#114](https://github.com/ilai-deutel/kibi/pull/114))
+- Copy, cut and paste lines with <kbd>Ctrl</kbd> + <kbd>C</kbd>, <kbd>Ctrl</kbd> + <kbd>X</kbd>, <kbd>Ctrl</kbd> + <kbd>V</kbd> ([#207](https://github.com/ilai-deutel/kibi/pull/207))
+- <kbd>Ctrl</kbd> + <kbd>←</kbd>/<kbd>→</kbd> moves to the previous/next word ([#214](https://github.com/ilai-deutel/kibi/pull/214))
 - Syntax highlighting configurations for C ([#98](https://github.com/ilai-deutel/kibi/pull/98), [#181](https://github.com/ilai-deutel/kibi/pull/181)), Nim ([#106](https://github.com/ilai-deutel/kibi/pull/106)), C# ([#211](https://github.com/ilai-deutel/kibi/pull/211)), C++ ([#211](https://github.com/ilai-deutel/kibi/pull/211)), CoffeeScript ([#262](https://github.com/ilai-deutel/kibi/pull/262)), CSS ([#211](https://github.com/ilai-deutel/kibi/pull/211)), D ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Dart ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Elixir ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Fish ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Go ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Groovy ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Haskell ([#211](https://github.com/ilai-deutel/kibi/pull/211)), HTNL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Java ([#211](https://github.com/ilai-deutel/kibi/pull/211)), JavaScript ([#108](https://github.com/ilai-deutel/kibi/pull/108)), Julia ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Kotlin ([#211](https://github.com/ilai-deutel/kibi/pull/211)), LRC [#433](https://github.com/ilai-deutel/kibi/pull/433), Lua ([#108](https://github.com/ilai-deutel/kibi/pull/108), [#277](https://github.com/ilai-deutel/kibi/pull/277)), Markdown ([#152](https://github.com/ilai-deutel/kibi/pull/152)), MATLAB ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Nix ([#262](https://github.com/ilai-deutel/kibi/pull/262)), NoSQL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Nushell ([#262](https://github.com/ilai-deutel/kibi/pull/262), [#433](https://github.com/ilai-deutel/kibi/pull/433)), OCaml ([#262](https://github.com/ilai-deutel/kibi/pull/262)), Perl ([#211](https://github.com/ilai-deutel/kibi/pull/211)), PHP ([#211](https://github.com/ilai-deutel/kibi/pull/211)), PowerShell ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Processing ([#262](https://github.com/ilai-deutel/kibi/pull/262)), PRQL ([#369](https://github.com/ilai-deutel/kibi/pull/369)), R ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Racket ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Ruby ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Raku ([#262](https://github.com/ilai-deutel/kibi/pull/262)), RSS [#433](https://github.com/ilai-deutel/kibi/pull/433), Scala ([#211](https://github.com/ilai-deutel/kibi/pull/211)), SQL ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Swift ([#211](https://github.com/ilai-deutel/kibi/pull/211)), TypeScript ([#211](https://github.com/ilai-deutel/kibi/pull/211)), XML ([#211](https://github.com/ilai-deutel/kibi/pull/211), [#449](https://github.com/ilai-deutel/kibi/pull/449)), YAML ([#211](https://github.com/ilai-deutel/kibi/pull/211)), Zig ([#262](https://github.com/ilai-deutel/kibi/pull/262), [#400](https://github.com/ilai-deutel/kibi/pull/400)), ZSH ([#211](https://github.com/ilai-deutel/kibi/pull/211))
 - Support for WebAssembly ([#159](https://github.com/ilai-deutel/kibi/pull/159))
 - Binary optimization for release: enable LTO ([#346](https://github.com/ilai-deutel/kibi/pull/346)); single codegen unit, abort on panic, strip symbols ([#464](https://github.com/ilai-deutel/kibi/pull/464))
@@ -117,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add support for UTF-8 characters ([#1](https://github.com/ilai-deutel/kibi/issues/1))
-- Add a command to duplicate the current row (`Ctrl-D`)
+- Add a command to duplicate the current row (<kbd>Ctrl</kbd> + <kbd>D</kbd>)
 - Syntax highlighting configuration for `bash`
 
 ### Fixed
@@ -144,6 +162,7 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 Initial release
 
+[0.3.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.0
 [0.2.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.2.2
