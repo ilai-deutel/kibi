@@ -60,6 +60,8 @@ cp -R \
   README.md \
   config_example.ini \
   syntax.d \
+  assets/kibi.svg \
+  kibi.desktop \
   "$tmp_dir/$archive_dir"
 
 if [[ "$dest_path" == *.tar.gz ]]; then
