@@ -13,6 +13,8 @@ path = [
     ".github/**.yml",
     ".vscode/settings.json",
     "assets/recording.cast",
+    "assets/*.png",
+    "assets/*.webm",
     "ci/*",
     "scripts/*",
     "syntax.d/*.ini",

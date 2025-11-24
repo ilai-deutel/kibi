@@ -1,7 +1,7 @@
 {
   description = "CI scripts";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
   outputs =
     {
@@ -41,8 +41,11 @@
           };
           generate_recording = {
             runtimeInputs = with pkgs; [
+              asciinema-agg
+              ffmpeg
+              monaspace
               nodePackages.svgo
-              (pkgs.rWrapper.override {
+              (rWrapper.override {
                 packages = with rPackages; [
                   asciicast
                   httr2

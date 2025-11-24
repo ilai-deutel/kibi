@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Generates SVG and PNG screenshots.
 
 set -euo pipefail
 
@@ -28,6 +29,10 @@ main() {
 
   for mode in 'dark' 'light'; do
     generate_screenshot "$mode" | svgo - | add_license_information "$font_family" "$font_license_details" > "assets/screenshot-$mode.svg"
+    inkscape \
+      "assets/screenshot-$mode.svg" \
+      --export-height 1080 \
+      --export-filename "assets/screenshot-$mode.png"
   done
 }
 

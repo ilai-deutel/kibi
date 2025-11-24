@@ -15,8 +15,7 @@ read_cast("assets/recording.cast") |>
 write_svg(
   tmp,
   window = TRUE,
-  # rows = 30,
-  cols = 40,
+  cols = 106,
   theme = "monokai",
   cursor = TRUE,
 )
