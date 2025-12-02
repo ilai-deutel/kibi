@@ -46,7 +46,7 @@ pub struct Row {
     pub hl_state: HlState,
     /// If not `None`, the range that is currently matched during a FIND
     /// operation.
-    pub match_segment: Option<std::ops::Range<usize>>,
+    pub match_segments: Vec<std::ops::Range<usize>>,
 }
 
 impl Row {
@@ -189,11 +189,11 @@ impl Row {
                     buffer.push_str(&current_hl_type.to_string());
                 }
             } else {
-                if let Some(match_segment) = &self.match_segment {
-                    if match_segment.contains(&rx) {
+                if !self.match_segments.is_empty() {
+                    if self.match_segments.iter().any(|r| r.contains(&rx)) {
                         // Set the highlight type to Match, i.e. set the background to cyan
                         hl_type = &HlType::Match;
-                    } else if use_color && rx == match_segment.end {
+                    } else if use_color && self.match_segments.iter().any(|r| rx == r.end) {
                         // Reset the formatting, in particular the background
                         buffer.push_str(RESET);
                     }
