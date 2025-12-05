@@ -432,6 +432,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "rtczza",
+      "name": "ken",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41325712?v=4",
+      "profile": "https://github.com/rtczza",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
