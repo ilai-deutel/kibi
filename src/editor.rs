@@ -643,24 +643,32 @@ impl Editor {
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
-        // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
-        // TODO: Handle multiple matches per line
-        for _ in 0..num_rows {
-            current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
-            let row = &mut self.rows[current];
-            if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
-                // self.cursor.coff: Try to reset the column offset; if the match is after the
-                // offset, this will be updated in self.cursor.scroll() so that
-                // the result is visible
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
-                let rx = row.cx2rx[cx];
-                row.match_segment = Some(rx..rx + query.len());
-                return Some(current);
+        let current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
+        // 清除所有行的 match_segments
+        for row in &mut self.rows {
+            row.match_segments.clear();
+        }
+        let mut found_row = None;
+        for idx in 0..num_rows {
+            let i = (current + if forward { 1 } else { num_rows - 1 } + idx) % num_rows;
+            let row = &mut self.rows[i];
+            let line = row.chars.as_slice();
+            let mut pos = 0;
+            while pos + query.len() <= line.len() {
+                if &line[pos..pos + query.len()] == query.as_bytes() {
+                    let rx = row.cx2rx[pos];
+                    row.match_segments.push(rx..rx + query.len());
+                    if found_row.is_none() {
+                        // 只导航到第一个找到的行
+                        (self.cursor.x, self.cursor.y, self.cursor.coff) = (pos, i, 0);
+                        found_row = Some(i);
+                    }
+                }
+                pos += 1;
             }
         }
-        None
+        found_row
     }
 
     /// If `file_name` is not None, load the file. Then run the text editor.
@@ -764,10 +772,10 @@ impl PromptMode {
                 PromptState::Active(b) => return Some(Self::Save(b)),
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
                 PromptState::Completed(file_name) => ed.save_as(file_name),
-            },
+            }
             Self::Find(b, saved_cursor, last_match) => {
-                if let Some(row_idx) = last_match {
-                    ed.rows[row_idx].match_segment = None;
+                for row in &mut ed.rows {
+                    row.match_segments.clear();
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
