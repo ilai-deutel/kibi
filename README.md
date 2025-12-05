@@ -19,7 +19,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-5E0D73.svg?logo=contributorcovenant)](CODE_OF_CONDUCT.md)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-46-orange.svg)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-47-orange.svg)](#contributors)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Kibi in action: creating and editing a file, with syntax highlighting and search feature](assets/recording.svg)](https://asciinema.org/a/KY7tKPlxHXqRdJiv5KaTJbPj5)
@@ -419,6 +419,7 @@ any kind welcome!
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Cristian-Andrei-Pomenea"><img src="https://avatars.githubusercontent.com/u/189586799?v=4" width="100px;" alt=""/><br /><sub><b>Pomenea Cristian-Andrei</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=Cristian-Andrei-Pomenea" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/CalinCodes"><img src="https://avatars.githubusercontent.com/u/168958070?v=4" width="100px;" alt=""/><br /><sub><b>Călin Fota</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=CalinCodes" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/stefanpeiculeasa"><img src="https://avatars.githubusercontent.com/u/176714001?v=4" width="100px;" alt=""/><br /><sub><b>Peiculeasa Sergiu-Ștefan</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=stefanpeiculeasa" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/rtczza"><img src="https://avatars.githubusercontent.com/u/41325712?v=4" width="100px;" alt=""/><br /><sub><b>ken</b></sub></a><br /><a href="https://github.com/ilai-deutel/kibi/commits?author=rtczza" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
