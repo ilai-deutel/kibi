@@ -207,6 +207,7 @@ kibi --version    # Print version information and exit
 | <kbd>Ctrl</kbd> + <kbd>C</kbd> | Copies the entire line                                        |
 | <kbd>Ctrl</kbd> + <kbd>X</kbd> | Cuts the entire line                                          |
 | <kbd>Ctrl</kbd> + <kbd>V</kbd> | Will paste the copied line                                    |
+| Ctrl-/            | Toggle comment on the current line                            |
 | <kbd>Ctrl</kbd> + <kbd>←</kbd> | Moves cursor to previous word                                 |
 | <kbd>Ctrl</kbd> + <kbd>→</kbd> | Moves cursor to next word                                     |
 
