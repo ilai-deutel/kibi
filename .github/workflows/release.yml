@@ -110,7 +110,7 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2.8.2
         with:
-          prefix-key: rust-stable
+          prefix-key: rust-nightly
           # Android-only
           cache-directories: ~/ndk
 
@@ -140,11 +140,11 @@ jobs:
           echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
           TARGET_UPPERCASE=$(sed -e 's/.*/\U&/' -e 's/-/_/g' <<< ${{ matrix.target }})
           echo "CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${TOOLCHAIN}/bin/${{ matrix.target }}${ANDROID_API_LEVEL}-clang" >> "$GITHUB_ENV"
-      - name: Install Rust stable toolchain
+      - name: Install Rust nightly toolchain
         run: |
-          rustup toolchain install stable --target ${{ matrix.target }} --profile minimal
-          rustup default stable
-          rustc +stable --version --verbose
+          rustup toolchain install nightly --target ${{ matrix.target }} --profile minimal
+          rustup default nightly
+          rustc +nightly --version --verbose
 
       - name: Set asset path (Unix)
         if: "! startsWith(matrix.os, 'windows-')"

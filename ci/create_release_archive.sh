@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-RUSTFLAGS='-D warnings' cargo build --target "$target" --release --verbose
+RUSTFLAGS='-D warnings -Zstack-protector=strong' cargo build --target "$target" --release --verbose
 
 binary_path="target/$target/release/kibi"
 
