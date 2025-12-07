@@ -5,11 +5,9 @@ path = [
     "**.rs",
     "**/.gitignore",
     "**/Cargo.toml",
-    "**/README.md",
     ".allstar/*.yaml",
     ".cargo/config.toml",
     ".github/CODEOWNERS",
-    ".github/**.md",
     ".github/**.yml",
     ".vscode/settings.json",
     "assets/recording.cast",
@@ -21,21 +19,12 @@ path = [
     ".all-contributorsrc",
     ".markdownlint.json",
     "Cargo.lock",
-    "CHANGELOG.md",
     "COPYRIGHT",
     "clippy.toml",
     "config_example.ini",
     "deny.toml",
     "kibi.desktop",
     "rustfmt.toml",
-    "SECURITY.md"
 ]
 SPDX-FileCopyrightText = "2020 Ilaï Deutel & Kibi Contributors"
 SPDX-License-Identifier = "MIT or Apache-2.0"
-
-[[annotations]]
-path = [
-    "CODE_OF_CONDUCT.md",
-]
-SPDX-FileCopyrightText = "Organization for Ethical Source"
-SPDX-License-Identifier = "CC-BY-SA-4.0"

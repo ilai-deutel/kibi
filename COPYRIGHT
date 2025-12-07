@@ -1,6 +1,11 @@
+<!--
+SPDX-FileCopyrightText: 2020 Ilaï Deutel
+SPDX-License-Identifier: MIT or Apache-2.0
+-->
+
 Except as otherwise noted (below and/or in individual files), Kibi is licensed
-under the Apache License, Version 2.0 <LICENSE-APACHE> or
-<http://www.apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT>
+under the Apache License, Version 2.0 [LICENSE-APACHE](LICENSE-APACHE) or
+<http://www.apache.org/licenses/LICENSE-2.0> or the MIT license [LICENSE-MIT](LICENSE-MIT)
 or <http://opensource.org/licenses/MIT>, at your option.
 
 ---
@@ -9,6 +14,7 @@ Parts of the project are inspired by kilo <https://github.com/antirez/kilo>
 and the tutorial <https://viewsourcecode.org/snaptoken/kilo/>. The kilo source
 code is licensed under the BSD 2-Clause "Simplified" License:
 
+<!-- markdownlint-disable no-inline-html ul-style-->
 Copyright (c) 2016, Salvatore Sanfilippo <antirez at gmail dot com>
 
 All rights reserved.
@@ -33,5 +39,6 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+<!-- markdownlint-restore -->
 
 ---

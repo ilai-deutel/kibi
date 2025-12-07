@@ -1,5 +1,9 @@
 {
+    "MD004": {
+        "style": "dash"
+    },
     "MD013": {
+        "code_blocks": false,
         "tables": false
     },
     "MD024": {
@@ -18,5 +22,8 @@
     "MD041": {
         "allow_preamble": true
     },
-    "MD042": false
+    "MD042": false,
+    "MD049": {
+        "style": "underscore"
+    }
 }

@@ -1,4 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2020 Ilaï Deutel
+SPDX-License-Identifier: MIT or Apache-2.0
+-->
+
 <div align="center">
+    <!-- markdownlint-disable-next-line line_length -->
     <img src="./assets/kibi.svg" alt="Logo of Kibi. A dark gray square with rounded corners contains a large, light-orange, backward-pointing chevron and a bright green, vertical rectangle. To the left of the chevron is a column of ten light-orange, horizontal rectangles. These ten rectangles function as a 10-bit binary counter, with the bottom bar being the least significant bit and the top the most significant. The bars blink in a sequence that counts from 0 to 1023 in binary." width="256" />
 </div>
 
@@ -43,33 +49,33 @@ Contributions are welcome! Be careful to stay below the 1024-line limit...
 
 ## Table of contents
 
-* [Installation](#installation)
-  * [With cargo](#with-cargo)
-  * [Arch User Repository (Arch Linux)](#arch-user-repository-arch-linux)
-  * [Android (with Termux)](#android-with-termux)
-  * [Fedora/CentOS](#fedoracentos)
-  * [NetBSD](#netbsd)
-  * [Flatpak](#flatpak)
-* [Usage](#usage)
-  * [Keyboard shortcuts](#keyboard-shortcuts)
-  * [Configuration](#configuration)
-    * [Global configuration](#global-configuration)
-    * [Syntax highlighting](#syntax-highlighting)
-* [Comparison with kilo](#comparison-with-kilo)
-* [Contributing](#contributing)
-* [Dependencies](#dependencies)
-* [Why Kibi?](#why-kibi)
-* [Contributors](#contributors)
-* [License](#license)
+- [Installation](#installation)
+  - [With cargo](#with-cargo)
+  - [Arch User Repository (Arch Linux)](#arch-user-repository-arch-linux)
+  - [Android (with Termux)](#android-with-termux)
+  - [Fedora/CentOS](#fedoracentos)
+  - [NetBSD](#netbsd)
+  - [Flatpak](#flatpak)
+- [Usage](#usage)
+  - [Keyboard shortcuts](#keyboard-shortcuts)
+  - [Configuration](#configuration)
+    - [Global configuration](#global-configuration)
+    - [Syntax highlighting](#syntax-highlighting)
+- [Comparison with kilo](#comparison-with-kilo)
+- [Contributing](#contributing)
+- [Dependencies](#dependencies)
+- [Why Kibi?](#why-kibi)
+- [Contributors](#contributors)
+- [License](#license)
 
 ## Installation
 
-<!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable no-inline-html -->
 <a href="https://repology.org/project/kibi/versions">
     <img src="https://repology.org/badge/vertical-allrepos/kibi.svg"
     alt="Packaging status" align="right">
 </a>
-<!-- markdownlint-enable MD033 -->
+<!-- markdownlint-enable no-inline-html -->
 
 ### With `cargo`
 
@@ -95,23 +101,63 @@ ln -sr ./kibi/syntax.d ~/.local/share/kibi/syntax.d
 
 ### Arch User Repository (Arch Linux)
 
-2 packages are available on the AUR:
+3 packages are available on the AUR:
 [`kibi`](https://aur.archlinux.org/packages/kibi) and
+[`kibi-bin`](https://aur.archlinux.org/packages/kibi-bin).
 [`kibi-git`](https://aur.archlinux.org/packages/kibi-git).
 
-<details><summary>Installation instructions</summary>
+<!-- markdownlint-disable-next-line no-inline-html -->
+<details><summary>Installation instructions: <code>kibi</code></summary>
 
-1. Installation with an AUR helper, for instance using `yay`:
+1. Installation with an AUR helper, for instance using `paru`:
 
    ```bash
-   yay -Syu kibi  # or yay -Syu kibi-git
+   paru -Syu kibi
    ```
 
 2. Install manually with `makepkg`:
 
    ```bash
-   git clone https://aur.archlinux.org/kibi.git  # or git clone https://aur.archlinux.org/kibi-git.git
+   git clone https://aur.archlinux.org/kibi.git
    cd kibi
+   makepkg -si
+   ```
+
+</details>
+<!-- markdownlint-disable-next-line no-inline-html -->
+<details><summary>Installation instructions: <code>kibi-bin</code></summary>
+
+1. Installation with an AUR helper, for instance using `paru`:
+
+   ```bash
+   paru -Syu --pgpfetch kibi-bin
+   ```
+
+2. Install manually with `makepkg`:
+
+   ```bash
+   gpg --keyserver keys.openpgp.org  --recv-keys 102588418FF7E165696490A206E8A973494808A2
+   git clone https://aur.archlinux.org/kibi-bin.git
+   cd kibi-bin
+   makepkg -si
+   ```
+
+</details>
+
+<!-- markdownlint-disable-next-line no-inline-html -->
+<details><summary>Installation instructions: <code>kibi-git</code></summary>
+
+1. Installation with an AUR helper, for instance using `paru`:
+
+   ```bash
+   paru -Syu kibi-git
+   ```
+
+2. Install manually with `makepkg`:
+
+   ```bash
+   git clone https://aur.archlinux.org/kibi-git.git
+   cd kibi-git
    makepkg -si
    ```
 
@@ -234,10 +280,10 @@ The location of these files is described below.
 
 kibi follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
-* A user-level configuration file can be located at
+- A user-level configuration file can be located at
   `$XDG_CONFIG_HOME/kibi/config.ini` if environment variable `$XDG_CONFIG_HOME`
   is defined, `~/.config/kibi/config.ini` otherwise.
-* A system-wide configuration file can be located at
+- A system-wide configuration file can be located at
   `$XDG_CONFIG_DIRS/kibi/config.ini` if environment variable
   `$XDG_CONFIG_DIRS` is defined, `/etc/kibi/config.ini` or
   `/etc/xdg/kibi/config.ini` otherwise.
@@ -250,7 +296,6 @@ A configuration file can be located at `%APPDATA%\Kibi\config.ini`.
 
 Syntax highlighting can be configured using INI files which follow this format:
 
-<!-- markdownlint-disable MD013 -->
 ```ini
 ### /usr/share/kibi/syntax.d/rust.ini ###
 # Kibi syntax highlighting configuration for Rust
@@ -268,7 +313,6 @@ multiline_string_delim="
 keywords_1=abstract, as, async, await, become, box, break, const, continue, crate, do, dyn, else, enum, extern, false, final, fn, for, if, impl, in, let, loop, macro, match, mod, move, mut, override, priv, pub, ref, return, self, Self, static, struct, super, trait, true, try, type, typeof, unsafe, unsized, use, virtual, where, while, yield
 keywords_2=i8, i16, i32, i64, i128, isize, u8, u16, u32, u36, u128, usize, f32, f64, bool, char, str
 ```
-<!-- markdownlint-enable MD013 -->
 
 The location of these files is described below.
 
@@ -276,10 +320,10 @@ The location of these files is described below.
 
 kibi follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
-* User-level syntax highlighting configuration files can be located at `$XDG_DATA_HOME/kibi/syntax.d/<file_name>.ini`
+- User-level syntax highlighting configuration files can be located at `$XDG_DATA_HOME/kibi/syntax.d/<file_name>.ini`
   if environment variable `$XDG_DATA_HOME` is defined,
   `~/.local/share/kibi/syntax.d/<file_name>.ini` otherwise.
-* System-wide syntax highlighting configuration files can be located at `$XDG_DATA_DIRS/kibi/syntax.d/<file_name>.ini`
+- System-wide syntax highlighting configuration files can be located at `$XDG_DATA_DIRS/kibi/syntax.d/<file_name>.ini`
   if environment variable `$XDG_DATA_DIRS` is defined,
   `/usr/local/share/kibi/syntax.d/<file_name>.ini` or
   `/usr/share/kibi/syntax.d/<file_name>.ini` otherwise.
@@ -296,31 +340,28 @@ editor written by Salvatore Sanfilippo (antirez) in C, and
 
 `kibi` provides additional features:
 
-* Support for UTF-8 characters
-* Compatibility with Windows
-* Command to jump to a given row/column
-* Handle window resize (UNIX only)
-* Parsing configuration files: global editor configuration with validation, language-specific
+- Support for UTF-8 characters
+- Compatibility with Windows
+- Command to jump to a given row/column
+- Handle window resize (UNIX only)
+- Parsing configuration files: global editor configuration with validation, language-specific
   syntax highlighting configuration (38 languages and counting)
-* Display line numbers on the left of the screen; display file size in the status
+- Display line numbers on the left of the screen; display file size in the status
   bar
-* Syntax highlighting: multi-line strings
-* *Save as* prompt when no file name has been provided
-* Command to duplicate the current row, to quickly move between words
-* Ability to execute an external command from the editor and paste its output
-* Support for end-of-options delimiter `--` (following [POSIX.1-2024 12. Utility Conventions](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html))
-* Can be used as the editor for the *`sudoers`* file via [`visudo`](https://www.man7.org/linux/man-pages/man8/visudo.8.html)
-* Guaranteed memory safety, thanks to Rust!
-* Bug fixes
+- Syntax highlighting: multi-line strings
+- _Save as_ prompt when no file name has been provided
+- Command to duplicate the current row, to quickly move between words
+- Ability to execute an external command from the editor and paste its output
+- Support for end-of-options delimiter `--` (following [POSIX.1-2024 12. Utility
+  Conventions](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html))
+- Can be used as the editor for the _`sudoers`_ file via [`visudo`](https://www.man7.org/linux/man-pages/man8/visudo.8.html)
+- Guaranteed memory safety, thanks to Rust!
+- Bug fixes
 
 ## Contributing
 
-The most important limitation is that the line check the line count remains
-under 1024. To check this run:
-
-```shell
-cargo xtask count-loc
-```
+Contributions of any kind are welcome! Make sure to check out the contributing guide:
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Dependencies
 
@@ -330,11 +371,11 @@ This project must remain tiny, so using advanced dependencies such as [`ncurses`
 
 The following dependencies provide wrappers around system calls.
 
-* On UNIX systems (Linux, macOS):
-  * `libc`
-* On Windows:
-  * `winapi`
-  * `winapi-util`
+- On UNIX systems (Linux, macOS):
+  - `libc`
+- On Windows:
+  - `winapi`
+  - `winapi-util`
 
 In addition, `unicode-width` is used to determine the displayed width of Unicode
 characters. Unfortunately, there is no way around it: the
@@ -433,13 +474,7 @@ any kind welcome!
 
 This project is licensed under either of
 
-* [Apache License, Version 2.0](LICENSE-APACHE)
-* [MIT License](LICENSE-MIT)
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE-MIT)
 
 at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in Kibi by you shall be dual licensed as above, without any
-additional terms or conditions.
