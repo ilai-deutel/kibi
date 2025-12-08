@@ -6,5 +6,5 @@ fn main() {
             String::from_utf8_lossy(&output.stdout[1..]).replacen('-', ".r", 1).replace('-', "."),
         _ => env!("CARGO_PKG_VERSION").into(),
     };
-    println!("cargo:rustc-env=KIBI_VERSION={version}");
+    println!("cargo:rustc-env=CARGO_PKG_VERSION={version}");
 }

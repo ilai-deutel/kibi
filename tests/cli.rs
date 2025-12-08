@@ -36,7 +36,7 @@ fn run_kibi(args: &[&str]) -> Result<Output, Box<dyn std::error::Error>> {
 fn version(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     let output = run_kibi(args)?;
     assert!(output.status.success());
-    assert_eq!(output.stdout, format!("kibi {}\n", std::env!("KIBI_VERSION")));
+    assert_eq!(output.stdout, format!("kibi {}\n", std::env!("CARGO_PKG_VERSION")));
     Ok(())
 }
 

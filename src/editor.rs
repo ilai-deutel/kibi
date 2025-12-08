@@ -21,7 +21,7 @@ const EXECUTE: u8 = ctrl_key(b'E');
 const REMOVE_LINE: u8 = ctrl_key(b'R');
 const BACKSPACE: u8 = 127;
 
-const WELCOME_MESSAGE: &str = concat!("Kibi ", env!("KIBI_VERSION"));
+const WELCOME_MESSAGE: &str = concat!("Kibi ", env!("CARGO_PKG_VERSION"));
 const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
                             ^C copy | ^X cut | ^V paste";
 
