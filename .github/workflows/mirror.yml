@@ -5,7 +5,7 @@ on:
     branches:
       - "master"
     tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]
 
 permissions:
   contents: read
@@ -22,11 +22,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: yesolutions/mirror-action@1708f16cdb28634fd3ba10c5c79abc91f5578a14 # v0.7.0
-        with:
-          REMOTE: "https://codeberg.com/ilai/kibi.git"
-          GIT_USERNAME: ${{ secrets.CODEBERG_USERNAME }}
-          GIT_PASSWORD: ${{ secrets.CODEBERG_TOKEN }}
-          PUSH_ALL_REFS: false
-          GIT_PUSH_ARGS: --tags --verbose
-          GIT_REF: refs/remotes/origin/main
+          ref: master
+      - name: Push to Codeberg
+        run: |
+          mkdir --parents --mode=700 ~/.ssh
+          echo "${{ secrets.CODEBERG_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          echo "${{ secrets.CODEBERG_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          git remote add mirror ssh://git@codeberg.org/ilai/kibi.git
+          git push --tags --verbose mirror master
