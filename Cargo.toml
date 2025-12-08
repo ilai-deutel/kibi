@@ -28,7 +28,7 @@ repository.workspace = true
 unicode-width = "0.2.2"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.176"
+libc = "0.2.178"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
