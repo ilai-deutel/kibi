@@ -645,22 +645,23 @@ impl Editor {
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
         let current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
-        // 清除所有行的 match_segments
-        for row in &mut self.rows {
-            row.match_segments.clear();
-        }
         let mut found_row = None;
         for idx in 0..num_rows {
             let i = (current + if forward { 1 } else { num_rows - 1 } + idx) % num_rows;
             let row = &mut self.rows[i];
+            // Clear match segments and any current match for this row before scanning it
+            row.match_segments.clear();
+            row.current_match = None;
             let line = row.chars.as_slice();
             let mut pos = 0;
             while pos + query.len() <= line.len() {
                 if &line[pos..pos + query.len()] == query.as_bytes() {
                     let rx = row.cx2rx[pos];
+                    // Record all matches for this row
                     row.match_segments.push(rx..rx + query.len());
                     if found_row.is_none() {
-                        // 只导航到第一个找到的行
+                        // First match becomes the current match (cursor navigates here)
+                        row.current_match = Some(rx..rx + query.len());
                         (self.cursor.x, self.cursor.y, self.cursor.coff) = (pos, i, 0);
                         found_row = Some(i);
                     }
@@ -772,10 +773,11 @@ impl PromptMode {
                 PromptState::Active(b) => return Some(Self::Save(b)),
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
                 PromptState::Completed(file_name) => ed.save_as(file_name),
-            }
+            },
             Self::Find(b, saved_cursor, last_match) => {
                 for row in &mut ed.rows {
                     row.match_segments.clear();
+                    row.current_match = None;
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
@@ -1443,5 +1445,19 @@ mod tests {
         let mut buffer = String::new();
         editor.draw_left_padding(&mut buffer, value);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn find_multiple_matches_highlight_and_navigate_first() {
+        let mut ed = Editor::default();
+        for &b in b"Hello Hello World" {
+            ed.process_keypress(&Key::Char(b));
+        }
+
+        let found = ed.find("Hello", None, true);
+        assert_eq!(found, Some(0));
+        assert_eq!(ed.cursor.y, 0);
+        assert_eq!(ed.cursor.x, 0);
+        assert_eq!(ed.rows[0].match_segments.len(), 2);
     }
 }
