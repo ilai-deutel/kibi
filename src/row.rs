@@ -46,7 +46,14 @@ pub struct Row {
     pub hl_state: HlState,
     /// If not `None`, the range that is currently matched during a FIND
     /// operation.
-    pub match_segment: Option<std::ops::Range<usize>>,
+    ///
+    /// The `current_match` is the single match the cursor navigated to and
+    /// should keep the original match highlighting. `match_segments` holds
+    /// the ranges of other matches (non-current) and are drawn with an
+    /// underline.
+    pub current_match: Option<std::ops::Range<usize>>,
+    /// Ranges of matches found in the row (excluding the current match).
+    pub match_segments: Vec<std::ops::Range<usize>>,
 }
 
 impl Row {
@@ -189,18 +196,33 @@ impl Row {
                     buffer.push_str(&current_hl_type.to_string());
                 }
             } else {
-                if let Some(match_segment) = &self.match_segment {
-                    if match_segment.contains(&rx) {
-                        // Set the highlight type to Match, i.e. set the background to cyan
-                        hl_type = &HlType::Match;
-                    } else if use_color && rx == match_segment.end {
-                        // Reset the formatting, in particular the background
-                        buffer.push_str(RESET);
-                    }
+                // If we are right after the end of any match (current or other), reset
+                if use_color
+                    && (self.current_match.as_ref().map_or(false, |r| rx == r.end)
+                        || self.match_segments.iter().any(|r| rx == r.end))
+                {
+                    buffer.push_str(RESET);
+                    current_hl_type = HlType::Normal;
                 }
+
+                // Determine whether this position is the current match or another match
+                let is_current = self.current_match.as_ref().map_or(false, |r| r.contains(&rx));
+                let is_other = !is_current && self.match_segments.iter().any(|r| r.contains(&rx));
+
+                if is_current {
+                    // Keep the original match highlighting for the current match
+                    hl_type = &HlType::Match;
+                }
+
                 if use_color && current_hl_type != *hl_type {
                     buffer.push_str(&hl_type.to_string());
                 }
+
+                // For non-current matches, add underline (ANSI \x1b[4m)
+                if is_other && use_color {
+                    buffer.push_str("\x1b[4m");
+                }
+
                 current_hl_type = *hl_type;
                 buffer.push(c);
             }
@@ -213,4 +235,39 @@ impl Row {
 /// Return whether `c` is an ASCII separator.
 const fn is_sep(c: u8) -> bool {
     c.is_ascii_whitespace() || c == b'\0' || (c.is_ascii_punctuation() && c != b'_')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn draw_shows_current_match_and_underlines_others() {
+        // Create a row with ASCII content so cx==rx
+        let mut row = Row::new(b"Hello Hello World".to_vec());
+        // Populate render/hl structures
+        row.update(&SyntaxConf::default(), HlState::Normal, NonZeroUsize::new(8).unwrap());
+
+        // Simulate editor behaviour: current match is the first "Hello" (0..5),
+        // and match_segments contains both matches (0..5 and 6..11)
+        row.current_match = Some(0..5);
+        row.match_segments = vec![0..5, 6..11];
+
+        let mut buf = String::new();
+        row.draw(0, 100, &mut buf, true);
+
+        // Print buffer for debugging (shown with --nocapture)
+        println!("DRAW BUFFER: {:?}", buf);
+
+        // Current match should be rendered with Match background (\x1b[46m)
+        assert!(buf.contains("\x1b[46mHello"), "buffer={buf}");
+        // Other match should be rendered with underline (\x1b[4m). The code
+        // currently prefixes each character with underline, so check the first
+        // underlined character sequence.
+        assert!(buf.contains("\x1b[4mH"), "buffer={buf}");
+        // Ensure current match appears before the other match
+        let pos_curr = buf.find("\x1b[46mHello").unwrap();
+        let pos_other = buf.find("\x1b[4mH").unwrap();
+        assert!(pos_curr < pos_other, "current match should appear first");
+    }
 }

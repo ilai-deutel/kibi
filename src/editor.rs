@@ -643,24 +643,34 @@ impl Editor {
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
-        // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
-        // TODO: Handle multiple matches per line
-        for _ in 0..num_rows {
-            current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
-            let row = &mut self.rows[current];
-            if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
-                // self.cursor.coff: Try to reset the column offset; if the match is after the
-                // offset, this will be updated in self.cursor.scroll() so that
-                // the result is visible
-                (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
-                let rx = row.cx2rx[cx];
-                row.match_segment = Some(rx..rx + query.len());
-                return Some(current);
+        let current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
+        let mut found_row = None;
+        for idx in 0..num_rows {
+            let i = (current + if forward { 1 } else { num_rows - 1 } + idx) % num_rows;
+            let row = &mut self.rows[i];
+            // Clear match segments and any current match for this row before scanning it
+            row.match_segments.clear();
+            row.current_match = None;
+            let line = row.chars.as_slice();
+            let mut pos = 0;
+            while pos + query.len() <= line.len() {
+                if &line[pos..pos + query.len()] == query.as_bytes() {
+                    let rx = row.cx2rx[pos];
+                    let rx_end = row.cx2rx[pos + query.len()];
+                    // Record all matches for this row using rendered end index
+                    row.match_segments.push(rx..rx_end);
+                    if found_row.is_none() {
+                        // First match becomes the current match (cursor navigates here)
+                        row.current_match = Some(rx..rx_end);
+                        (self.cursor.x, self.cursor.y, self.cursor.coff) = (pos, i, 0);
+                        found_row = Some(i);
+                    }
+                }
+                pos += 1;
             }
         }
-        None
+        found_row
     }
 
     /// If `file_name` is not None, load the file. Then run the text editor.
@@ -766,19 +776,97 @@ impl PromptMode {
                 PromptState::Completed(file_name) => ed.save_as(file_name),
             },
             Self::Find(b, saved_cursor, last_match) => {
-                if let Some(row_idx) = last_match {
-                    ed.rows[row_idx].match_segment = None;
+                for row in &mut ed.rows {
+                    row.match_segments.clear();
+                    row.current_match = None;
                 }
                 match process_prompt_keypress(b, key) {
                     PromptState::Active(query) => {
                         #[expect(clippy::wildcard_enum_match_arm)]
-                        let (last_match, forward) = match key {
+                        let (last_match_row, forward) = match key {
                             Key::Arrow(AKey::Right | AKey::Down) | Key::Char(FIND) =>
                                 (last_match, true),
                             Key::Arrow(AKey::Left | AKey::Up) => (last_match, false),
                             _ => (None, true),
                         };
-                        let curr_match = ed.find(&query, last_match, forward);
+
+                        // If we already have a match on the same row, try to navigate
+                        // between matches on that row first (left/right). Only if no
+                        // further match is found, fall back to searching the next row.
+                        if let Some(row_idx) = last_match_row {
+                            if let Some(row) = ed.rows.get_mut(row_idx) {
+                                // Recompute matches from raw bytes so indices align with cx2rx
+                                let line = row.chars.as_slice();
+                                let mut matches_vec = Vec::new();
+                                let mut p = 0usize;
+                                while p + query.len() <= line.len() {
+                                    if &line[p..p + query.len()] == query.as_bytes() {
+                                        let start_rx = row.cx2rx[p];
+                                        let end_rx = row.cx2rx[p + query.len()];
+                                        matches_vec.push(start_rx..end_rx);
+                                    }
+                                    p += 1;
+                                }
+                                if !matches_vec.is_empty() {
+                                    let cur_rx =
+                                        row.current_match.as_ref().map(|r| r.start).or_else(|| {
+                                            if ed.cursor.y == row_idx {
+                                                Some(row.cx2rx[ed.cursor.x])
+                                            } else {
+                                                None
+                                            }
+                                        });
+                                    if let Some(cur_start) = cur_rx {
+                                        let mut cur_idx =
+                                            matches_vec.iter().position(|r| r.start == cur_start);
+                                        if cur_idx.is_none() {
+                                            cur_idx = matches_vec
+                                                .iter()
+                                                .position(|r| r.start >= cur_start);
+                                        }
+                                        if let Some(idx) = cur_idx {
+                                            if forward {
+                                                // If there is a next match on the same row, move to
+                                                // it.
+                                                if idx + 1 < matches_vec.len() {
+                                                    let m = matches_vec[idx + 1].clone();
+                                                    row.current_match = Some(m.clone());
+                                                    let cx = row.rx2cx[m.start];
+                                                    (ed.cursor.x, ed.cursor.y, ed.cursor.coff) =
+                                                        (cx, row_idx, 0);
+                                                    return Some(Self::Find(
+                                                        query,
+                                                        saved_cursor,
+                                                        Some(row_idx),
+                                                    ));
+                                                }
+                                                // otherwise fall-through to
+                                                // search next rows
+                                            } else {
+                                                // If there is a previous match on the same row,
+                                                // move to it.
+                                                if idx >= 1 {
+                                                    let m = matches_vec[idx - 1].clone();
+                                                    row.current_match = Some(m.clone());
+                                                    let cx = row.rx2cx[m.start];
+                                                    (ed.cursor.x, ed.cursor.y, ed.cursor.coff) =
+                                                        (cx, row_idx, 0);
+                                                    return Some(Self::Find(
+                                                        query,
+                                                        saved_cursor,
+                                                        Some(row_idx),
+                                                    ));
+                                                }
+                                                // otherwise fall-through to
+                                                // search previous rows
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        let curr_match = ed.find(&query, last_match_row, forward);
                         return Some(Self::Find(query, saved_cursor, curr_match));
                     }
                     // The prompt was cancelled. Restore the previous position.
@@ -1435,5 +1523,48 @@ mod tests {
         let mut buffer = String::new();
         editor.draw_left_padding(&mut buffer, value);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn find_multiple_matches_highlight_and_navigate_first() {
+        let mut ed = Editor::default();
+        for &b in b"Hello Hello World" {
+            ed.process_keypress(&Key::Char(b));
+        }
+
+        let found = ed.find("Hello", None, true);
+        assert_eq!(found, Some(0));
+        assert_eq!(ed.cursor.y, 0);
+        assert_eq!(ed.cursor.x, 0);
+        assert_eq!(ed.rows[0].match_segments.len(), 2);
+    }
+
+    #[test]
+    fn find_and_navigate_multiple_matches_same_line() {
+        let mut ed = Editor::default();
+        // Insert the example file content into the editor
+        let content = b"hello, test, hello ello\nues linux kernel\n\nkern linux linus \n\nHello, world.\nello....\nello....";
+        for &b in content.iter() {
+            ed.process_keypress(&Key::Char(b));
+        }
+
+        // Initial search
+        let found = ed.find("ello", None, true);
+        assert_eq!(found, Some(0));
+        assert_eq!(ed.cursor.y, 0);
+
+        // Get byte positions of matches on the first row
+        let row_bytes = &ed.rows[0].chars;
+        let s = String::from_utf8_lossy(row_bytes);
+        let occ: Vec<usize> = s.match_indices("ello").map(|(i, _)| i).collect();
+        assert!(occ.len() >= 2, "expected at least two occurrences on first row");
+
+        // Enter prompt mode state as if user typed the query already
+        let mut pm = PromptMode::Find(String::from("ello"), ed.cursor.clone(), found);
+        // Press Right arrow to navigate to next match on the same line
+        pm = pm.process_keypress(&mut ed, &Key::Arrow(AKey::Right)).unwrap();
+        // Cursor should still be on the same row and moved to the second occurrence
+        assert_eq!(ed.cursor.y, 0);
+        assert_eq!(ed.cursor.x, occ[1]);
     }
 }
