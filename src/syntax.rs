@@ -58,8 +58,8 @@ impl Conf {
                 Ok(dir_entries) =>
                     for dir_entry in dir_entries {
                         match dir_entry.map(|dir_entry| Self::parse(&dir_entry.path())) {
-                            Ok((sc, suffixes)) if suffixes.iter().any(|s| name.ends_with(s)) =>
-                                return sc,
+                            // sfix = suffixes
+                            Ok((sc, sfix)) if sfix.iter().any(|s| name.ends_with(s)) => return sc,
                             Ok((..)) => (),
                             Err(e) => eprintln!("Error iterating through {data_dir}/syntax.d: {e}"),
                         }

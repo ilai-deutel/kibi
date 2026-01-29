@@ -76,8 +76,8 @@ impl Row {
     /// `self.render`. This is done in constant time by using the difference
     /// between `self.rx2cx[rx]` and the cx for the next character.
     pub fn get_char_size(&self, rx: usize) -> usize {
-        let cx0 = self.rx2cx[rx];
-        self.rx2cx.iter().skip(rx + 1).map(|cx| cx - cx0).find(|d| *d > 0).unwrap_or(1)
+        // let cx0 = self.rx2cx[rx];
+        self.rx2cx.iter().skip(rx + 1).map(|cx| cx - self.rx2cx[rx]).find(|d| *d > 0).unwrap_or(1)
     }
 
     /// Update the syntax highlighting types of the row.
