@@ -13,7 +13,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4.10"
-tempfile = "3.23.0"
+tempfile = "3.24.0"
 env-test-util = "1.0.1"
 kibi = { path = ".." }
 
