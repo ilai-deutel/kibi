@@ -16,7 +16,7 @@ pub enum Error {
     /// number of command line arguments.
     TooManyArguments(Vec<String>),
     /// Unrecognized option given as a command line argument.
-    UnrcogOpt(String),
+    BadOption(String),
 }
 
 impl From<std::io::Error> for Error {

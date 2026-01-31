@@ -420,32 +420,23 @@ impl Editor {
     fn toggle_comment(&mut self) {
         // Get the first single-line comment start symbol from syntax config
         let Some(sym) = self.syntax.sl_comment_start.first() else { return };
-        let row = &mut self.rows[self.cursor.y];
+        let Some(row) = self.rows.get_mut(self.cursor.y) else { return };
         // Find the first non-whitespace character position
-        let pos = row.chars.iter().position(|&c| c != b' ' && c != b'\t').unwrap_or(0);
+        let pos = row.chars.iter().position(|&c| !(c as char).is_whitespace()).unwrap_or(0);
 
         // Check if the line is already commented
-        if row.chars.get(pos..pos + sym.len()) == Some(sym.as_bytes()) {
-            // Remove the comment
-            row.chars.drain(pos..pos + sym.len());
-            if row.chars.get(pos) == Some(&b' ') {
-                row.chars.remove(pos);
-            }
-            self.n_bytes = self.n_bytes.saturating_sub(sym.len() as u64);
-            // Adjust cursor position if it's after the removed comment
-            if self.cursor.x > pos {
-                self.cursor.x = self.cursor.x.saturating_sub(sym.len() + 1).min(row.chars.len());
-            }
+        let n_update = if row.chars.get(pos..pos + sym.len()) == Some(sym.as_bytes()) {
+            let to_remove = sym.len() + usize::from(row.chars.get(pos + sym.len()) == Some(&b' '));
+            // Remove the comment and return the removed size as a negative integer
+            0isize.saturating_sub_unsigned(row.chars.drain(pos..pos + to_remove).len())
         } else {
-            // Add comment
-            let cmt = [sym.as_bytes(), b" "].concat();
             // Insert comment at the first non-whitespace position
-            row.chars.splice(pos..pos, cmt.iter().copied());
-            self.n_bytes += cmt.len() as u64;
-            // Adjust cursor position if it's after the insertion point
-            if self.cursor.x >= pos {
-                self.cursor.x += cmt.len();
-            }
+            row.chars.splice(pos..pos, iter::chain(sym.bytes(), iter::once(b' ')));
+            1isize.saturating_add_unsigned(sym.len())
+        };
+        self.n_bytes = self.n_bytes.saturating_add_signed(n_update as i64);
+        if self.cursor.x >= pos {
+            self.cursor.x = self.cursor.x.saturating_add_signed(n_update);
         }
 
         self.update_row(self.cursor.y, false);
