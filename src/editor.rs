@@ -1468,4 +1468,54 @@ mod tests {
         editor.draw_left_padding(&mut buffer, value);
         assert_eq!(buffer, expected);
     }
+
+    #[test]
+    fn editor_toggle_comment() {
+        let mut editor = Editor::default();
+
+        // Set up Python syntax configuration for testing
+        editor.syntax.sl_comment_start = vec!["#".to_owned()];
+
+        for b in b"def hello():\n    print(\"Hello\")\n    return True" {
+            if *b == b'\n' {
+                editor.insert_new_line();
+            } else {
+                editor.insert_byte(*b);
+            }
+        }
+
+        // Test commenting a line
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Test uncommenting the same line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Test commenting an indented line
+        editor.cursor.y = 1; // Second line (indented)
+        editor.cursor.x = 0;
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    # print(\"Hello\")");
+
+        // Test uncommenting the indented line
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT));
+        assert_eq!(editor.rows[1].chars, b"    print(\"Hello\")");
+
+        // Test the bug case: cursor at end of line during toggle
+        editor.cursor.y = 0; // First line
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Comment
+        assert_eq!(editor.rows[0].chars, b"# def hello():");
+
+        // Now uncomment with cursor still at end - this should not panic
+        editor.cursor.x = editor.rows[0].chars.len(); // Position at end again
+        editor.process_keypress(&Key::Char(TOGGLE_COMMENT)); // Uncomment
+        assert_eq!(editor.rows[0].chars, b"def hello():");
+
+        // Verify cursor position is valid
+        assert!(editor.cursor.x <= editor.rows[0].chars.len());
+    }
 }
