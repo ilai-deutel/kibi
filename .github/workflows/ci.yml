@@ -31,30 +31,30 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - "1.91" # MSRV
+          - &MSRV "1.93"
           - nightly
         target:
           # Tier 1 platforms
-          - aarch64-apple-darwin        # ARM64 macOS (11.0+, Big Sur+)
-          - aarch64-pc-windows-msvc     # ARM64 Windows MSVC
-          - aarch64-unknown-linux-gnu   # ARM64 Linux (kernel 4.1+, glibc 2.17+)
-          - i686-pc-windows-msvc        # 32-bit MSVC (Windows 10+, Windows Server 2016+, Pentium 4) 1 2
-          - i686-unknown-linux-gnu      # 32-bit Linux (kernel 3.2+, glibc 2.17+, Pentium 4) 1
-          - x86_64-pc-windows-gnu       # 64-bit MinGW (Windows 10+, Windows Server 2016+)
-          - x86_64-pc-windows-msvc      # 64-bit MSVC (Windows 10+, Windows Server 2016+)
-          - x86_64-unknown-linux-gnu    # 64-bit Linux (kernel 3.2+, glibc 2.17+)
+          - aarch64-apple-darwin # ARM64 macOS (11.0+, Big Sur+)
+          - aarch64-pc-windows-msvc # ARM64 Windows MSVC
+          - aarch64-unknown-linux-gnu # ARM64 Linux (kernel 4.1+, glibc 2.17+)
+          - i686-pc-windows-msvc # 32-bit MSVC (Windows 10+, Windows Server 2016+, Pentium 4) 1 2
+          - i686-unknown-linux-gnu # 32-bit Linux (kernel 3.2+, glibc 2.17+, Pentium 4) 1
+          - x86_64-pc-windows-gnu # 64-bit MinGW (Windows 10+, Windows Server 2016+)
+          - x86_64-pc-windows-msvc # 64-bit MSVC (Windows 10+, Windows Server 2016+)
+          - x86_64-unknown-linux-gnu # 64-bit Linux (kernel 3.2+, glibc 2.17+)
           # Tier 2 platforms
-          - aarch64-linux-android       # ARM64 Android
-          - aarch64-unknown-linux-musl  # ARM64 Linux with musl 1.2.3
-          - x86_64-unknown-linux-musl   # 64-bit Linux with musl 1.2.3
-          - x86_64-apple-darwin         # 64-bit macOS (10.12+, Sierra+)
-          - wasm32-wasip1               # WebAssembly with WASIp1
+          - aarch64-linux-android # ARM64 Android
+          - aarch64-unknown-linux-musl # ARM64 Linux with musl 1.2.3
+          - x86_64-unknown-linux-musl # 64-bit Linux with musl 1.2.3
+          - x86_64-apple-darwin # 64-bit macOS (10.12+, Sierra+)
+          - wasm32-wasip1 # WebAssembly with WASIp1
         include:
           # Only run coverage on nightly toolchain
-          - toolchain: "1.91"
+          - toolchain: *MSRV
             disable-coverage: true
 
-          # # Target-specific config
+          # Target-specific config
           - target: aarch64-apple-darwin
             os: macos-latest
           - target: aarch64-pc-windows-msvc
@@ -107,7 +107,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install gcc-multilib
       - name: Setup cache
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2.8.2
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           prefix-key: rust-${{ matrix.toolchain }}
           # Android-only
@@ -174,11 +174,11 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
-      with:
-        parallel-finished: true
-        carryforward: aarch64-apple-darwin,aarch64-unknown-linux-gnu,i686-pc-windows-msvc,i686-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-unknown-linux-gnu,aarch64-unknown-linux-musl,x86_64-unknown-linux-musl,x86_64-apple-darwin
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+        with:
+          parallel-finished: true
+          carryforward: aarch64-apple-darwin,aarch64-unknown-linux-gnu,i686-pc-windows-msvc,i686-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-unknown-linux-gnu,aarch64-unknown-linux-musl,x86_64-unknown-linux-musl,x86_64-apple-darwin
 
   static_checks:
     strategy:
@@ -216,7 +216,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup cache
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2.8.2
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           prefix-key: rust-nightly
       - name: Install Rust nightly with clippy and rustfmt
