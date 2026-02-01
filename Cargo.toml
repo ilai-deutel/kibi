@@ -3,7 +3,7 @@ resolver = "3"
 members = ["fuzz", "xtask"]
 
 [workspace.package]
-version = "0.3.2"
+version = "0.3.3"
 rust-version = "1.93"
 authors = ["Ilaï Deutel"]
 license = "MIT OR Apache-2.0"

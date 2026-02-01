@@ -9,6 +9,17 @@ All notable changes to this project will be documented in this file.
 _The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)._
 
+## [0.3.3] - 2026-01-01
+
+### Added
+
+- <kbd>Ctrl</kbd> + <kbd>/</kbd> to comment / uncomment lines ([#416](https://github.com/ilai-deutel/kibi/pull/416))
+- Strong stack protection in release binaries ([#535](https://github.com/ilai-deutel/kibi/pull/535))
+
+### Removed
+
+- Build scripts are excluded from published crates ([#538](https://github.com/ilai-deutel/kibi/pull/538))
+
 ## [0.3.2] - 2025-11-23
 
 ### Added
@@ -218,6 +229,7 @@ kibi v0.1.1 is a small patch release that includes a minor fix to the
 
 Initial release
 
+[0.3.3]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.3
 [0.3.2]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ilai-deutel/kibi/releases/tag/v0.3.0
