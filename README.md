@@ -23,6 +23,7 @@ SPDX-License-Identifier: MIT or Apache-2.0
 [![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/ilai-deutel/kibi)](https://rust-reportcard.xuri.me/report/github.com/ilai-deutel/kibi)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ilai-deutel/kibi/badge)](https://scorecard.dev/viewer/?uri=github.com/ilai-deutel/kibi)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11296/badge)](https://www.bestpractices.dev/projects/11296)
+[![Socket Badge](https://badge.socket.dev/cargo/package/kibi/0.3.3)](https://badge.socket.dev/cargo/package/kibi/0.3.3)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-5E0D73.svg?logo=contributorcovenant)](CODE_OF_CONDUCT.md)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-47-orange.svg)](#contributors)
