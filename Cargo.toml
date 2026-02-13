@@ -35,8 +35,6 @@ winapi = { version = "0.3.9", default-features = false, features = ["wincon"] }
 winapi-util = "0.1.11"
 
 [dev-dependencies]
-env_logger = { version = "0.11.8", default-features = false, features = ["auto-color", "humantime"] }
-log = { version = "0.4.29", default-features = false}
 rstest = { version = "0.26.1", default-features = false }
 tempfile = { version = "3.24.0", default-features = false }
 

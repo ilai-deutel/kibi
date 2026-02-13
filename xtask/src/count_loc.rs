@@ -1,6 +1,5 @@
-use std::path::{Path, PathBuf};
+use std::{ffi::OsStr, path::Path};
 
-use glob::glob;
 use tokei::LanguageType;
 
 use crate::{BOLD, GREEN, RED, RESET, Result};
@@ -19,25 +18,44 @@ const ATTRIBUTE_PREFIXES_TO_IGNORE: [&str; 7] = [
     "cfg_attr(fuzzing,",
 ];
 
-pub fn count_loc() -> Result<()> {
-    let mut results = Vec::new();
-    let config = tokei::Config::default();
-    let mut longest_path = 0;
-    for entry in glob("./*.rs")?.chain(glob("./src/**/*.rs")?) {
-        let path = entry?;
-
-        let source = filter_lines(&path)?;
-        let stats = LanguageType::Rust.parse_from_str(source, &config);
-
-        longest_path = longest_path.max(path.display().to_string().len());
-        results.push((path, stats.code));
+fn count_file_loc(path: &Path, config: &tokei::Config) -> Result<usize> {
+    if path.extension() != Some(OsStr::new("rs")) {
+        Err(format!("{path} is not a Rust file", path = path.display()))?;
     }
-    print_summary(&results, longest_path, &["unix", "wasi", "windows"])
+
+    let source = filter_lines(path)?;
+    let stats = LanguageType::Rust.parse_from_str(source, config);
+
+    Ok(stats.code)
+}
+
+pub fn count_loc() -> Result<()> {
+    let config = tokei::Config::default();
+    let source_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .ok_or("Could not find source directory")?
+        .join("src");
+
+    let mut results = Vec::new();
+    for entry in std::fs::read_dir(&source_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if entry.file_type()?.is_dir() {
+            Err(format!("Subdirectories are not supported: {path}", path = path.display()))?;
+        }
+
+        let count = count_file_loc(&path, &config)?;
+        let file_name = path.strip_prefix(&source_dir)?.display().to_string();
+        results.push((file_name, count));
+    }
+    results.sort();
+
+    print_summary(&results, &["unix", "wasi", "windows"])
 }
 
 /// Filter out lines that contain lints and anything after
 /// `#[cfg(test)]` attributes.
-pub fn filter_lines(path: &Path) -> Result<String> {
+fn filter_lines(path: &Path) -> Result<String> {
     let content = std::fs::read_to_string(path)?;
     let lines = content
         .lines()
@@ -54,12 +72,18 @@ pub fn filter_lines(path: &Path) -> Result<String> {
     Ok(filtered_content)
 }
 
-pub fn print_summary(results: &[(PathBuf, usize)], width: usize, platforms: &[&str]) -> Result<()> {
+fn print_summary(results: &[(String, usize)], platforms: &[&str]) -> Result<()> {
     let platform_counts = platforms.iter().map(|platform| filter_count(results, platform));
     let other_count = results.iter().map(|(_, count)| count).sum::<usize>()
         - platform_counts.clone().sum::<usize>();
-    for (path, count) in results {
-        println!("{:width$} {:4}", path.display(), count, width = width);
+    let width = std::cmp::max(
+        // Length of "ansi_escape.rs"
+        results.iter().map(|(file_name, _)| file_name.len()).max().unwrap_or_default(),
+        // Length of "Total (windows)"
+        platforms.iter().map(|s| s.len()).max().unwrap_or_default() + 8usize,
+    );
+    for (file_name, count) in results {
+        println!("{file_name:width$} {count:4}");
     }
     let mut too_high = false;
     for (platform, platform_count) in platforms.iter().zip(platform_counts) {
@@ -78,10 +102,10 @@ pub fn print_summary(results: &[(PathBuf, usize)], width: usize, platforms: &[&s
     Ok(())
 }
 
-pub fn filter_count(results: &[(PathBuf, usize)], pattern: &str) -> usize {
+fn filter_count(results: &[(String, usize)], platform: &str) -> usize {
     results
         .iter()
-        .filter(|(path, _)| path.display().to_string().contains(pattern))
+        .filter(|(file_name, _)| *file_name == format!("{platform}.rs"))
         .map(|(_, count)| count)
-        .sum::<usize>()
+        .sum()
 }

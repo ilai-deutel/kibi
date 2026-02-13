@@ -1,6 +1,5 @@
 #![cfg(not(target_os = "wasi"))] // Not supported yet
 
-use log::info;
 use rstest::rstest;
 
 struct Output {
@@ -10,18 +9,20 @@ struct Output {
 }
 
 fn run_kibi(args: &[&str]) -> Result<Output, Box<dyn std::error::Error>> {
-    let _ = env_logger::builder().is_test(true).try_init();
     let binary_path = std::env!("CARGO_BIN_EXE_kibi");
     let mut command = std::process::Command::new(binary_path);
     command.args(args);
-    info!("Running {command:?}");
+    eprintln!("Running command {binary_path} {args}", args = args.join(" "));
     let start = std::time::Instant::now();
     let output = command.output()?;
-    info!(
-        "{}Exited after {:?} with {:#?}",
-        if output.status.success() { "✔️" } else { "❌" },
-        start.elapsed(),
-        output
+    eprintln!(
+        "{icon} Exited after {duration} with\n     Status: {status}\n     Stdout: {stdout}\n     \
+         Stderr: {stderr}",
+        icon = if output.status.success() { "✔️" } else { "❌" },
+        duration = start.elapsed().as_secs_f32(),
+        status = output.status,
+        stdout = String::from_utf8_lossy(&output.stdout),
+        stderr = String::from_utf8_lossy(&output.stderr),
     );
     Ok(Output {
         status: output.status,
