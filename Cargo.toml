@@ -40,8 +40,21 @@ log = { version = "0.4.29", default-features = false}
 rstest = { version = "0.26.1", default-features = false }
 tempfile = { version = "3.24.0", default-features = false }
 
-[badges]
-maintenance = { status = "actively-developed" }
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = "symbols"
 
 [lints]
 workspace = true
@@ -128,9 +141,3 @@ unwrap_used = "deny"
 use_debug = "deny"
 verbose_file_reads = "deny"
 wildcard_enum_match_arm = "deny"
-
-[profile.release]
-codegen-units = 1
-lto = true
-panic = "abort"
-strip = "symbols"
