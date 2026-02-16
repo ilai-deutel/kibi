@@ -36,7 +36,7 @@ winapi-util = "0.1.11"
 
 [dev-dependencies]
 rstest = { version = "0.26.1", default-features = false }
-tempfile = { version = "3.24.0", default-features = false }
+tempfile = { version = "3.25.0", default-features = false }
 
 [profile.dev]
 debug = "line-tables-only"
