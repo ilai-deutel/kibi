@@ -677,10 +677,19 @@ impl Editor {
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
         // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
+        let mut current = last_match.unwrap_or(self.cursor.y);
+        // Some edge cases fail without this, as seen from the tests
+        current = current.min(self.rows.len().saturating_sub(1));
+        // Without this it would go downwards with each character unless we just copy
+        // paste directly the pattern.
+        let mut iter_start = last_match.is_none();
         // TODO: Handle multiple matches per line
         for _ in 0..num_rows {
-            current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
+            if !iter_start {
+                current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
+            }
+
+            iter_start = false;
             let row = &mut self.rows[current];
             if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
                 // self.cursor.coff: Try to reset the column offset; if the match is after the
