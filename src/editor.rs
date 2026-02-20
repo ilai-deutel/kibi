@@ -1402,6 +1402,38 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn editor_press_ctrl_left_right() {
+        let mut editor = Editor::default();
+        for &b in b"Hello\nWorld\nand\nFerris!" {
+            editor.process_keypress(&Key::Char(b));
+        }
+
+        // check current position
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.process_keypress(&Key::CtrlArrow(AKey::Left));
+
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.process_keypress(&Key::CtrlArrow(AKey::Left));
+
+        assert_eq!(editor.cursor.x, 3);
+        assert_eq!(editor.cursor.y, 2);
+
+        editor.process_keypress(&Key::CtrlArrow(AKey::Right));
+
+        assert_eq!(editor.cursor.x, 0);
+        assert_eq!(editor.cursor.y, 3);
+
+        editor.process_keypress(&Key::CtrlArrow(AKey::Right));
+
+        assert_eq!(editor.cursor.x, 7);
+        assert_eq!(editor.cursor.y, 3);
+    }
+
     #[rstest]
     #[case::ascii_completed(&[Key::Char(b'H'), Key::Char(b'i'), Key::Char(b'\r')], &PromptState::Completed(String::from("Hi")))]
     #[case::escape(&[Key::Char(b'H'), Key::Char(b'i'), Key::Escape], &PromptState::Cancelled)]
