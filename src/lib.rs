@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Ilaï Deutel
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! # Kibi
 //!
 //! Kibi is a text editor in ≤1024 lines of code.

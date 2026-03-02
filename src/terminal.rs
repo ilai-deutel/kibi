@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Ilaï Deutel
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::io::{self, BufRead, Read, Write};
 
 use crate::{Error, ansi_escape::*, sys};

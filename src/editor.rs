@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Ilaï Deutel
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors as scsr};

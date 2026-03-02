@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Ilaï Deutel
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! # Row
 //!
 //! Utilities for rows. A `Row` owns the underlying characters, the rendered

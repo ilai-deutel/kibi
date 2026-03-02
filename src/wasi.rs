@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Ilaï Deutel
+//
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! # sys (WASI)
 //!
 //! WASI-specific structs and functions. Will be imported as `sys` on WASI

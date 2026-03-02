@@ -2,7 +2,6 @@ version = 1
 
 [[annotations]]
 path = [
-    "**.rs",
     "**/.gitignore",
     "**/Cargo.toml",
     ".allstar/*.yaml",
@@ -13,8 +12,9 @@ path = [
     "assets/recording.cast",
     "assets/*.png",
     "assets/*.webm",
-    "ci/*",
-    "scripts/*",
+    "ci/*.json",
+    "scripts/termframe/*",
+    "scripts/flake.lock",
     "syntax.d/*.ini",
     ".all-contributorsrc",
     ".markdownlint.json",

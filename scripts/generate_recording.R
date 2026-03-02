@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+# SPDX-FileCopyrightText: 2020 Ilaï Deutel
+#
+# SPDX-License-Identifier: MIT OR Apache-2.0
 
 library(asciicast)
 library(httr2)
