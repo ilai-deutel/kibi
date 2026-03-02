@@ -923,7 +923,7 @@ mod tests {
             expected.len()
         );
         for (i, (row, expected)) in editor.rows.iter().zip(expected).enumerate() {
-            assert_eq!(row.hl, *expected, "comparing HlTypes for row {i}",);
+            assert_eq!(row.hl, *expected, "comparing HlTypes for row {i}");
         }
     }
 

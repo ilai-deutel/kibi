@@ -61,11 +61,12 @@ fn filter_lines(path: &Path) -> Result<String> {
         .lines()
         .filter(|line| {
             let line = line.trim_start();
-            // TODO: Use strip_prefix_of when https://github.com/rust-lang/rfcs/pull/528 is stabilized
+            // TODO: Use strip_prefix_of when https://github.com/rust-lang/rust/issues/27721 is stabilized
             line.strip_prefix(INNER_ATTRIBUTE_PREFIX)
                 .or_else(|| line.strip_prefix(OUTER_ATTRIBUTE_PREFIX))
-                .filter(|s| ATTRIBUTE_PREFIXES_TO_IGNORE.iter().any(|prefix| s.starts_with(prefix)))
-                .is_none()
+                .is_none_or(|s| {
+                    !ATTRIBUTE_PREFIXES_TO_IGNORE.iter().any(|prefix| s.starts_with(prefix))
+                })
         })
         .take_while(|line| !line.contains("#[cfg(test)]"));
     let filtered_content = lines.collect::<Vec<_>>().join("\n");
