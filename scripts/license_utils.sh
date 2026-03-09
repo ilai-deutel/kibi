@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2020 Ilaï Deutel
+# SPDX-FileCopyrightText: 2020 Ilaï Deutel & Kibi Contributors
 #
 # SPDX-License-Identifier: MIT OR Apache-2.0
 
@@ -12,7 +12,7 @@ add_license_information() {
   # REUSE-IgnoreStart
   file_header='<!--
     SPDX-License-Identifier: MIT or Apache-2.0
-    SPDX-FileCopyrightText: 2020 Ilaï Deutel
+    SPDX-FileCopyrightText: 2020 Ilaï Deutel & Kibi Contributors
   -->'
 
   font_snippet_begin="<!--

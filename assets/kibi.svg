@@ -1,42 +1,59 @@
 <!--
   SPDX-License-Identifier: MIT or Apache-2.0
-  SPDX-FileCopyrightText: 2020 Ilaï Deutel
+  SPDX-FileCopyrightText: 2020 Ilaï Deutel & Kibi Contributors
 -->
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
-  <title>Logo of Kibi. A dark gray square with rounded corners contains a large, light-orange, backward-pointing chevron and a bright green, vertical rectangle. To the left of the chevron is a column of ten light-orange, horizontal rectangles. These ten rectangles function as a 10-bit binary counter, with the bottom bar being the least significant bit and the top the most significant. The bars blink in a sequence that counts from 0 to 1023 in binary.</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"
+  fill="none">
+  <title>Logo of Kibi. A dark gray square with rounded corners contains a large, light-orange,
+    backward-pointing chevron and a bright green, vertical rectangle. To the left of the chevron is
+    a column of ten light-orange, horizontal rectangles. These ten rectangles function as a 10-bit
+    binary counter, with the bottom bar being the least significant bit and the top the most
+    significant. The bars blink in a sequence that counts from 0 to 1023 in binary.</title>
   <rect x="100" y="100" width="824" height="824" rx="128" fill="#2C3E50" />
 
   <g fill="#edbe93">
-    <title>A light-orange letter "k". The left bar of the letter functions as a 10-bit binary counter, with the bottom being the least significant bit and the top the most significant. The bars blink in a sequence that counts from 0 to 1023 in binary.</title>
+    <title>A light-orange letter "k". The left bar of the letter functions as a 10-bit binary
+      counter, with the bottom being the least significant bit and the top the most significant. The
+      bars blink in a sequence that counts from 0 to 1023 in binary.</title>
     <rect x="256" y="168" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="1024s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="1024s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="232" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="512s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="512s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="296" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="256s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="256s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="360" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="128s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="128s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="424" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="64s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="64s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="488" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="32s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="32s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="552" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="16s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="16s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="616" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="8s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="8s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="680" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="4s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="4s" repeatCount="indefinite" />
     </rect>
     <rect x="256" y="744" width="96" height="48">
-      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete" dur="2s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="1;0.7;1" keyTimes="0;0.5;1" calcMode="discrete"
+        dur="2s" repeatCount="indefinite" />
     </rect>
     <path d="M592 232 L368 512 L592 792 L688 792 L464 512 L688 232 Z" />
   </g>

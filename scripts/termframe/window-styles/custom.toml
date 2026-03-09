@@ -1,11 +1,9 @@
 #:schema https://raw.githubusercontent.com/pamburus/termframe/refs/heads/main/schema/json/window-style.schema.json
 # SPDX-License-Identifier: MIT or Apache-2.0
-# SPDX-FileCopyrightText: 2020 Ilaï Deutel
+# SPDX-FileCopyrightText: 2020 Ilaï Deutel & Kibi Contributors
 
 [window.title.font]
-family = [
-    "Monaspace Neon",
-]
+family = ["Monaspace Neon"]
 size = 16
 weight = "normal"
 

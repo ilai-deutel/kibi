@@ -19,7 +19,6 @@ path = [
     ".all-contributorsrc",
     ".markdownlint.json",
     "Cargo.lock",
-    "COPYRIGHT",
     "clippy.toml",
     "config_example.ini",
     "deny.toml",

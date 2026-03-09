@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2020 Ilaï Deutel
+SPDX-FileCopyrightText: 2020 Ilaï Deutel & Kibi Contributors
 SPDX-License-Identifier: MIT or Apache-2.0
 -->
 
