@@ -1,18 +1,17 @@
 version: 2
 updates:
   - package-ecosystem: cargo
-    directory: "/"
+    directories:
+      - "/"
+      - "/fuzz/"
+      - "/xtask/"
     schedule:
       interval: weekly
-  - package-ecosystem: cargo
-    directory: "/fuzz/"
-    schedule:
-      interval: weekly
-  - package-ecosystem: cargo
-    directory: "/xtask/"
-    schedule:
-      interval: weekly
+    cooldown:
+      default-days: 5
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5

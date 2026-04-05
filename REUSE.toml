@@ -4,6 +4,7 @@ version = 1
 path = [
     "**/.gitignore",
     "**/Cargo.toml",
+    "**/Cargo.lock",
     ".allstar/*.yaml",
     ".cargo/config.toml",
     ".github/CODEOWNERS",
@@ -18,7 +19,6 @@ path = [
     "syntax.d/*.ini",
     ".all-contributorsrc",
     ".markdownlint.json",
-    "Cargo.lock",
     "clippy.toml",
     "config_example.ini",
     "deny.toml",

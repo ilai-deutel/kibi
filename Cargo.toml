@@ -1,15 +1,3 @@
-[workspace]
-resolver = "3"
-members = ["fuzz", "xtask"]
-
-[workspace.package]
-version = "0.3.3"
-rust-version = "1.93"
-authors = ["Ilaï Deutel"]
-license = "MIT OR Apache-2.0"
-edition = "2024"
-repository = "https://github.com/ilai-deutel/kibi"
-
 [package]
 name = "kibi"
 description = "A text editor in less than 1024 lines of code with syntax highlighting, search and more."
@@ -17,12 +5,12 @@ readme = "README.md"
 keywords = ["editor", "terminal", "text-editor"]
 categories = ["text-editors", "development-tools"]
 include = ["src/", "tests/", "Cargo.toml", "Cargo.lock", "COPYRIGHT", "LICENSE-*"]
-version.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-edition.workspace = true
-repository.workspace = true
+version = "0.3.3"
+rust-version = "1.93"
+authors = ["Ilaï Deutel"]
+license = "MIT OR Apache-2.0"
+edition = "2024"
+repository = "https://github.com/ilai-deutel/kibi"
 
 [dependencies]
 unicode-width = "0.2.2"
@@ -54,10 +42,7 @@ lto = true
 panic = "abort"
 strip = "symbols"
 
-[lints]
-workspace = true
-
-[workspace.lints.rust]
+[lints.rust]
 explicit_outlives_requirements = "deny"
 let-underscore-drop = "deny"
 meta-variable-misuse = "deny"
@@ -77,7 +62,7 @@ unused-macro-rules = "deny"
 unused_qualifications = "deny"
 variant_size_differences = "deny"
 
-[workspace.lints.clippy]
+[lints.clippy]
 correctness = { level = "deny", priority = -1 }
 style = { level = "deny", priority = -1 }
 complexity = { level = "deny", priority = -1 }

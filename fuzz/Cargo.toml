@@ -1,12 +1,9 @@
 [package]
 name = "kibi-fuzz"
+authors = ["Ilaï Deutel"]
+license = "MIT OR Apache-2.0"
+edition = "2024"
 publish = false
-version.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-edition.workspace = true
-repository.workspace = true
 
 [package.metadata]
 cargo-fuzz = true
@@ -23,6 +20,3 @@ path = "fuzz_targets/fuzz_config_load.rs"
 test = false
 doc = false
 bench = false
-
-[lints]
-workspace = true

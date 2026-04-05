@@ -1,4 +1,5 @@
-/target
+debug
+target
 **/*.rs.bk
 .idea
 release_files

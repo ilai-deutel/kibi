@@ -2,19 +2,11 @@
 name = "xtask"
 description = "Scripts to help with kibi's development."
 readme = "README.md"
-keywords = ["scripts"]
-categories = ["development-tools"]
-version.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-edition.workspace = true
-repository.workspace = true
+authors = ["Ilaï Deutel"]
+license = "MIT OR Apache-2.0"
+edition = "2024"
 publish = false
 
 [dependencies]
 # https://github.com/XAMPPRocky/tokei/pull/1289
 tokei = { git = "https://github.com/ilai-deutel/tokei", branch = "cli-deps", default-features = false }
-
-[lints]
-workspace = true
