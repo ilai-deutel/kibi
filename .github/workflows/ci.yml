@@ -231,13 +231,13 @@ jobs:
         uses: olix0r/cargo-action-fmt/setup@9269f3aa1ff01775d95efc97037e2cbdb41d9684 # v2
       - name: Check (Linux, MacOS, Windows)
         if: matrix.target != 'wasm32-wasip1'
-        run: cargo check --verbose --all-features --all-targets --workspace --target ${{ matrix.target }}
+        run: cargo check --verbose --all-features --all-targets --target ${{ matrix.target }}
       - name: Check (WASI)
         if: matrix.target == 'wasm32-wasip1'
         run: cargo check --verbose --all-features --all-targets --target ${{ matrix.target }}
       - name: Clippy (Linux, MacOS, Windows)
         if: matrix.target != 'wasm32-wasip1'
-        run: cargo clippy --all-features --all-targets --workspace --target ${{ matrix.target }}
+        run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
       - name: Clippy (WASI)
         if: matrix.target == 'wasm32-wasip1'
         run: cargo clippy --all-features --all-targets --target ${{ matrix.target }}
