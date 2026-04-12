@@ -96,7 +96,7 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c5996e0193a3df57d695c1b8a1dec2a4c62e8730" # v2.3.3
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@c51854704019a247608d928f370c98740469d4b5" # v2.3.5
     with:
       fail-on-vuln: false
   osv-pr:
