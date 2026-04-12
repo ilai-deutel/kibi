@@ -648,14 +648,11 @@ impl Editor {
                 set_status!(self, "Press Ctrl+Q {0} more time{1:.2$} to quit.", r, "s", r - 1);
                 reset_quit_times = false;
             }
-            Key::Char(SAVE) => match self.file_name.take() {
-                // TODO: Can we avoid using take() then reassigning the value to file_name?
-                Some(file_name) => {
-                    self.save_and_handle_io_errors(&file_name);
-                    self.file_name = Some(file_name);
-                }
-                None => prompt_mode = Some(PromptMode::Save(String::new())),
-            },
+            Key::Char(SAVE) if let Some(file_name) = self.file_name.take() => {
+                self.save_and_handle_io_errors(&file_name);
+                self.file_name = Some(file_name);
+            }
+            Key::Char(SAVE) => prompt_mode = Some(PromptMode::Save(String::new())),
             Key::Char(FIND) =>
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),

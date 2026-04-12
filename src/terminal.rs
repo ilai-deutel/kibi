@@ -20,7 +20,7 @@ pub fn get_window_size_using_cursor() -> Result<(usize, usize), Error> {
     io::stdout().flush()?;
     let mut prefix_buffer = [0u8; 2];
     sys::stdin()?.read_exact(&mut prefix_buffer)?;
-    if prefix_buffer != [b'\x1b', b'['] {
+    if prefix_buffer != *b"\x1b[" {
         return Err(Error::CursorPosition);
     }
     Ok((read_value_until(b';')?, read_value_until(b'R')?))
@@ -33,6 +33,7 @@ fn read_value_until<T: std::str::FromStr>(stop_byte: u8) -> Result<T, Error> {
     sys::stdin()?.read_until(stop_byte, &mut buf)?;
     // Check that we have reached `stop_byte`, not EOF.
     buf.pop().filter(|u| *u == stop_byte).ok_or(Error::CursorPosition)?;
+    // TODO: https://github.com/rust-lang/rust/issues/134821 - Use from_ascii when stabilized
     std::str::from_utf8(&buf).or(Err(Error::CursorPosition))?.parse().or(Err(Error::CursorPosition))
 }
 

@@ -43,7 +43,6 @@ static WSC: AtomicBool = AtomicBool::new(false);
 /// Handle a change in window size.
 extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.store(true, Relaxed) }
 
-#[expect(clippy::fn_to_numeric_cast_any)]
 /// Register a signal handler that sets a global variable when the window size
 /// changes. After calling this function, use `has_window_size_changed` to query
 /// the global variable.
