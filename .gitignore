@@ -3,3 +3,4 @@ target
 **/*.rs.bk
 .idea
 release_files
+mutants.out

@@ -62,7 +62,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           prefix-key: rust-nightly
       - name: Install Rust nightly with rust-src
@@ -70,8 +70,7 @@ jobs:
           rustup toolchain install nightly --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
           rustup default nightly
           rustc +nightly --version --verbose
+      - name: Install cargo-nextest
+        run: cargo install --locked --verbose cargo-nextest
       - name: Run tests with sanitizer
-        run: cargo test --all-targets -Zbuild-std --verbose --all-features --no-fail-fast --target ${{ matrix.target }}
-        env:
-          RUSTFLAGS: -D warnings -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
-          RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }} ${{ matrix.extra_flags }}
+        run: ci/build_and_test.sh --sanitizer ${{ matrix.sanitizer }} --target ${{ matrix.target }} --no-coverage

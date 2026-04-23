@@ -29,6 +29,11 @@ while [[ $# -gt 0 ]]; do
       enable_coverage="false"
       shift
       ;;
+    --sanitizer)
+      sanitizer="$2"
+      shift
+      shift
+      ;;
     *)
       echo "Unknown argument $1"
       exit 1
@@ -39,7 +44,9 @@ done
 target=${target:-$(rustc -vV | sed -n 's/host: //p')}
 
 export RUST_LOG=info
-export RUSTFLAGS='-D warnings'
+export RUSTFLAGS="${RUSTFLAGS:-} -D warnings"
+export RUSTDOCFLAGS="${RUSTDOCFLAGS:-}"
+export ZFLAGS=''
 
 if [[ "$enable_coverage" == "true" ]]; then
   output_dir=${output_dir:-$PWD/target/coverage/$(date +%Y-%m-%d_%H-%M-%S)}
@@ -48,7 +55,20 @@ if [[ "$enable_coverage" == "true" ]]; then
   export LLVM_PROFILE_FILE="$output_dir/kibi-%p-%m.profraw"
 fi
 
+if [[ -n ${sanitizer-} ]]; then
+  export RUSTFLAGS="$RUSTFLAGS -Zsanitizer=$sanitizer"
+  export RUSTDOCFLAGS="$RUSTDOCFLAGS -Zsanitizer=$sanitizer"
+  export ZFLAGS='-Z build-std'
+
+  if [[ "$sanitizer" == "memory" ]]; then
+    export RUSTFLAGS="$RUSTFLAGS -Zsanitizer-memory-track-origins"
+    export RUSTDOCFLAGS="$RUSTDOCFLAGS -Zsanitizer-memory-track-origins"
+  fi
+fi
+
+# shellcheck disable=SC2086
 cargo build \
+  $ZFLAGS \
   --target "$target" \
   --all-features \
   --locked \
@@ -58,12 +78,14 @@ if [[ "$run_tests" == "false" ]]; then
   exit 0
 fi
 
-cargo test \
+# shellcheck disable=SC2086
+cargo nextest run \
+  $ZFLAGS \
+  --profile ci \
   --target "$target" \
   --all-features \
   --locked \
-  --no-fail-fast \
-  --verbose
+  --show-progress counter
 
 if [[ "$enable_coverage" == "true" ]]; then
   grcov \

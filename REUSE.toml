@@ -7,6 +7,8 @@ path = [
     "**/Cargo.lock",
     ".allstar/*.yaml",
     ".cargo/config.toml",
+    ".cargo/mutants.toml",
+    ".config/nextest.toml",
     ".github/CODEOWNERS",
     ".github/**.yml",
     ".vscode/settings.json",

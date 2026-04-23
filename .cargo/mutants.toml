@@ -1,0 +1,3 @@
+#:schema https://json.schemastore.org/cargo-mutants-config.json.
+
+test_tool = "nextest"
