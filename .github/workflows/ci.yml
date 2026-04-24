@@ -2,18 +2,15 @@ name: CI
 
 on:
   push:
+  pull_request:
     branches:
-      - "master"
-    paths: &TRIGGER_PATHS
+      - master
+    paths:
       - ".github/workflows/ci.yml"
       - "**.rs"
       - "*cargo/config.toml"
       - "*Cargo.toml"
       - "*Cargo.lock"
-  pull_request:
-    branches:
-      - master
-    paths: *TRIGGER_PATHS
 
 env:
   CARGO_TERM_COLOR: always
