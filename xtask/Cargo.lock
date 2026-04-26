@@ -883,8 +883,8 @@ dependencies = [
 
 [[package]]
 name = "tokei"
-version = "13.0.0"
-source = "git+https://github.com/ilai-deutel/tokei?branch=cli-deps#d2101e530d4c97752ceec3dde2d942cc56ff8173"
+version = "14.0.0"
+source = "git+https://github.com/ilai-deutel/tokei?branch=cli-deps#0eded895ef12c2346dd5f86dc5623e8c2bbfee34"
 dependencies = [
  "aho-corasick",
  "arbitrary",
