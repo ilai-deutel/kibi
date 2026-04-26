@@ -39,12 +39,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13  # v4.35.1
+        uses: github/codeql-action/init@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # v4.35.2
         with:
           languages: ${{ matrix.language }}
           build-mode: none
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13  # v4.35.1
+        uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # v4.35.2
         with:
           category: "/language:${{matrix.language}}"
   dev-skim:
@@ -68,7 +68,7 @@ jobs:
         with:
           options-json: ci/devskim.json
       - name: Upload DevSkim scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13  # v4.35.1
+        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # v4.35.2
         with:
           sarif_file: devskim-results.sarif
   cargo-deny:
@@ -134,6 +134,6 @@ jobs:
           results_format: sarif
           publish_results: true
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13  # v4.35.1
+        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # v4.35.2
         with:
           sarif_file: results.sarif
