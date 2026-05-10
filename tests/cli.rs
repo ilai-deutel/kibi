@@ -56,7 +56,7 @@ fn version(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
 fn invalid_option(#[case] args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     let output = run_kibi(args)?;
     assert!(!output.status.success());
-    assert_eq!(output.stderr, format!("Error: BadOption(\"{}\")\n", &args[0]));
+    assert_eq!(output.stderr, format!("Error: BadOption(\"{}\")\n", args[0]));
     Ok(())
 }
 

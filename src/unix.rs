@@ -46,6 +46,7 @@ extern "C" fn handle_wsize(_: c_int, _: *mut siginfo_t, _: *mut c_void) { WSC.st
 /// Register a signal handler that sets a global variable when the window size
 /// changes. After calling this function, use `has_window_size_changed` to query
 /// the global variable.
+// #[expect(clippy::fn_to_numeric_cast_any)]
 pub fn register_winsize_change_signal_handler() -> io::Result<()> {
     unsafe {
         let mut maybe_sa = std::mem::MaybeUninit::<sigaction>::uninit();
