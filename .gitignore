@@ -1,6 +1,8 @@
 debug
 target
 **/*.rs.bk
-.idea
 release_files
 mutants.out
+.idea
+.vscode
+.zed
