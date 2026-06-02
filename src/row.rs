@@ -61,18 +61,19 @@ impl Row {
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
     pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: NonZeroUsize) -> HlState {
-        let (..) = (self.render.clear(), self.cx2rx.clear(), self.rx2cx.clear());
-        let (mut cx, mut rx) = (0, 0);
+        self.render.clear(); self.cx2rx.clear(); self.rx2cx.clear(); //Compact to keep the file under the line limit
+        let mut cx = 0; let mut rx = 0;
+
         for c in String::from_utf8_lossy(&self.chars).chars() {
             // The number of rendered characters
             let n_rend_chars =
                 if c == '\t' { tab.get() - (rx % tab) } else { c.width().unwrap_or(1) };
-            self.render.push_str(&(if c == '\t' { " ".repeat(n_rend_chars) } else { c.into() }));
+            if c == '\t' { self.render.push_str(&" ".repeat(n_rend_chars)); } else { self.render.push(c); }
             self.cx2rx.extend(repeat_n(rx, c.len_utf8()));
             self.rx2cx.extend(repeat_n(cx, n_rend_chars));
-            (rx, cx) = (rx + n_rend_chars, cx + c.len_utf8());
+            rx += n_rend_chars; cx += c.len_utf8();
         }
-        let (..) = (self.cx2rx.push(rx), self.rx2cx.push(cx));
+        self.cx2rx.push(rx); self.rx2cx.push(cx);   
         self.update_syntax(syntax, hl_state)
     }
 
