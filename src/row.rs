@@ -61,7 +61,7 @@ impl Row {
     /// Update the row: convert tabs into spaces and compute highlight symbols
     /// The `hl_state` argument is the `HLState` for the previous row.
     pub fn update(&mut self, syntax: &SyntaxConf, hl_state: HlState, tab: NonZeroUsize) -> HlState {
-        self.render.clear(); self.cx2rx.clear(); self.rx2cx.clear(); //Aligned to keep a minimal ammount on lines
+        self.render.clear(); self.cx2rx.clear(); self.rx2cx.clear(); //Compact to keep the file under the line limit
         let mut cx = 0; let mut rx = 0;
 
         for c in String::from_utf8_lossy(&self.chars).chars() {
