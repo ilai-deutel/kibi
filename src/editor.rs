@@ -233,8 +233,8 @@ impl Editor {
                 self.update_window_size()?;
                 self.refresh_screen()?;
             }
-            // Match on the next byte received or, if the first byte is <ESC> ('\x1b'), on
-            // the next few bytes.
+            // Match on the next byte received or, if the first byte is <ESC>
+            // ('\x1b'), on the next few bytes.
             if let Some(a) = bytes.next().transpose()? {
                 if a != b'\x1b' {
                     return Ok(Key::Char(a));
@@ -247,7 +247,8 @@ impl Editor {
                         (b'[', mut c @ Some(b'0'..=b'8')) => {
                             let mut d = bytes.next().transpose()?;
                             if (c, d) == (Some(b'1'), Some(b';')) {
-                                // 1 is the default modifier value. Therefore, <ESC>[1;5C is
+                                // 1 is the default modifier value. Therefore,
+                                // <ESC>[1;5C is
                                 // equivalent to <ESC>[5C, etc.
                                 c = bytes.next().transpose()?;
                                 d = bytes.next().transpose()?;
@@ -285,9 +286,10 @@ impl Editor {
     /// maximum number of digits for line numbers (since the left padding
     /// depends on this number of digits).
     fn update_screen_cols(&mut self) {
-        // The maximum number of digits to use for the line number is the number of
-        // digits of the last line number. This is equal to the number of times
-        // we can divide this number by ten, computed below using `successors`.
+        // The maximum number of digits to use for the line number is the number
+        // of digits of the last line number. This is equal to the
+        // number of times we can divide this number by ten, computed
+        // below using `successors`.
         let n_digits = scsr(Some(self.rows.len()), |u| Some(u / 10).filter(|u| *u > 0)).count();
         let show_line_num = self.config.show_line_num && n_digits + 2 < self.window_width / 4;
         self.ln_pad = if show_line_num { n_digits + 2 } else { 0 };
@@ -326,7 +328,8 @@ impl Editor {
             row.chars.insert(self.cursor.x, c);
         } else {
             self.rows.push(Row::new(vec![c]));
-            // The number of rows has changed. The left padding may need to be updated.
+            // The number of rows has changed. The left padding may need to be
+            // updated.
             self.update_screen_cols();
         }
         self.update_row(self.cursor.y, false);
@@ -340,8 +343,8 @@ impl Editor {
         let (position, new_row_chars) = if self.cursor.x == 0 {
             (self.cursor.y, Vec::new())
         } else {
-            // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any cursor.y ≥
-            // row.len()
+            // self.rows[self.cursor.y] must exist, since cursor.x = 0 for any
+            // cursor.y ≥ row.len()
             let new_chars = self.rows[self.cursor.y].chars.split_off(self.cursor.x);
             self.update_row(self.cursor.y, false);
             (self.cursor.y + 1, new_chars)
@@ -360,8 +363,8 @@ impl Editor {
     fn delete_char(&mut self) {
         if self.cursor.x > 0 {
             let row = &mut self.rows[self.cursor.y];
-            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8 character
-            // size).
+            // Obtain the number of bytes to be removed: could be 1-4 (UTF-8
+            // character size).
             let n_bytes_to_remove = row.get_char_size(row.cx2rx[self.cursor.x] - 1);
             row.chars.splice(self.cursor.x - n_bytes_to_remove..self.cursor.x, iter::empty());
             self.update_row(self.cursor.y, false);
@@ -375,12 +378,13 @@ impl Editor {
             previous_row.chars.extend(&row.chars);
             self.update_row(self.cursor.y - 1, true);
             self.update_row(self.cursor.y, false);
-            // The number of rows has changed. The left padding may need to be updated.
+            // The number of rows has changed. The left padding may need to be
+            // updated.
             self.update_screen_cols();
             (self.dirty, self.cursor.y) = (true, self.cursor.y - 1);
         } else if self.cursor.y == self.rows.len() {
-            // If the cursor is located after the last row, pressing backspace is equivalent
-            // to pressing the left arrow key.
+            // If the cursor is located after the last row, pressing backspace
+            // is equivalent to pressing the left arrow key.
             self.move_cursor(&AKey::Left, false);
         }
     }
@@ -431,7 +435,8 @@ impl Editor {
         // Check if the line is already commented
         let n_update = if row.chars.get(pos..pos + sym.len()) == Some(sym.as_bytes()) {
             let to_remove = sym.len() + usize::from(row.chars.get(pos + sym.len()) == Some(&b' '));
-            // Remove the comment and return the removed size as a negative integer
+            // Remove the comment and return the removed size as a negative
+            // integer
             0isize.saturating_sub_unsigned(row.chars.drain(pos..pos + to_remove).len())
         } else {
             // Insert comment at the first non-whitespace position
@@ -466,16 +471,18 @@ impl Editor {
         for line in BufReader::new(&file).split(b'\n') {
             self.rows.push(Row::new(line?));
         }
-        // If the file ends with an empty line or is empty, we need to append an empty
-        // row to `self.rows`. Unfortunately, BufReader::split doesn't yield an
-        // empty Vec in this case, so we need to check the last byte directly.
+        // If the file ends with an empty line or is empty, we need to append an
+        // empty row to `self.rows`. Unfortunately, BufReader::split
+        // doesn't yield an empty Vec in this case, so we need to check
+        // the last byte directly.
         file.seek(io::SeekFrom::End(0))?;
         #[expect(clippy::unbuffered_bytes)]
         if file.bytes().next().transpose()?.is_none_or(|b| b == b'\n') {
             self.rows.push(Row::new(Vec::new()));
         }
         self.update_all_rows();
-        // The number of rows has changed. The left padding may need to be updated.
+        // The number of rows has changed. The left padding may need to be
+        // updated.
         self.update_screen_cols();
         self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
         Ok(())
@@ -598,12 +605,12 @@ impl Editor {
         self.draw_status_bar(&mut buffer);
         self.draw_message_bar(&mut buffer);
         let (cursor_x, cursor_y) = if self.prompt_mode.is_none() {
-            // If not in prompt mode, position the cursor according to the `cursor`
-            // attributes.
+            // If not in prompt mode, position the cursor according to the
+            // `cursor` attributes.
             (self.rx() - self.cursor.coff + 1 + self.ln_pad, self.cursor.y - self.cursor.roff + 1)
         } else {
-            // If in prompt mode, position the cursor on the prompt line at the end of the
-            // line.
+            // If in prompt mode, position the cursor on the prompt line at the
+            // end of the line.
             (self.status_msg.as_ref().map_or(0, |sm| sm.msg.len() + 1), self.screen_rows + 2)
         };
         // Finally, print `buffer` and move the cursor
@@ -684,8 +691,9 @@ impl Editor {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
             let row = &mut self.rows[current];
             if let Some(cx) = row.chars.windows(query.len()).position(|w| w == query.as_bytes()) {
-                // self.cursor.coff: Try to reset the column offset; if the match is after the
-                // offset, this will be updated in self.cursor.scroll() so that
+                // self.cursor.coff: Try to reset the column offset; if the
+                // match is after the offset, this will be
+                // updated in self.cursor.scroll() so that
                 // the result is visible
                 (self.cursor.x, self.cursor.y, self.cursor.coff) = (cx, current, 0);
                 let rx = row.cx2rx[cx];
