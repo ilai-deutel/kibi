@@ -112,6 +112,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[expect(clippy::assert_is_empty, reason = "Unnecessary for non-emptiness check.")]
     fn syntax_d_files() {
         let mut file_count = 0;
         let mut syntax_names = HashSet::new();

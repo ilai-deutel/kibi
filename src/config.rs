@@ -206,8 +206,8 @@ mod tests {
         fn set(&mut self, key: &'static OsStr, value: Option<&OsStr>) {
             let original_value = env::var_os(key);
             assert!(self.original_values.insert(key, original_value).is_none());
-            // SAFETY: Only one test at a time may set or remove an environment variable, as
-            // enforced by ENV_LOCK.
+            // SAFETY: Only one test at a time may set or remove an environment
+            // variable, as enforced by ENV_LOCK.
             #[expect(unsafe_code)]
             unsafe {
                 match value {
@@ -220,8 +220,8 @@ mod tests {
 
     impl Drop for TempEnvVars<'_> {
         fn drop(&mut self) {
-            // SAFETY: Only one test at a time may set or remove an environment variable, as
-            // enforced by ENV_LOCK.
+            // SAFETY: Only one test at a time may set or remove an environment
+            // variable, as enforced by ENV_LOCK.
             #[expect(unsafe_code)]
             unsafe {
                 for (key, original_value) in &self.original_values {

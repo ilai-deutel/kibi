@@ -88,8 +88,8 @@ impl Row {
         self.hl.clear();
         let line = self.render.as_bytes();
 
-        // Delimiters for multi-line comments and multi-line strings, as Option<&String,
-        // &String>
+        // Delimiters for multi-line comments and multi-line strings, as
+        // Option<&String, &String>
         let ml_comment_delims = syntax.ml_comment_delims.as_ref().map(|(start, end)| (start, end));
         let ml_string_delims = syntax.ml_string_delim.as_ref().map(|x| (x, x));
 
@@ -102,8 +102,9 @@ impl Row {
                 continue;
             }
 
-            // Multi-line strings and multi-line comments have the same behavior; the only
-            // differences are: the start/end delimiters, the `HLState`, the `HLType`.
+            // Multi-line strings and multi-line comments have the same
+            // behavior; the only differences are: the start/end delimiters, the
+            // `HLState`, the `HLType`.
             for (delims, mstate, mtype) in &[
                 (ml_comment_delims, HlState::MultiLineComment, HlType::MlComment),
                 (ml_string_delims, HlState::MultiLineString, HlType::MlString),
@@ -111,7 +112,8 @@ impl Row {
                 if let Some((start, end)) = delims {
                     if hl_state == *mstate {
                         if find_str(end) {
-                            // Highlight the remaining symbols of the multi line comment end
+                            // Highlight the remaining symbols of the multi line
+                            // comment end
                             self.hl.extend(repeat_n(mtype, end.len()));
                             hl_state = HlState::Normal;
                         } else {
@@ -119,7 +121,8 @@ impl Row {
                         }
                         continue 'syntax_loop;
                     } else if hl_state == HlState::Normal && find_str(start) {
-                        // Highlight the remaining symbols of the multi line comment start
+                        // Highlight the remaining symbols of the multi line
+                        // comment start
                         self.hl.extend(repeat_n(mtype, start.len()));
                         hl_state = *mstate;
                         continue 'syntax_loop;
@@ -155,9 +158,10 @@ impl Row {
             }
 
             if prev_sep {
-                // This filters makes sure that names such as "in_comment" are not partially
-                // highlighted (even though "in" is a keyword in rust)
-                // The argument is the keyword that is matched at `i`.
+                // This filters makes sure that names such as "in_comment" are
+                // not partially highlighted (even though "in"
+                // is a keyword in rust) The argument is the
+                // keyword that is matched at `i`.
                 let s_filter = |kw: &str| line.get(i + kw.len()).is_none_or(|c| is_sep(*c));
                 for (keyword_highlight_type, kws) in &syntax.keywords {
                     for keyword in kws.iter().filter(|kw| find_str(kw) && s_filter(kw)) {
@@ -194,7 +198,8 @@ impl Row {
             } else {
                 if let Some(match_segment) = &self.match_segment {
                     if match_segment.contains(&rx) {
-                        // Set the highlight type to Match, i.e. set the background to cyan
+                        // Set the highlight type to Match, i.e. set the
+                        // background to cyan
                         hl_type = &HlType::Match;
                     } else if use_color && rx == match_segment.end {
                         // Reset the formatting, in particular the background

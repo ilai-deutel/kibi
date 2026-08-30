@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - &MSRV "1.95"
+          - &MSRV "1.98"
           - nightly
         target:
           # Tier 1 platforms
@@ -92,10 +92,10 @@ jobs:
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install gcc-multilib (i686)
@@ -161,7 +161,7 @@ jobs:
           fi
       - name: Upload code coverage results
         if: matrix.disable-coverage != true
-        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+        uses: coverallsapp/github-action@9d9e89d696a25032d0793b4e628dbe3c3bd7929c # v2.3.7
         with:
           file: coverage/lcov.info
           format: lcov
@@ -174,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
-        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+        uses: coverallsapp/github-action@9d9e89d696a25032d0793b4e628dbe3c3bd7929c # v2.3.7
         with:
           parallel-finished: true
           carryforward: aarch64-apple-darwin,aarch64-unknown-linux-gnu,i686-pc-windows-msvc,i686-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-unknown-linux-gnu,aarch64-unknown-linux-musl,x86_64-unknown-linux-musl,x86_64-apple-darwin
@@ -208,10 +208,10 @@ jobs:
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Setup cache

@@ -51,8 +51,8 @@ pub fn register_winsize_change_signal_handler() -> io::Result<()> {
     unsafe {
         let mut maybe_sa = std::mem::MaybeUninit::<sigaction>::uninit();
         cerr(libc::sigemptyset(&raw mut (*maybe_sa.as_mut_ptr()).sa_mask))?;
-        // We could use sa_handler here, however, sigaction defined in libc does not
-        // have sa_handler field, so we use sa_sigaction instead.
+        // We could use sa_handler here, however, sigaction defined in libc does
+        // not have sa_handler field, so we use sa_sigaction instead.
         (*maybe_sa.as_mut_ptr()).sa_flags = SA_SIGINFO;
         (*maybe_sa.as_mut_ptr()).sa_sigaction = handle_wsize as *const () as sighandler_t;
         cerr(sigaction(libc::SIGWINCH, maybe_sa.as_ptr(), std::ptr::null_mut()))
