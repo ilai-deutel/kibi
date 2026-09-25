@@ -450,6 +450,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "joshlawrence",
+      "name": "Josh Lawrence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4182468?v=4",
+      "profile": "https://github.com/joshlawrence",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "commitType": "docs"
