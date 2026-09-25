@@ -10,6 +10,7 @@ path = [
     ".cargo/mutants.toml",
     ".config/nextest.toml",
     ".github/CODEOWNERS",
+    ".github/**.md",
     ".github/**.yml",
     ".vscode/settings.json",
     "assets/recording.cast",
