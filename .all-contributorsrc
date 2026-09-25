@@ -441,6 +441,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "2910000",
+      "name": "Nick Mann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/166685632?v=4",
+      "profile": "https://github.com/2910000",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "joshlawrence",
+      "name": "Josh Lawrence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4182468?v=4",
+      "profile": "https://github.com/joshlawrence",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "commitType": "docs"

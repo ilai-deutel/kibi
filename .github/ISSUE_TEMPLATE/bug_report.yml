@@ -1,0 +1,67 @@
+name: Bug report
+description: File a bug/issue
+labels: ["bug", "needs triage"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A concise description of what you're experiencing.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: A concise description of what you expected to happen.
+  - type: textarea
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. In this environment...
+        1. With this config...
+        1. Run '...'
+        1. See error...
+  - type: upload
+    id: screenshots
+    attributes:
+      label: Upload screenshots
+      description: If applicable, add screenshots to help explain your problem.
+  - type: dropdown
+    attributes:
+      label: What operating system are you seeing the problem on?
+      multiple: true
+      options:
+        - Linux
+        - MacOS
+        - Windows
+        - Other
+  - type: input
+    attributes:
+      label: OS details / version
+      placeholder: Linux 7.1.8-arch1-3
+  - type: textarea
+    attributes:
+      label: Kibi version(s)
+      description: Enter the output of `kibi --version`. Indicate if you've tested multiple versions
+      render: markdown
+      placeholder: |
+        - v0.3.3
+        - v0.3.2
+        - on master
+  - type: input
+    attributes:
+      label: Rust version(s)
+      description: Enter the output of output of `rustc --version` if you built Kibi from source
+      placeholder: rustc 1.98.0 (88d9e12ae 2026-08-18)
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: |
+        Links? References? Rust backtrace?
