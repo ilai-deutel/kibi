@@ -17,6 +17,7 @@ const REFRESH_SCREEN: u8 = ctrl_key(b'L');
 const SAVE: u8 = ctrl_key(b'S');
 const FIND: u8 = ctrl_key(b'F');
 const GOTO: u8 = ctrl_key(b'G');
+const OPEN: u8 = ctrl_key(b'O');
 const CUT: u8 = ctrl_key(b'X');
 const COPY: u8 = ctrl_key(b'C');
 const PASTE: u8 = ctrl_key(b'V');
@@ -27,8 +28,8 @@ const TOGGLE_COMMENT: u8 = 31;
 const BACKSPACE: u8 = 127;
 
 const WELCOME_MESSAGE: &str = concat!("Kibi ", env!("CARGO_PKG_VERSION"));
-const HELP_MESSAGE: &str = "^S save | ^Q quit | ^F find | ^G go to | ^D duplicate | ^E execute | \
-                            ^C copy | ^X cut | ^V paste | ^/ comment";
+const HELP_MESSAGE: &str = "^S save | ^Q quit | ^O open | ^F find | ^G go to | ^D duplicate | ^E \
+                            execute | ^C copy | ^X cut | ^V paste | ^/ comment";
 
 /// `set_status!` sets a formatted status message for the editor.
 /// Example usage: `set_status!(editor, "{file_size} written to {file_name}")`
@@ -488,6 +489,26 @@ impl Editor {
         Ok(())
     }
 
+    /// Open a file, replacing the current content. Errors are printed to the
+    /// status bar; a file that does not exist yet starts a new empty buffer,
+    /// like passing the path on the command line.
+    fn open(&mut self, path: &str) {
+        let path = sys::path(path);
+        // load() appends rows to the current buffer, so reset it first: the
+        // opened file replaces the content being edited.
+        self.rows.clear();
+        self.n_bytes = 0;
+        match self.load(path.as_path()) {
+            Ok(()) => {
+                self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
+                self.file_name = Some(path.to_string_lossy().to_string());
+                self.dirty = false;
+                self.cursor = CursorState::default();
+            }
+            Err(err) => set_status!(self, "Can't open! {err:?}"),
+        }
+    }
+
     /// Save the text to a file, given its name.
     fn save(&self, file_name: &str) -> Result<usize, io::Error> {
         let mut file = File::create(file_name)?;
@@ -663,6 +684,7 @@ impl Editor {
             Key::Char(FIND) =>
                 prompt_mode = Some(PromptMode::Find(String::new(), self.cursor.clone(), None)),
             Key::Char(GOTO) => prompt_mode = Some(PromptMode::GoTo(String::new())),
+            Key::Char(OPEN) => prompt_mode = Some(PromptMode::Open(String::new())),
             Key::Char(DUPLICATE) => self.duplicate_current_row(),
             Key::Char(CUT) => {
                 self.copy_current_row();
@@ -776,6 +798,8 @@ pub fn run<I: BufRead>(file_name: Option<&str>, input: &mut I) -> Result<(), Err
 enum PromptMode {
     /// Save(prompt buffer)
     Save(String),
+    /// Open(prompt buffer)
+    Open(String),
     /// Find(prompt buffer, saved cursor state, last match)
     Find(String, CursorState, Option<usize>),
     /// GoTo(prompt buffer)
@@ -791,6 +815,7 @@ impl PromptMode {
     fn status_msg(&self) -> String {
         match self {
             Self::Save(buffer) => format!("Save as: {buffer}"),
+            Self::Open(buffer) => format!("Open: {buffer}"),
             Self::Find(buffer, ..) => format!("Search (Use ESC/Arrows/Enter): {buffer}"),
             Self::GoTo(buffer) => format!("Enter line number[:column number]: {buffer}"),
             Self::Execute(buffer) => format!("Command to execute: {buffer}"),
@@ -805,6 +830,11 @@ impl PromptMode {
                 PromptState::Active(b) => return Some(Self::Save(b)),
                 PromptState::Cancelled => set_status!(ed, "Save aborted"),
                 PromptState::Completed(file_name) => ed.save_as(file_name),
+            },
+            Self::Open(b) => match process_prompt_keypress(b, key) {
+                PromptState::Active(b) => return Some(Self::Open(b)),
+                PromptState::Cancelled => set_status!(ed, "Open aborted"),
+                PromptState::Completed(path) => ed.open(&path),
             },
             Self::Find(b, saved_cursor, last_match) => {
                 if let Some(row_idx) = last_match {
@@ -899,6 +929,7 @@ mod tests {
     use std::io::Cursor;
 
     use rstest::rstest;
+    use tempfile::tempdir;
 
     use super::*;
     use crate::syntax::HlType;
@@ -1455,6 +1486,58 @@ mod tests {
             .take()
             .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, &Key::Char(b'\r')));
         assert_eq!(prompt_mode, None);
+    }
+
+    #[test]
+    fn editor_open_file() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.rs");
+        std::fs::write(&path, b"fn main() {}\n").unwrap();
+        let path_str = path.to_str().unwrap();
+
+        let mut ed: Editor = Editor::default();
+        for b in b"old content" {
+            ed.insert_byte(*b);
+        }
+        ed.dirty = true;
+
+        let mut prompt_mode = Some(PromptMode::Open(String::new()));
+        for c in path_str.chars() {
+            let key = Key::Char(u8::try_from(c).expect("ASCII path"));
+            prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
+        }
+        prompt_mode =
+            prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
+        assert_eq!(prompt_mode, None);
+
+        assert_row_chars_equal(&ed, &[b"fn main() {}", b""]);
+        assert_eq!(ed.file_name, Some(path_str.to_owned()));
+        assert!(!ed.dirty);
+    }
+
+    #[test]
+    fn editor_open_missing_file_starts_new_buffer() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("does_not_exist.txt");
+        let path_str = path.to_str().unwrap().to_owned();
+
+        let mut ed: Editor = Editor::default();
+        for b in b"old content" {
+            ed.insert_byte(*b);
+        }
+
+        let mut prompt_mode = Some(PromptMode::Open(String::new()));
+        for c in path_str.chars() {
+            let key = Key::Char(c as u8);
+            prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
+        }
+        prompt_mode =
+            prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
+        assert_eq!(prompt_mode, None);
+
+        // A non-existing file starts a new empty buffer, like the CLI path
+        assert_row_chars_equal(&ed, &[b""]);
+        assert_eq!(ed.file_name, Some(path_str));
     }
 
     #[rstest]
