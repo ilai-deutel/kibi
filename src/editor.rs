@@ -458,17 +458,21 @@ impl Editor {
     /// Try to load a file. If found, load the rows and update the render and
     /// syntax highlighting. If not found, do not return an error.
     fn load(&mut self, path: &Path) -> Result<(), Error> {
-        let mut file = match File::open(path) {
-            Err(e) if e.kind() == ErrorKind::NotFound => {
-                self.rows.push(Row::new(Vec::new()));
-                return Ok(());
-            }
-            r => r,
-        }?;
+        self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
+        let file = match File::open(path) {
+            Err(e) if e.kind() == ErrorKind::NotFound => None,
+            r => Some(r?),
+        };
+        self.file_name = Some(path.to_string_lossy().to_string());
+        let Some(mut file) = file else {
+            self.rows = vec![Row::new(Vec::new())];
+            return Ok(());
+        };
         let ft = file.metadata()?.file_type();
         if !(ft.is_file() || ft.is_symlink()) {
             return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type").into());
         }
+        self.rows.clear();
         for line in BufReader::new(&file).split(b'\n') {
             self.rows.push(Row::new(line?));
         }
@@ -486,6 +490,8 @@ impl Editor {
         // updated.
         self.update_screen_cols();
         self.n_bytes = self.rows.iter().map(|row| row.chars.len() as u64).sum();
+        self.dirty = false;
+        self.cursor = CursorState::default();
         Ok(())
     }
 
@@ -493,19 +499,8 @@ impl Editor {
     /// status bar; a file that does not exist yet starts a new empty buffer,
     /// like passing the path on the command line.
     fn open(&mut self, path: &str) {
-        let path = sys::path(path);
-        // load() appends rows to the current buffer, so reset it first: the
-        // opened file replaces the content being edited.
-        self.rows.clear();
-        self.n_bytes = 0;
-        match self.load(path.as_path()) {
-            Ok(()) => {
-                self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
-                self.file_name = Some(path.to_string_lossy().to_string());
-                self.dirty = false;
-                self.cursor = CursorState::default();
-            }
-            Err(err) => set_status!(self, "Can't open! {err:?}"),
+        if let Err(err) = self.load(&sys::path(path)) {
+            set_status!(self, "Can't open! {err:?}");
         }
     }
 
@@ -736,12 +731,9 @@ impl Editor {
         set_status!(self, "{HELP_MESSAGE}");
 
         if let Some(path) = file_name.map(sys::path) {
-            self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
             self.load(path.as_path())?;
-            self.file_name = Some(path.to_string_lossy().to_string());
         } else {
             self.rows.push(Row::new(Vec::new()));
-            self.file_name = None;
         }
         loop {
             if let Some(mode) = &self.prompt_mode {
@@ -833,7 +825,7 @@ impl PromptMode {
             },
             Self::Open(b) => match process_prompt_keypress(b, key) {
                 PromptState::Active(b) => return Some(Self::Open(b)),
-                PromptState::Cancelled => set_status!(ed, "Open aborted"),
+                PromptState::Cancelled => (),
                 PromptState::Completed(path) => ed.open(&path),
             },
             Self::Find(b, saved_cursor, last_match) => {
