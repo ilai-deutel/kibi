@@ -921,7 +921,6 @@ mod tests {
     use std::io::Cursor;
 
     use rstest::rstest;
-    use tempfile::tempdir;
 
     use super::*;
     use crate::syntax::HlType;
@@ -1480,56 +1479,64 @@ mod tests {
         assert_eq!(prompt_mode, None);
     }
 
-    #[test]
-    fn editor_open_file() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("test.rs");
-        std::fs::write(&path, b"fn main() {}\n").unwrap();
-        let path_str = path.to_str().unwrap();
+    // Opening a file touches the filesystem, which is not supported on WASI
+    #[cfg(not(target_family = "wasm"))]
+    mod fs_tests {
+        use tempfile::tempdir;
 
-        let mut ed: Editor = Editor::default();
-        for b in b"old content" {
-            ed.insert_byte(*b);
-        }
-        ed.dirty = true;
+        use super::super::*;
 
-        let mut prompt_mode = Some(PromptMode::Open(String::new()));
-        for c in path_str.chars() {
-            let key = Key::Char(u8::try_from(c).expect("ASCII path"));
-            prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
-        }
-        prompt_mode =
-            prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
-        assert_eq!(prompt_mode, None);
+        #[test]
+        fn editor_open_file() {
+            let dir = tempdir().unwrap();
+            let path = dir.path().join("test.rs");
+            std::fs::write(&path, b"fn main() {}\n").unwrap();
+            let path_str = path.to_str().unwrap();
 
-        assert_row_chars_equal(&ed, &[b"fn main() {}", b""]);
-        assert_eq!(ed.file_name, Some(path_str.to_owned()));
-        assert!(!ed.dirty);
-    }
+            let mut ed: Editor = Editor::default();
+            for b in b"old content" {
+                ed.insert_byte(*b);
+            }
+            ed.dirty = true;
 
-    #[test]
-    fn editor_open_missing_file_starts_new_buffer() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("does_not_exist.txt");
-        let path_str = path.to_str().unwrap().to_owned();
+            let mut prompt_mode = Some(PromptMode::Open(String::new()));
+            for c in path_str.chars() {
+                let key = Key::Char(u8::try_from(c).expect("ASCII path"));
+                prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
+            }
+            prompt_mode =
+                prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
+            assert_eq!(prompt_mode, None);
 
-        let mut ed: Editor = Editor::default();
-        for b in b"old content" {
-            ed.insert_byte(*b);
+            super::assert_row_chars_equal(&ed, &[b"fn main() {}", b""]);
+            assert_eq!(ed.file_name, Some(path_str.to_owned()));
+            assert!(!ed.dirty);
         }
 
-        let mut prompt_mode = Some(PromptMode::Open(String::new()));
-        for c in path_str.chars() {
-            let key = Key::Char(c as u8);
-            prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
-        }
-        prompt_mode =
-            prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
-        assert_eq!(prompt_mode, None);
+        #[test]
+        fn editor_open_missing_file_starts_new_buffer() {
+            let dir = tempdir().unwrap();
+            let path = dir.path().join("does_not_exist.txt");
+            let path_str = path.to_str().unwrap().to_owned();
 
-        // A non-existing file starts a new empty buffer, like the CLI path
-        assert_row_chars_equal(&ed, &[b""]);
-        assert_eq!(ed.file_name, Some(path_str));
+            let mut ed: Editor = Editor::default();
+            for b in b"old content" {
+                ed.insert_byte(*b);
+            }
+
+            let mut prompt_mode = Some(PromptMode::Open(String::new()));
+            for c in path_str.chars() {
+                let key = Key::Char(c as u8);
+                prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
+            }
+            prompt_mode =
+                prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
+            assert_eq!(prompt_mode, None);
+
+            // A non-existing file starts a new empty buffer, like the CLI path
+            super::assert_row_chars_equal(&ed, &[b""]);
+            assert_eq!(ed.file_name, Some(path_str));
+        }
     }
 
     #[rstest]
