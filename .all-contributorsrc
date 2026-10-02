@@ -459,6 +459,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "niukanen1",
+      "name": "niukanen1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57656076?v=4",
+      "profile": "https://github.com/niukanen1",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitType": "docs"
