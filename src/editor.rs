@@ -455,34 +455,35 @@ impl Editor {
         self.dirty = true;
     }
 
-    /// Try to load a file. If found, load the rows and update the render and
-    /// syntax highlighting. If not found, do not return an error.
-    fn load(&mut self, path: &Path) -> Result<(), Error> {
-        self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
+    /// Try to load a file. If not found, start a new empty buffer instead.
+    fn load(&mut self, path: &Path) -> Result<(), io::Error> {
         let file = match File::open(path) {
             Err(e) if e.kind() == ErrorKind::NotFound => None,
             r => Some(r?),
         };
+        // The type check runs before the editor state is updated, so opening
+        // an invalid file is a no-op
+        let ft = file.as_ref().map(|f| f.metadata().map(|m| m.file_type())).transpose()?;
+        if ft.is_some_and(|ft| !ft.is_file() && !ft.is_symlink()) {
+            return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type"));
+        }
+        self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
         self.file_name = Some(path.to_string_lossy().to_string());
-        let Some(mut file) = file else {
-            self.rows = vec![Row::new(Vec::new())];
-            return Ok(());
-        };
-        let ft = file.metadata()?.file_type();
-        if !(ft.is_file() || ft.is_symlink()) {
-            return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type").into());
-        }
-        self.rows.clear();
-        for line in BufReader::new(&file).split(b'\n') {
-            self.rows.push(Row::new(line?));
-        }
-        // If the file ends with an empty line or is empty, we need to append an
-        // empty row to `self.rows`. Unfortunately, BufReader::split
-        // doesn't yield an empty Vec in this case, so we need to check
-        // the last byte directly.
-        file.seek(io::SeekFrom::End(0))?;
-        #[expect(clippy::unbuffered_bytes)]
-        if file.bytes().next().transpose()?.is_none_or(|b| b == b'\n') {
+        if let Some(mut file) = file {
+            self.rows.clear();
+            for line in BufReader::new(&file).split(b'\n') {
+                self.rows.push(Row::new(line?));
+            }
+            // If the file ends with an empty line or is empty, append an empty
+            // row: BufReader::split doesn't yield an empty Vec in this case,
+            // so check the last byte directly.
+            file.seek(io::SeekFrom::End(0))?;
+            #[expect(clippy::unbuffered_bytes)]
+            if file.bytes().next().transpose()?.is_none_or(|b| b == b'\n') {
+                self.rows.push(Row::new(Vec::new()));
+            }
+        } else {
+            // A file that was not found starts a new empty buffer
             self.rows.push(Row::new(Vec::new()));
         }
         self.update_all_rows();
@@ -495,12 +496,11 @@ impl Editor {
         Ok(())
     }
 
-    /// Open a file, replacing the current content. Errors are printed to the
-    /// status bar; a file that does not exist yet starts a new empty buffer,
-    /// like passing the path on the command line.
+    /// Open a file, replacing the current content, printing errors to the
+    /// status bar
     fn open(&mut self, path: &str) {
         if let Err(err) = self.load(&sys::path(path)) {
-            set_status!(self, "Can't open! {err:?}");
+            set_status!(self, "Can't open {path:?}: {err}");
         }
     }
 
@@ -730,10 +730,9 @@ impl Editor {
         self.update_window_size()?;
         set_status!(self, "{HELP_MESSAGE}");
 
-        if let Some(path) = file_name.map(sys::path) {
-            self.load(path.as_path())?;
-        } else {
-            self.rows.push(Row::new(Vec::new()));
+        match file_name {
+            Some(path) => self.open(path),
+            None => self.rows.push(Row::new(Vec::new())),
         }
         loop {
             if let Some(mode) = &self.prompt_mode {
@@ -1491,51 +1490,45 @@ mod tests {
             let dir = tempdir().unwrap();
             let path = dir.path().join("test.rs");
             std::fs::write(&path, b"fn main() {}\n").unwrap();
-            let path_str = path.to_str().unwrap();
-
-            let mut ed: Editor = Editor::default();
-            for b in b"old content" {
-                ed.insert_byte(*b);
-            }
-            ed.dirty = true;
-
-            let mut prompt_mode = Some(PromptMode::Open(String::new()));
-            for c in path_str.chars() {
-                let key = Key::Char(u8::try_from(c).expect("ASCII path"));
-                prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
-            }
-            prompt_mode =
-                prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
-            assert_eq!(prompt_mode, None);
-
-            super::assert_row_chars_equal(&ed, &[b"fn main() {}", b""]);
-            assert_eq!(ed.file_name, Some(path_str.to_owned()));
-            assert!(!ed.dirty);
-        }
-
-        #[test]
-        fn editor_open_missing_file_starts_new_buffer() {
-            let dir = tempdir().unwrap();
-            let path = dir.path().join("does_not_exist.txt");
             let path_str = path.to_str().unwrap().to_owned();
 
             let mut ed: Editor = Editor::default();
             for b in b"old content" {
                 ed.insert_byte(*b);
             }
-
+            ed.dirty = true;
             let mut prompt_mode = Some(PromptMode::Open(String::new()));
             for c in path_str.chars() {
-                let key = Key::Char(c as u8);
+                let key = Key::Char(u8::try_from(c).expect("ASCII path"));
                 prompt_mode = prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &key));
             }
-            prompt_mode =
+            let done =
                 prompt_mode.take().and_then(|m| m.process_keypress(&mut ed, &Key::Char(b'\r')));
-            assert_eq!(prompt_mode, None);
+            assert_eq!(done, None);
 
-            // A non-existing file starts a new empty buffer, like the CLI path
-            super::assert_row_chars_equal(&ed, &[b""]);
+            super::assert_row_chars_equal(&ed, &[b"fn main() {}", b""]);
             assert_eq!(ed.file_name, Some(path_str));
+            assert!(!ed.dirty);
+        }
+
+        #[test]
+        fn editor_open_invalid_file_type_is_noop() {
+            let path = tempdir().unwrap().path().join("a_directory");
+            std::fs::create_dir_all(&path).unwrap();
+            let path_str = path.to_str().unwrap();
+
+            let mut ed: Editor = Editor::default();
+            for b in b"old content" {
+                ed.insert_byte(*b);
+            }
+            let file_name_before = ed.file_name.clone();
+            ed.open(path_str);
+            super::assert_row_chars_equal(&ed, &[b"old content"]);
+            assert_eq!(ed.file_name, file_name_before);
+            assert_eq!(
+                ed.status_msg.as_ref().expect("error must set a status message").msg,
+                format!("Can't open {path_str:?}: Invalid input file type")
+            );
         }
     }
 
