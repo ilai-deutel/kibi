@@ -47,7 +47,7 @@ pub struct Conf {
     /// The token that start and end a multi-line strings, e.g. "\"\"\"" for
     /// Python.
     pub ml_string_delim: Option<String>,
-    /// Keywords to highlight and there corresponding `HLType` (typically
+    /// Keywords to highlight and their corresponding `HLType` (typically
     /// `HLType::Keyword1` or `HLType::Keyword2`)
     pub keywords: Vec<(HlType, Vec<String>)>,
 }
@@ -87,7 +87,8 @@ impl Conf {
                 "singleline_comment_start" => sc.sl_comment_start = pvs(val)?,
                 "multiline_comment_delims" =>
                     sc.ml_comment_delims = match val.split_once(',') {
-                        Some((v1, v2)) if !v2.contains(',') => Some((pv(v1)?, pv(v2)?)),
+                        Some((v1, v2)) if !v2.contains(',') =>
+                            Some((pv(v1.trim())?, pv(v2.trim())?)),
                         _ => return Err(format!("Expected 2 delimiters, got {val}")),
                     },
                 "multiline_string_delim" => sc.ml_string_delim = Some(pv(val)?),
@@ -131,5 +132,47 @@ mod tests {
         let tmp_dir = TempDir::new().expect("Could not create temporary directory");
         let tmp_path = tmp_dir.path().join("path_does_not_exist.ini");
         assert_eq!(Conf::parse(&tmp_path), (Conf::default(), Vec::<String>::new()));
+    }
+
+    #[test]
+    fn full_example() {
+        let tmp_dir = TempDir::new().expect("Could not create temporary directory");
+        let file_path = tmp_dir.path().join("test_config.ini");
+        let ini_content = r#"
+name=Rust
+extensions=rs
+highlight_numbers=true
+singleline_string_quotes= "
+   singleline_comment_start=   //
+multiline_comment_delims=/*,   */
+; In Rust, the multi-line string delimiter is the same as the single-line string delimiter
+multiline_string_delim="
+; https://doc.rust-lang.org/book/appendix-01-keywords.html
+keywords_1=abstract, as, async
+keywords_2=i8, i16
+"#;
+        fs::write(&file_path, ini_content).expect("Could not write INI file");
+        assert_eq!(
+            Conf::parse(&file_path),
+            (
+                Conf {
+                    name: String::from("Rust"),
+                    highlight_numbers: true,
+                    sl_string_quotes: vec!['"'],
+                    sl_comment_start: vec![String::from("//")],
+                    ml_comment_delims: Some((String::from("/*"), String::from("*/"))),
+                    ml_string_delim: Some(String::from("\"")),
+                    keywords: vec![
+                        (HlType::Keyword1, vec![
+                            String::from("abstract"),
+                            String::from("as"),
+                            String::from("async"),
+                        ]),
+                        (HlType::Keyword2, vec![String::from("i8"), String::from("i16"),])
+                    ],
+                },
+                vec![String::from(".rs")]
+            )
+        );
     }
 }

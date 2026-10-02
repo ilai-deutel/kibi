@@ -98,7 +98,7 @@ where F: FnMut(&str, &str) -> Result<(), String> {
     );
 }
 
-/// Trim a value (right-hand side of a key=value INI line) and parses it.
+/// Parse a value (right-hand side of a key=value INI line).
 pub fn parse_value<T: FromStr<Err=E>, E: Display>(value: &str) -> Result<T, String> {
     value.parse().map_err(|e: E| e.to_string())
 }
