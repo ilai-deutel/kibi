@@ -394,8 +394,8 @@ is 230 lines long.
 
 ## Contributors
 
-This project follows the [all-contributors](https://allcontributors.org/) specification
-([emoji key](https://allcontributors.org/docs/en/emoji-key)). Contributions of
+This project follows the [all-contributors](https://allcontributors.org) specification
+([emoji key](https://allcontributors.org/emoji-key)). Contributions of
 any kind welcome!
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->

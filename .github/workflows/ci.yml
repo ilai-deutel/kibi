@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - &MSRV "1.98"
+          - &MSRV "1.99"
           - nightly
         target:
           # Tier 1 platforms
