@@ -5,7 +5,7 @@
 use std::fmt::{Display, Write as _};
 use std::io::{self, BufRead, BufReader, ErrorKind, Read, Seek, Write};
 use std::iter::{self, repeat, successors as scsr};
-use std::{fs::File, path::Path, process::Command, time::Instant};
+use std::{fs, path::Path, process::Command, time::Instant};
 
 use crate::row::{HlState, Row};
 use crate::{Config, Error, ansi_escape::*, syntax::Conf as SyntaxConf, sys, terminal};
@@ -457,16 +457,17 @@ impl Editor {
 
     /// Try to load a file. If not found, start a new empty buffer instead.
     fn load(&mut self, path: &Path) -> Result<(), io::Error> {
-        let file = match File::open(path) {
+        // File::open fails on directories on Windows (Access denied), so check
+        // the file type first: the type check runs before the editor state is
+        // updated, so opening an invalid file is a no-op
+        let invalid_type = |ft: fs::FileType| !ft.is_file() && !ft.is_symlink();
+        if fs::metadata(path).is_ok_and(|m| invalid_type(m.file_type())) {
+            return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type"));
+        }
+        let file = match fs::File::open(path) {
             Err(e) if e.kind() == ErrorKind::NotFound => None,
             r => Some(r?),
         };
-        // The type check runs before the editor state is updated, so opening
-        // an invalid file is a no-op
-        let ft = file.as_ref().map(|f| f.metadata().map(|m| m.file_type())).transpose()?;
-        if ft.is_some_and(|ft| !ft.is_file() && !ft.is_symlink()) {
-            return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type"));
-        }
         self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
         self.file_name = Some(path.to_string_lossy().to_string());
         if let Some(mut file) = file {
@@ -506,7 +507,7 @@ impl Editor {
 
     /// Save the text to a file, given its name.
     fn save(&self, file_name: &str) -> Result<usize, io::Error> {
-        let mut file = File::create(file_name)?;
+        let mut file = fs::File::create(file_name)?;
         let mut written = 0;
         for (i, row) in self.rows.iter().enumerate() {
             file.write_all(&row.chars)?;
@@ -1489,7 +1490,7 @@ mod tests {
         fn editor_open_file() {
             let dir = tempdir().unwrap();
             let path = dir.path().join("test.rs");
-            std::fs::write(&path, b"fn main() {}\n").unwrap();
+            fs::write(&path, b"fn main() {}\n").unwrap();
             let path_str = path.to_str().unwrap().to_owned();
 
             let mut ed: Editor = Editor::default();
@@ -1514,7 +1515,7 @@ mod tests {
         #[test]
         fn editor_open_invalid_file_type_is_noop() {
             let path = tempdir().unwrap().path().join("a_directory");
-            std::fs::create_dir_all(&path).unwrap();
+            fs::create_dir_all(&path).unwrap();
             let path_str = path.to_str().unwrap();
 
             let mut ed: Editor = Editor::default();
