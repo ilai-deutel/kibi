@@ -28,8 +28,8 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - &MSRV "1.98"
-          - nightly
+          - &MSRV "1.99"
+          - &nightly nightly-2026-10-03
         target:
           # Tier 1 platforms
           - aarch64-apple-darwin # ARM64 macOS (11.0+, Big Sur+)
@@ -90,6 +90,9 @@ jobs:
       contents: read
       id-token: write
 
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -121,26 +124,24 @@ jobs:
           echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
           TARGET_UPPERCASE=$(sed -e 's/.*/\U&/' -e 's/-/_/g' <<< ${{ matrix.target }})
           echo "CARGO_TARGET_${TARGET_UPPERCASE}_LINKER=${TOOLCHAIN}/bin/${{ matrix.target }}${ANDROID_API_LEVEL}-clang" >> "$GITHUB_ENV"
+      - name: Install Rust ${{ matrix.toolchain }} toolchain
+        if: matrix.disable-coverage == true
+        run: |
+          set -euo pipefail
+          rustup install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal
+          rustc --version --verbose
+      - name: Install Rust ${{ matrix.toolchain }} toolchain, grcov
+        if: matrix.disable-coverage != true
+        run: |
+          set -euo pipefail
+          rustup install --target ${{ matrix.target }} --profile minimal --component llvm-tools-preview
+          rustc --version --verbose
+          cargo install --locked --verbose grcov
       - name: Install dependencies (WASI)
         if: matrix.target == 'wasm32-wasip1'
         run: cargo install --locked --verbose wasmtime-cli
       - name: Install cargo-nextest
         run: cargo install --locked --verbose cargo-nextest
-      - name: Install Rust ${{ matrix.toolchain }} toolchain
-        if: matrix.disable-coverage == true
-        run: |
-          set -euo pipefail
-          rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal
-          rustup default ${{ matrix.toolchain }}
-          rustc +${{ matrix.toolchain }} --version --verbose
-      - name: Install Rust ${{ matrix.toolchain }} toolchain, grcov
-        if: matrix.disable-coverage != true
-        run: |
-          set -euo pipefail
-          rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.target }} --profile minimal --component llvm-tools-preview
-          rustup default ${{ matrix.toolchain }}
-          rustc +${{ matrix.toolchain }} --version --verbose
-          cargo install --locked --verbose grcov
       - name: Build and test
         run: |
           set -euo pipefail
@@ -206,6 +207,9 @@ jobs:
       pull-requests: write
       checks: write
 
+    env:
+      RUSTUP_TOOLCHAIN: *nightly
+
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -217,12 +221,11 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
-          prefix-key: rust-nightly
-      - name: Install Rust nightly with clippy and rustfmt
+          prefix-key: rust-${{ env.RUSTUP_TOOLCHAIN }}
+      - name: Install Rust ${{ env.RUSTUP_TOOLCHAIN }} with clippy and rustfmt
         run: |
-          rustup toolchain install nightly --target ${{ matrix.target }} --component rustfmt --component clippy --profile minimal --allow-downgrade
-          rustup default nightly
-          rustc +nightly --version --verbose
+          rustup install install ${{ env.RUSTUP_TOOLCHAIN }} --target ${{ matrix.target }} --component rustfmt --component clippy --profile minimal --allow-downgrade
+          rustc --version --verbose
       - name: Format
         run: cargo fmt --check --all
       - name: Set up cargo-action-fmt

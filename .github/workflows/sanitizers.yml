@@ -53,6 +53,9 @@ jobs:
     permissions:
       contents: read
 
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-10-03
+
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -64,12 +67,11 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
-          prefix-key: rust-nightly
-      - name: Install Rust nightly with rust-src
+          prefix-key: rust-${{ env.RUSTUP_TOOLCHAIN }}
+      - name: Install Rust ${{ env.RUSTUP_TOOLCHAIN }} with rust-src
         run: |
-          rustup toolchain install nightly --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
-          rustup default nightly
-          rustc +nightly --version --verbose
+          rustup toolchain install ${{ env.RUSTUP_TOOLCHAIN }} --target ${{ matrix.target }} --component rust-src --profile minimal --allow-downgrade
+          rustc --version --verbose
       - name: Install cargo-nextest
         run: cargo install --locked --verbose cargo-nextest
       - name: Run tests with sanitizer
