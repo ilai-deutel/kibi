@@ -191,9 +191,9 @@ impl Editor {
                 }
                 self.cursor.x = cursor_x;
             }
-            // ← at the beginning of the line: move to the end of the previous line. The x
-            // position will be adjusted after this `match` to accommodate the current row
-            // length, so we can just set here to the maximum possible value here.
+            // ← at the start of a line: go to the end of the previous line.
+            // The x position gets adjusted after this `match` for the current
+            // row length, so the maximum possible value works here.
             (AKey::Left, _) if self.cursor.y > 0 =>
                 (self.cursor.y, self.cursor.x) = (self.cursor.y - 1, usize::MAX),
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
@@ -205,8 +205,8 @@ impl Editor {
                 self.cursor.x = cursor_x;
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
-            // TODO: For Up and Down, move self.cursor.x to be consistent with tabs and UTF-8
-            //  characters, i.e. according to rx
+            // TODO: For Up and Down, move self.cursor.x to be consistent with
+            // tabs and UTF-8  characters, i.e. according to rx
             (AKey::Up, _) if self.cursor.y > 0 => self.cursor.y -= 1,
             (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
@@ -460,8 +460,7 @@ impl Editor {
         // File::open fails on directories on Windows (Access denied), so check
         // the file type first: the type check runs before the editor state is
         // updated, so opening an invalid file is a no-op
-        let invalid_type = |ft: fs::FileType| !ft.is_file() && !ft.is_symlink();
-        if fs::metadata(path).is_ok_and(|m| invalid_type(m.file_type())) {
+        if fs::metadata(path).is_ok_and(|m| !m.is_file() && !m.is_symlink()) {
             return Err(io::Error::new(ErrorKind::InvalidInput, "Invalid input file type"));
         }
         let file = match fs::File::open(path) {
@@ -470,8 +469,8 @@ impl Editor {
         };
         self.syntax = SyntaxConf::find(&path.to_string_lossy(), &sys::data_dirs());
         self.file_name = Some(path.to_string_lossy().to_string());
+        self.rows.clear();
         if let Some(mut file) = file {
-            self.rows.clear();
             for line in BufReader::new(&file).split(b'\n') {
                 self.rows.push(Row::new(line?));
             }
@@ -497,8 +496,7 @@ impl Editor {
         Ok(())
     }
 
-    /// Open a file, replacing the current content, printing errors to the
-    /// status bar
+    /// Open a file, replacing the current content
     fn open(&mut self, path: &str) {
         if let Err(err) = self.load(&sys::path(path)) {
             set_status!(self, "Can't open {path:?}: {err}");
@@ -854,8 +852,9 @@ impl PromptMode {
                 PromptState::Active(b) => return Some(Self::GoTo(b)),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
-                    let mut split = b.splitn(2, ':')
-                        // saturating_sub: Lines and cols are 1-indexed
+                    // saturating_sub: Lines and cols are 1-indexed
+                    let mut split = b
+                        .splitn(2, ':')
                         .map(|u| u.trim().parse().map(|s: usize| s.saturating_sub(1)));
                     match (split.next().transpose(), split.next().transpose()) {
                         (Ok(Some(y)), Ok(x)) => {
@@ -1530,6 +1529,19 @@ mod tests {
                 ed.status_msg.as_ref().expect("error must set a status message").msg,
                 format!("Can't open {path_str:?}: Invalid input file type")
             );
+        }
+
+        #[test]
+        fn editor_open_missing_file_clears_buffer() {
+            let dir = tempdir().unwrap();
+            let path = dir.path().join("does_not_exist.txt");
+            let path_str = path.to_str().unwrap();
+            let mut ed: Editor = Editor::default();
+            for b in b"old content" {
+                ed.insert_byte(*b);
+            }
+            ed.open(path_str);
+            super::assert_row_chars_equal(&ed, &[b""]);
         }
     }
 
