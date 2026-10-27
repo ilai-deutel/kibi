@@ -28,8 +28,8 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-          - &MSRV "1.98"
           - nightly
+          - &MSRV "1.99"
         target:
           # Tier 1 platforms
           - aarch64-apple-darwin # ARM64 macOS (11.0+, Big Sur+)
