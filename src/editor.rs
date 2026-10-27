@@ -191,9 +191,10 @@ impl Editor {
                 }
                 self.cursor.x = cursor_x;
             }
-            // ← at the start of a line: go to the end of the previous line.
-            // The x position gets adjusted after this `match` for the current
-            // row length, so the maximum possible value works here.
+            // ← at the beginning of the line: move to the end of the previous
+            // line. The x position will be adjusted after this `match` to
+            // accommodate the current row length, so we can just set here to
+            // the maximum possible value here.
             (AKey::Left, _) if self.cursor.y > 0 =>
                 (self.cursor.y, self.cursor.x) = (self.cursor.y - 1, usize::MAX),
             (AKey::Right, Some(row)) if self.cursor.x < row.chars.len() => {
@@ -206,7 +207,7 @@ impl Editor {
             }
             (AKey::Right, Some(_)) => self.cursor.move_to_next_line(),
             // TODO: For Up and Down, move self.cursor.x to be consistent with
-            // tabs and UTF-8  characters, i.e. according to rx
+            // tabs and UTF-8 characters, i.e. according to rx
             (AKey::Up, _) if self.cursor.y > 0 => self.cursor.y -= 1,
             (AKey::Down, Some(_)) => self.cursor.y += 1,
             _ => (),
@@ -852,9 +853,9 @@ impl PromptMode {
                 PromptState::Active(b) => return Some(Self::GoTo(b)),
                 PromptState::Cancelled => (),
                 PromptState::Completed(b) => {
-                    // saturating_sub: Lines and cols are 1-indexed
                     let mut split = b
                         .splitn(2, ':')
+                        // saturating_sub: Lines and cols are 1-indexed
                         .map(|u| u.trim().parse().map(|s: usize| s.saturating_sub(1)));
                     match (split.next().transpose(), split.next().transpose()) {
                         (Ok(Some(y)), Ok(x)) => {
