@@ -246,6 +246,7 @@ kibi --version    # Print version information and exit
 | ------------------------------ | ------------------------------------------------------------- |
 | <kbd>Ctrl</kbd> + <kbd>F</kbd> | Incremental search; use arrows to navigate                    |
 | <kbd>Ctrl</kbd> + <kbd>S</kbd> | Save the buffer to the current file, or specify the file path |
+| <kbd>Ctrl</kbd> + <kbd>O</kbd> | Open a file, replacing the buffer                             |
 | <kbd>Ctrl</kbd> + <kbd>G</kbd> | Go to `<line number>[:<column number>]` position              |
 | <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Quit                                                          |
 | <kbd>Ctrl</kbd> + <kbd>D</kbd> | Duplicate the current row                                     |
