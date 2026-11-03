@@ -179,40 +179,33 @@ impl Row {
         self.hl_state
     }
 
-    /// Draw the row and write the result to a buffer. An `offset` can be given,
-    /// as well as a limit on the length of the row (`max_len`). After
-    /// writing the characters, clear the rest of the line and move the
-    /// cursor to the start of the next line.
+    /// Draw the row, cropped to the columns `offset..offset + max_len`.
     pub fn draw(&self, offset: usize, max_len: usize, buffer: &mut String, use_color: bool) {
         let mut current_hl_type = HlType::Normal;
-        let chars = self.render.chars().skip(offset).take(max_len);
-        let mut rx = self.render.chars().take(offset).map(|c| c.width().unwrap_or(1)).sum();
-        for (c, mut hl_type) in chars.zip(self.hl.iter().skip(offset)) {
+        let chars = self.render.char_indices().scan(0, |cx, (i, c)| {
+            Some((i, std::mem::replace(cx, *cx + c.width().unwrap_or(1)), *cx, c))
+        });
+        for (i, rx, end, c) in chars
+            .skip_while(|&(_, _, end, _)| end <= offset)
+            .take_while(|&(_, _, end, _)| end <= offset + max_len)
+            .map(|(i, rx, end, c)| (i, rx, end, if rx < offset { ' ' } else { c }))
+        {
             if c.is_ascii_control() {
                 let rendered_char = if (c as u8) <= 26 { (b'@' + c as u8) as char } else { '?' };
                 push_colored(buffer, WBG, &rendered_char.to_string(), use_color);
-                // Restore previous color
-                if use_color && current_hl_type != HlType::Normal {
-                    buffer.push_str(&current_hl_type.to_string());
-                }
+                (use_color && current_hl_type != HlType::Normal)
+                    .then(|| buffer.push_str(&current_hl_type.to_string()));
             } else {
-                if let Some(match_segment) = &self.match_segment {
-                    if match_segment.contains(&rx) {
-                        // Set the highlight type to Match, i.e. set the
-                        // background to cyan
-                        hl_type = &HlType::Match;
-                    } else if use_color && rx == match_segment.end {
-                        // Reset the formatting, in particular the background
-                        buffer.push_str(RESET);
-                    }
-                }
+                let m = self.match_segment.as_ref().is_some_and(|m| m.contains(&rx));
+                let hl_type = if m { &HlType::Match } else { &self.hl[i] };
                 if use_color && current_hl_type != *hl_type {
+                    (current_hl_type == HlType::Match).then(|| buffer.push_str(RESET));
                     buffer.push_str(&hl_type.to_string());
                 }
                 current_hl_type = *hl_type;
-                buffer.push(c);
+                // A char straddling the left edge fills its remaining columns
+                buffer.extend(repeat_n(c, if rx < offset { end - offset } else { 1 }));
             }
-            rx += c.width().unwrap_or(1);
         }
         buffer.push_str(if use_color { RESET } else { "" });
     }

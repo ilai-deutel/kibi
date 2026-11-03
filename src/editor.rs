@@ -919,11 +919,12 @@ fn process_prompt_keypress(mut buffer: String, key: &Key) -> PromptState {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+    use std::num::NonZeroUsize;
 
     use rstest::rstest;
 
     use super::*;
-    use crate::syntax::HlType;
+    use crate::syntax::{Conf, HlType};
 
     fn assert_row_chars_equal(editor: &Editor, expected: &[&[u8]]) {
         assert_eq!(
@@ -1615,5 +1616,75 @@ mod tests {
 
         // Verify cursor position is valid
         assert!(editor.cursor.x <= editor.rows[0].chars.len());
+    }
+    fn update_row(text: &str) -> Row {
+        let mut row = Row::new(text.as_bytes().to_vec());
+        row.update(
+            &Conf { highlight_numbers: true, ..Default::default() },
+            HlState::Normal,
+            NonZeroUsize::new(4).unwrap(),
+        );
+        row
+    }
+
+    #[rstest]
+    // Case from #646: pasting fullwidth digits until the line is wider than the window
+    #[case(
+        "\u{ff10}\u{ff11}\u{ff12}\u{ff13}\u{ff14}\u{ff15}\u{ff16}\u{ff17}\u{ff18}\u{ff19}",
+        0,
+        6,
+        "\u{ff10}\u{ff11}\u{ff12}"
+    )]
+    // Scrolled right: the viewport starts inside the second ０
+    #[case("\u{ff10}\u{ff11}\u{ff12}\u{ff13}\u{ff14}", 5, 6, " \u{ff13}\u{ff14}")]
+    #[case("\u{ff10}\u{ff11}\u{ff12}\u{ff13}\u{ff14}\u{ff15}", 7, 6, " \u{ff14}\u{ff15}")]
+    // Mixed widths: the wide char starting before the viewport is drawn as a space
+    #[case("A\u{ff10}BC\u{ff14}", 2, 6, " BC\u{ff14}")]
+    // A wide char that would cross the right edge is not drawn
+    #[case("A\u{ff10}B", 0, 2, "A")]
+    // Tab expanded in the render, offset in the middle of the expansion
+    #[case("\u{ff10}\tZ", 1, 4, "   Z")]
+    // A 3-columns-wide char straddling the left edge fills 2 columns
+    #[case("\u{17d8}AB", 1, 4, "  AB")]
+    fn row_draw_respects_column_offsets(
+        #[case] text: &str, #[case] offset: usize, #[case] max_len: usize, #[case] expected: &str,
+    ) {
+        let mut buffer = String::new();
+        update_row(text).draw(offset, max_len, &mut buffer, false);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn row_draw_keeps_combining_marks_with_their_base() {
+        let mut buffer = String::new();
+        update_row("e\u{301}X").draw(0, 1, &mut buffer, false);
+        assert_eq!(buffer, "e\u{301}");
+    }
+
+    #[test]
+    fn row_draw_colors_multibyte_rows_correctly() {
+        let mut buffer = String::new();
+        // The digit must be red even though it follows a 3-byte fullwidth char
+        update_row("\u{ff10} 1").draw(0, 10, &mut buffer, true);
+        assert_eq!(buffer, "\u{ff10} \x1b[31m1\x1b[m");
+    }
+
+    #[test]
+    fn row_draw_colors_offset_multibyte_rows_correctly() {
+        let mut buffer = String::new();
+        update_row("\u{e9} 1").draw(1, 10, &mut buffer, true);
+        assert_eq!(buffer, " \x1b[31m1\x1b[m");
+    }
+
+    #[test]
+    fn row_draw_resets_the_match_background_when_leaving_a_match() {
+        let mut buffer = String::new();
+        let mut row = update_row("12");
+        // Highlight the first character, as FIND would
+        row.match_segment = Some(0..1);
+        row.draw(0, 10, &mut buffer, true);
+        // 1 is drawn with the Match background, then 2 resets it and takes the
+        // number color
+        assert_eq!(buffer, "\x1b[46m1\x1b[m\x1b[31m2\x1b[m");
     }
 }
