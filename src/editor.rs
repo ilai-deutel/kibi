@@ -699,10 +699,14 @@ impl Editor {
     /// key that is pressed. `last_match` is the last row that was matched,
     /// `forward` indicates whether to search forward or backward. Returns
     /// the row of a new match, or `None` if the search was unsuccessful.
+    /// Without a last match, the search starts at the cursor row (or at the
+    /// first row if the cursor is after the last row).
     fn find(&mut self, query: &str, last_match: Option<usize>, forward: bool) -> Option<usize> {
         // Number of rows to search
         let num_rows = if query.is_empty() { 0 } else { self.rows.len() };
-        let mut current = last_match.unwrap_or_else(|| num_rows.saturating_sub(1));
+        // Start one row before the cursor row, so that the first step of the
+        // loop lands on the cursor row itself (modulo `num_rows`).
+        let mut current = last_match.unwrap_or_else(|| self.cursor.y + num_rows.saturating_sub(1));
         // TODO: Handle multiple matches per line
         for _ in 0..num_rows {
             current = (current + if forward { 1 } else { num_rows - 1 }) % num_rows;
@@ -1477,6 +1481,33 @@ mod tests {
             .take()
             .and_then(|prompt_mode| prompt_mode.process_keypress(&mut ed, &Key::Char(b'\r')));
         assert_eq!(prompt_mode, None);
+    }
+
+    #[rstest]
+    #[case::from_cursor_row(1, b"fo", 2)]
+    #[case::cursor_row_itself(2, b"fo", 2)]
+    #[case::longer_query_stays(2, b"foo", 2)]
+    #[case::wraps_to_top(3, b"fo", 0)]
+    #[case::cursor_after_last_row(4, b"fo", 0)]
+    #[case::no_match_keeps_cursor(1, b"x", 1)]
+    fn find_starts_from_cursor(
+        #[case] cursor_y: usize, #[case] query: &[u8], #[case] expected_y: usize,
+    ) {
+        let mut ed: Editor = Editor::default();
+        for line in [&b"foo"[..], b"bar", b"foo", b"baz"] {
+            for c in line {
+                ed.insert_byte(*c);
+            }
+            ed.insert_new_line();
+        }
+        ed.rows.pop();
+        ed.cursor.y = cursor_y;
+        let (_, mut prompt_mode) = ed.process_keypress(&Key::Char(FIND));
+        for c in query {
+            prompt_mode =
+                prompt_mode.and_then(|mode| mode.process_keypress(&mut ed, &Key::Char(*c)));
+        }
+        assert_eq!(ed.cursor.y, expected_y);
     }
 
     // Opening a file touches the filesystem, which is not supported on WASI
